@@ -122,28 +122,11 @@ button:focus-visible{outline:2px solid var(--in);outline-offset:2px}
   font-weight: 800 !important; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3) !important; transition: all 0.15s ease !important;
 }
 #copyTripBtn:hover { background: #38bdf8 !important; }
-
-/* =========================================================================
-   スプラッシュ画面による接続待ちチラつき防止用
-   ========================================================================= */
-#splash {
-  position: fixed;
-  inset: 0;
-  background: #05070a;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 99999;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
-}
-#splash.hide {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
 </style>
 <script>
+// =========================================================================
+// 1. まず最優先でストレージヘルパー（safeLS/safeSS）を定義（起動クラッシュ防止）
+// =========================================================================
 var _localStorage;
 try {
   _localStorage = window.localStorage;
@@ -158,15 +141,17 @@ try {
   };
 }
 var _sessionStorage = _localStorage;
+
+const safeLS = {
+  get: k => { try { return _localStorage.getItem(k); } catch(e) { return null; } },
+  set: (k, v) => { try { _localStorage.setItem(k, v); } catch(e) {} },
+  remove: k => { try { _localStorage.removeItem(k); } catch(e) {} }
+};
+
+const safeSS = safeLS; // 永続的ストレージに統一してブラウザ終了時も自動復帰をサポート
 </script>
 </head>
 <body>
-<!-- ★追加：スプラッシュ接続オーバーレイ [1] -->
-<div id="splash">
-  <div class="logo" style="font-size: 28px; margin-bottom: 24px;">NEZUO CHAT</div>
-  <div class="spin" style="width: 28px; height: 28px; border-width: 3.5px; border-top-color: var(--in);"></div>
-</div>
-
 <div id="app">
   <div id="cp">
     <!-- ヘッダー -->
@@ -200,6 +185,10 @@ var _sessionStorage = _localStorage;
 
     <!-- タイムライン -->
     <div id="tl" role="log" aria-live="polite">
+      <!-- 過去ログ読み込み用バナー -->
+      <div id="loadMoreBlock" style="text-align: center; padding: 12px; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--bd); display: none;">
+        <button id="loadMoreBtn" style="color: #38bdf8; font-weight: bold; font-size: 12.5px; background: none; border: none; cursor: pointer;">▲ さらに過去のログを読み込む (<span id="loadMoreStatus">25/100</span>)</button>
+      </div>
       <div id="tl-inner"></div>
     </div>
 
@@ -305,15 +294,83 @@ var _sessionStorage = _localStorage;
 
 <script>
 // =========================================================================
-// 部屋管理のグローバルステート（同期ロードに最適化） [1]
+// 部屋管理用のグローバルステート
 // =========================================================================
 let currentRoomId = "official"; 
 
-// 1. キャッシュからセッションデータを最速（同期）ロードして待機時間・チラつきを皆無に [1]
+// DOM取得用のショートカット定義 ($ と D の定義)
+const $ = id => document.getElementById(id);
+const D = {
+  adminClearBtn: $("adminClearBtn"),
+  clrBtn: $("clrBtn"),
+  clrDot: $("clrDot"),
+  exBtn: $("exBtn"),
+  pl: $("pl"),
+  fixedPlayer: $("fixedPlayer"),
+  playerCloseBtn: $("playerCloseBtn"),
+  playerContent: $("playerContent"),
+  tl: $("tl"),
+  tli: $("tl-inner"),
+  unreadBadge: $("unreadBadge"),
+  jumpUpBtn: $("jumpUpBtn"),
+  jumpDownBtn: $("jumpDownBtn"),
+  joinForm: $("joinForm"),
+  ib: $("ib"),
+  ni: $("ni"),
+  tripi: $("tripi"),
+  joinBtn: $("joinBtn"),
+  tripPrevText: $("tripPrevText"),
+  copyTripBtn: $("copyTripBtn"),
+  fileInput: $("fileInput"),
+  imgBtn: $("imgBtn"),
+  mi: $("mi"),
+  clrMsgBtn: $("clrMsgBtn"),
+  sdBtn: $("sdBtn"),
+  delConfirmMod: $("delConfirmMod"),
+  delConfirmPreview: $("delConfirmPreview"),
+  delExecuteBtn: $("delExecuteBtn"),
+  delCancelBtn: $("delCancelBtn"),
+  clrmod: $("clrmod"),
+  clrPrev: $("clrPrev"),
+  clrPick2: $("clrPick2"),
+  clrCancel: $("clrCancel"),
+  clrOk: $("clrOk"),
+  imgViewMod: $("imgViewMod"),
+  imgViewSrc: $("imgViewSrc"),
+  imgViewCloseBtn: $("imgViewCloseBtn"),
+  kbKeepOpenChk: $("kbKeepOpenChk"),
+  pcnt: $("pcnt"),
+  loadMoreBlock: $("loadMoreBlock"),
+  loadMoreBtn: $("loadMoreBtn"),
+  loadMoreStatus: $("loadMoreStatus")
+};
+
+// 鍵情報
+const firebaseConfig = {
+  apiKey: "AIzaSyCsRidc0smUQDaBwq-oki5NzxSHx6-ljiw",
+  authDomain: "nezuochat.firebaseapp.com",
+  databaseURL: "https://nezuochat-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "nezuochat",
+  storageBucket: "nezuochat.firebasestorage.app",
+  messagingSenderId: "154725381397",
+  appId: "1:154725381397:web:8742ccd957e20cee8ce51c"
+};
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+const db = firebase.database();
+const auth = firebase.auth();
+
+// キャッシュからセッションデータをロード
 let myUid = safeLS.get("nz_permanent_uid"); 
+if (!myUid) {
+  myUid = "user_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
+  safeLS.set("nz_permanent_uid", myUid);
+}
 let myName = safeLS.get("nz_ni") || "";
 let myTrip = "";
-let isJoined = (safeLS.get("nz_is_joined") === "true") && (myName !== ""); 
+let isJoined = (safeLS.get("nz_is_joined") === "true") && (myName.trim() !== ""); 
 
 let keepKbOpen = safeLS.get("nz_keep_kb_open") === "true";
 let isAutoScroll = true; 
@@ -327,8 +384,16 @@ let curColor = safeLS.get("nz_color") || "#94a3b8";
 let tmpColor = curColor;
 let lastSendTime = 0;
 let targetDelId = null;
-let isFirstLoad = true; // ★追加：初期読み込みフラグ
-let isFirebaseListenersBound = false; // ★追加：リスナー重複登録を防止するフラグ
+let isFirstLoad = true; 
+let isFirebaseListenersBound = false; 
+
+// 動的取得用のリミット設定 (初期表示25件)
+let currentLimit = 25;
+const maxLimit = 100;
+let isLoadingMore = false;
+let isLoadMoreTriggered = false;
+let savedOldScrollHeight = 0;
+let savedOldScrollTop = 0;
 
 let isJoinFormExpanded = false;
 
@@ -344,7 +409,7 @@ const UR = /(https?:\/\/[^\s\n<>"]+)/gi;
 const COLORS = [
   {v:"#94a3b8",n:"グレー (標準)"},{v:"#e2e8f0",n:"スレート"},{v:"#06b6d4",n:"シアン"},{v:"#7dd3fc",n:"パステルスカイ"},{v:"#38bdf8",n:"スカイ"},{v:"#6366f1",n:"インディゴ"},{v:"#818cf8",n:"パステルインディゴ"},{v:"#bef264",n:"パステルライム"},
   {v:"#a3e635",n:"ライム1"},{v:"#84cc16",n:"ライム2"},{v:"#10b981",n:"エメラルド"},{v:"#34d399",n:"ミント"},{v:"#a7f3d0",n:"パステルミント"},{v:"#2dd4bf",n:"ティール"},{v:"#99f6e4",n:"パステルティール"},{v:"#14b8a6",n:"アクア"},
-  {v:"#fde68a",n:"パステルイエロー"},{v:"#fbbf24",n:"アンバー"},{v:"#f59e0b",n:"イエロー"},{v:"#fdba74",n:"パステルオレンジ"},{v:"#fb923c",n:"オレンジ1"},{v:"#fb923c",n:"オレンジ2"},{v:"#fca5a5",n:"パステルレッド"},{v:"#f87171",n:"レッド2"},
+  {v:"#fde68a",n:"パステルイエロー"},{v:"#fb9e0b",n:"アンバー"},{v:"#f59e0b",n:"イエロー"},{v:"#fdba74",n:"パステルオレンジ"},{v:"#fb923c",n:"オレンジ1"},{v:"#fb923c",n:"オレンジ2"},{v:"#fca5a5",n:"パステルレッド"},{v:"#f87171",n:"レッド2"},
   {v:"#ef4444",n:"レッド1"},{v:"#db2777",n:"ローズ"},{v:"#f472b6",n:"ピンク"},{v:"#f9a8d4",n:"ライトピンク"},{v:"#fda4af",n:"パステルローズ"},{v:"#a855f7",n:"パープル"},{v:"#c084fc",n:"ライトパープル"},{v:"#c4b5fd",n:"パステルパープル"}
 ];
 
@@ -400,9 +465,24 @@ const updateAdminUI = () => {
 window.SYSTEM_SALT = window.SYSTEM_SALT || "nz_chat_salt_default_key";
 
 window.sha256 = async (str) => {
-  const buf = new TextEncoder().encode(str);
-  const hash = await crypto.subtle.digest("SHA-256", buf);
-  return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+  if (window.crypto && crypto.subtle) {
+    try {
+      const buf = new TextEncoder().encode(str);
+      const hash = await crypto.subtle.digest("SHA-256", buf);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    } catch (e) {
+      console.warn("CryptoAPI failed, falling back:", e);
+    }
+  }
+  let h1 = 0x811c9dc5, h2 = 0xcbf29ce4;
+  const len = str.length;
+  for (let i = 0; i < len; i++) {
+    h1 = Math.imul(h1 ^ str.charCodeAt(i), 0x01000193);
+    h2 = Math.imul(h2 ^ str.charCodeAt(i), 0x01000193);
+  }
+  const p1 = (h1 >>> 0).toString(16).padStart(8, '0');
+  const p2 = (h2 >>> 0).toString(16).padStart(8, '0');
+  return p1 + p2 + p1 + p2;
 };
 
 window.makeTrip = async (name, tripKey) => {
@@ -439,7 +519,21 @@ const syncProfileValues = async () => {
   if (D.copyTripBtn) {
     D.copyTripBtn.style.display = tripiVal ? "inline-flex" : "none";
   }
+  
+  // 空欄判定
+  validateNameField();
 };
+
+function validateNameField() {
+  const nameVal = D.ni.value.trim();
+  if (nameVal === "") {
+    D.joinBtn.disabled = true;
+    D.joinBtn.textContent = "名前を入力してください";
+  } else {
+    D.joinBtn.disabled = false;
+    D.joinBtn.textContent = "参加する";
+  }
+}
 
 function switchUIMode(mode) {
   if (mode === "guest") {
@@ -462,12 +556,12 @@ function switchUIMode(mode) {
 }
 
 const updateLastPostTime = (time) => {
-  safeLS.set("nz_last_post_time", time.toString()); // ★永続ストレージに変更 [1]
+  safeLS.set("nz_last_post_time", time.toString()); 
 };
 
 function checkActivityTimeout() {
   if (!isJoined) return;
-  const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0"); // ★永続ストレージから取得 [1]
+  const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0"); 
   if (!lastPost) return;
 
   const elapsed = getTrueTime() - lastPost;
@@ -488,11 +582,10 @@ async function doExit(isAuto = false) {
   if (!isJoined) return;
 
   const cleanName = (myName || "").trim();
-  // ★名前がない場合は、ログを書き込まずに静かに退室処理のみを行う（謎の空ログ発生を防止）
   if (!cleanName) {
     isJoined = false;
     stopAutoExitTimer();
-    safeLS.remove("nz_is_joined"); // ★永続 [1]
+    safeLS.remove("nz_is_joined"); 
     safeLS.remove("nz_last_post_time");
     if (myUid) {
       await db.ref(`presence/official/${myUid}`).remove().catch(() => {});
@@ -533,7 +626,7 @@ async function doExit(isAuto = false) {
   isJoined = false;
   stopAutoExitTimer();
 
-  safeLS.remove("nz_is_joined"); // ★永続 [1]
+  safeLS.remove("nz_is_joined"); 
   safeLS.remove("nz_last_post_time");
 
   renderPresence(currentPresenceMap);
@@ -580,7 +673,6 @@ function triggerOtherExit(targetId, targetUser, calculatedTimeoutTime) {
       const actualUser = snapshot.val();
       const userDisplayName = (actualUser.n || "").trim();
       
-      // ★名前がない場合はログを書き込まずに静かに存在データのみ消去（謎の空白ログの発生を防止）
       if (!userDisplayName) {
         db.ref(`presence/official/${targetId}`).remove().catch(() => {});
         return;
@@ -608,7 +700,6 @@ function triggerOtherExit(targetId, targetUser, calculatedTimeoutTime) {
 async function joinRoom(isReconnect = false) {
   let n = isReconnect ? (safeLS.get("nz_ni") || "") : D.ni.value.trim();
   
-  // ★空欄のみブロック（「名無し」等の文字列はブロックしません）
   if (!n) { 
     if (!isReconnect) alert("名前を入力してください。"); 
     return; 
@@ -616,7 +707,7 @@ async function joinRoom(isReconnect = false) {
 
   const tk = isReconnect ? (safeLS.get("nz_tripi") || "") : D.tripi.value.trim();
   myName = n; myTrip = await window.makeTrip(n, tk); isJoined = true;
-  safeLS.set("nz_ni", n); safeLS.set("nz_tripi", tk); safeLS.set("nz_is_joined", "true"); // ★永続化 [1]
+  safeLS.set("nz_ni", n); safeLS.set("nz_tripi", tk); safeLS.set("nz_is_joined", "true"); 
   
   const nowTime = getTrueTime();
   updateLastPostTime(nowTime);
@@ -761,9 +852,17 @@ async function sendMsg(overrideText = null, imgData = null) {
 
 const renderedMwNodes = new Map();
 
+let lastChatHash = "";
+
 function syncMessagesDOM(targetMsgs) {
   if (!targetMsgs || !Array.isArray(targetMsgs)) return;
   const cleanMsgs = targetMsgs.filter(m => m && m.id);
+
+  const currentHash = cleanMsgs.map(m => `${m.id}_${m.u}_${m.n}_${m.m}`).join("|");
+  if (currentHash === lastChatHash && pendingMsgs.size === 0) {
+    return; 
+  }
+  lastChatHash = currentHash;
 
   const currentNodes = Array.from(D.tli.children);
   const targetIds = new Set(cleanMsgs.map(m => m.id));
@@ -807,7 +906,17 @@ function syncMessagesDOM(targetMsgs) {
     }
   });
 
-  scBottom();
+  if (isLoadMoreTriggered) {
+    isLoadMoreTriggered = false;
+    isLoadingMore = false;
+    requestAnimationFrame(() => {
+      const newScrollHeight = D.tl.scrollHeight;
+      D.tl.scrollTop = savedOldScrollTop + (newScrollHeight - savedOldScrollHeight);
+    });
+  } else {
+    scBottom();
+  }
+  
   updateJumpBtns();
 }
 
@@ -902,7 +1011,6 @@ function cMsg(m, isNewIncoming = false) {
     let displayTxt = m.m.startsWith("[SYS]::") ? m.m.substring(7) : m.m;
     el.innerHTML = `<div class="sys-msg">${escapeHtml(displayTxt)}<span class="sys-ts">[${fDT(msgTime)}]</span></div>`;
     
-    // ★システムメッセージは、その「対象本人（m.u === myUid）」または「管理者（isAdmin）」のみ完全消去可能 [1]
     if (m.u === myUid || isAdmin()) {
       const sysDiv = el.querySelector(".sys-msg");
       sysDiv.style.position = "relative";
@@ -964,7 +1072,6 @@ function cMsg(m, isNewIncoming = false) {
     }
   }
 
-  // ★削除ボタンを「本人のみ」表示に戻し、さらに「管理者」も常時操作可能に [1]
   if (m.u === myUid || isAdmin()) {
     const delBtn = document.createElement("button");
     delBtn.className = "del-btn-inline";
@@ -1023,10 +1130,56 @@ function updateJumpBtns() {
   }
 }
 
+// 過去ログを読み込む実処理
+async function loadMoreLogs() {
+  if (isLoadingMore || currentLimit >= maxLimit) return;
+  isLoadingMore = true;
+  
+  if (D.loadMoreBtn) {
+    D.loadMoreBtn.disabled = true;
+    D.loadMoreBtn.textContent = "🔄 読み込み中...";
+  }
+
+  savedOldScrollHeight = D.tl.scrollHeight;
+  savedOldScrollTop = D.tl.scrollTop;
+
+  currentLimit = Math.min(maxLimit, currentLimit + 25);
+  isLoadMoreTriggered = true;
+
+  setupFirebaseListeners();
+}
+
+function updateLoadMoreUI(loadedCount) {
+  if (!D.loadMoreBlock || !D.loadMoreBtn || !D.loadMoreStatus) return;
+
+  D.loadMoreBlock.style.display = "block";
+
+  if (currentLimit >= maxLimit) {
+    D.loadMoreBtn.disabled = true;
+    D.loadMoreBtn.style.color = "var(--mu)";
+    D.loadMoreBtn.textContent = "✨ これ以上の過去ログはありません (上限100件)";
+  } else if (loadedCount < currentLimit) {
+    D.loadMoreBtn.disabled = true;
+    D.loadMoreBtn.style.color = "var(--mu)";
+    D.loadMoreBtn.textContent = `✨ これ以上の過去ログはありません (全 ${loadedCount} 件)`;
+  } else {
+    D.loadMoreBtn.disabled = false;
+    D.loadMoreBtn.style.color = "#38bdf8";
+    D.loadMoreBtn.innerHTML = `▲ さらに過去のログを読み込む (<span id="loadMoreStatus">${loadedCount}/${maxLimit}件表示中</span>)`;
+  }
+}
+
+D.loadMoreBtn.onclick = loadMoreLogs;
+
 D.tl.addEventListener("scroll", () => {
   const scrollTop = D.tl.scrollTop;
   const clientHeight = D.tl.clientHeight;
   const scrollHeight = D.tl.scrollHeight;
+
+  // 最上部までスクロールされたら過去ログを自動ロード
+  if (scrollTop <= 0 && !isLoadingMore && currentLimit < maxLimit) {
+    loadMoreLogs();
+  }
 
   const isNearBottom = scrollTop + clientHeight >= scrollHeight - 40;
 
@@ -1183,8 +1336,6 @@ function renderPresence(serverListMap) {
     delete cleanMap[myUid];
   }
 
-  // ★キャッシュから旧ユーザー情報を無理やりマージする復活処理（復活バグの原因）は削除されました
-
   const members = Object.values(cleanMap).filter(m => m && m.n);
   populatePresenceList(members);
 }
@@ -1192,7 +1343,6 @@ function renderPresence(serverListMap) {
 let lastPresenceHash = "";
 
 function populatePresenceList(membersList) {
-  // ★名前が完全に空のユーザーを入室リストから除外
   const sortedList = [...membersList]
     .filter(m => m.n && m.n.trim() !== "")
     .sort((a, b) => a.id.localeCompare(b.id));
@@ -1216,7 +1366,9 @@ function populatePresenceList(membersList) {
   }
   D.pl.innerHTML = "";
   D.pl.appendChild(fragment);
-  D.pcnt.textContent = `${mLen}人`;
+  if (D.pcnt) {
+    D.pcnt.textContent = `${mLen}人`;
+  }
   updateJumpBtns(); 
 }
 
@@ -1323,6 +1475,9 @@ if (D.kbKeepOpenChk) {
 
 D.jumpUpBtn.onclick = () => {
   D.tl.scrollTo({ top: 0, behavior: "smooth" });
+  if (currentLimit < maxLimit) {
+    setTimeout(loadMoreLogs, 300);
+  }
 };
 
 D.jumpDownBtn.onclick = () => {
@@ -1372,7 +1527,6 @@ D.delExecuteBtn.onclick = async () => {
   D.delConfirmMod.classList.remove("show");
   targetDelId = null;
 
-  // ★修正：セキュリティルールとの競合を防ぐため、2重書き込みを廃止し、シンプルに完全削除（remove）のみを実行します
   await db.ref(`chat/official/${idToDelete}`).remove().catch((err) => {
     console.warn("削除エラー:", err);
   });
@@ -1516,7 +1670,7 @@ D.copyTripBtn.onclick = async () => {
 };
 
 const handleJoinKey = (e) => {
-  if (e.key === "Enter") {
+  if (e.key === "Enter" && !D.joinBtn.disabled) {
     joinRoom();
   }
 };
@@ -1526,7 +1680,7 @@ D.tripi.addEventListener("keydown", handleJoinKey);
 let lastBoostTime = 0;
 const boostSync = () => { 
   const now = Date.now();
-  if (now - lastBoostTime < 800) return; // ★さらに同期のレスポンスを高めるため、再接続ブーストの間隔を調整 [1]
+  if (now - lastBoostTime < 800) return; 
   lastBoostTime = now;
 
   if (db) {
@@ -1535,7 +1689,6 @@ const boostSync = () => {
   checkActivityTimeout(); 
   if (db && isJoined && myUid) { 
     startAutoExitChecker(); 
-    // ★復帰した瞬間に、裏側でサーバー側に対してもプレゼンスのアクティブ更新を直接送信する [1]
     const myPresRef = db.ref(`presence/official/${myUid}`);
     myPresRef.update({
       t: firebase.database.ServerValue.TIMESTAMP,
@@ -1577,7 +1730,6 @@ window.addEventListener('storage', (e) => {
       if (isJoined) {
         myName = safeLS.get("nz_ni") || "";
         if (!myName.trim()) {
-          // ★名前が何らかの同期ラグで空になっていた場合は、参加状態を解除する
           isJoined = false;
           safeLS.set("nz_is_joined", "false"); 
           switchUIMode("guest");
@@ -1613,30 +1765,20 @@ window.addEventListener('storage', (e) => {
   }
 });
 
-// ★メッセージ描画用のクリーンアップフィルター（幽霊ログや名無しログを徹底的に弾く共通関数）
 function filterMsg(m) {
   if (m.deleted) return false;
   
-  // 1. 本文（m.m）が存在しない、または空文字のものは非表示
   if (!m.m || typeof m.m !== "string" || m.m.trim() === "") {
     return false;
   }
-  // 2. 送信者名（m.n）が完全に存在しない、あるいは空文字の場合は非表示（バグ幽霊メッセージを完全に抹殺）
   if (!m.n || typeof m.n !== "string" || m.n.trim() === "") {
     return false;
   }
-  // 3. システムログで名前部分が完全に空白になっているものを非表示フィルターリング
   if (m.m.startsWith("[SYS]::")) {
     const sysText = m.m.substring(7).trim();
     if (sysText.startsWith("が退室しました") || sysText.startsWith("が入室しました") || !sysText) {
       return false;
     }
-  }
-  // 4. ★追加：24時間（86400000ミリ秒）以上前の古い発言（幽霊ログ）はタイムラインに絶対に出さない
-  const msgTime = getMsgTime(m);
-  const now = getTrueTime();
-  if (now - msgTime > 24 * 60 * 60 * 1000) {
-    return false;
   }
   
   return true;
@@ -1663,7 +1805,6 @@ function loadCachedChat() {
     if (cachedStr) {
       const cachedMsgs = JSON.parse(cachedStr);
       if (Array.isArray(cachedMsgs) && cachedMsgs.length > 0) {
-        // ★修正：起動時のキャッシュ読み込み段階でもフィルターを適用して描画する
         const activeCached = cachedMsgs.filter(m => filterMsg(m));
         syncMessagesDOM(activeCached);
       }
@@ -1679,7 +1820,8 @@ function setupFirebaseListeners() {
   chatRef.off();
   presenceRef.off();
 
-  const chatQuery = chatRef.limitToLast(50); 
+  // 指定した件数（初期は25件）をロード
+  const chatQuery = chatRef.limitToLast(currentLimit); 
   chatQuery.on("value", snap => {
     const serverMsgs = [];
     snap.forEach(child => {
@@ -1733,11 +1875,9 @@ function setupFirebaseListeners() {
       }
     });
 
-    // ★修正：共通フィルターを通して有効なメッセージのみを抽出
     const activeMsgs = serverMsgs.filter(m => filterMsg(m));
 
     try {
-      // ★修正：キャッシュにもフィルターを適用した後のクリーンなデータのみを保存するように変更
       const cacheData = activeMsgs.map(m => ({
         id: m.id,
         u: m.u,
@@ -1751,6 +1891,9 @@ function setupFirebaseListeners() {
       }));
       safeLS.set("nz_chat_cache", JSON.stringify(cacheData)); 
     } catch (e) {}
+
+    // バナーUIを読み込み状況に応じて更新
+    updateLoadMoreUI(serverMsgs.length);
 
     syncMessagesDOM(activeMsgs);
 
@@ -1778,7 +1921,7 @@ function setupFirebaseListeners() {
 
         let pt = u.p_t || ut;
 
-        if (isOffsetLoaded && isJoined && id !== myUid && (nowTrue - pt >= 1800000)) {
+        if (isOffsetLoaded && id !== myUid && (nowTrue - pt >= 1800000)) {
           triggerOtherExit(id, u, pt + 1800000);
           continue; 
         }
@@ -1798,7 +1941,6 @@ function setupFirebaseListeners() {
 }
 
 const initAuthProcess = async () => {
-  // ★最速起動のためにキャッシュ（ローカルストレージ）から同期的にセッション情報を即座に読み込む [1]
   myUid = safeLS.get("nz_permanent_uid");
   if (!myUid) {
     myUid = "user_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
@@ -1812,7 +1954,6 @@ const initAuthProcess = async () => {
   const tk = safeLS.get("nz_tripi") || ""; 
   myTrip = await window.makeTrip(myName, tk);
 
-  // 1. 同期的に即座に描画を実行（UIDや参加フラグが揃っているため、削除ボタンや覗き見画面が一瞬で完成する）
   loadCachedPresence();
   loadCachedChat();
   await syncProfileValues();
@@ -1822,9 +1963,23 @@ const initAuthProcess = async () => {
   } else {
     switchUIMode("guest");
   }
+  D.tl.style.opacity = "1";
 
-  // 2. バックグラウンドで非同期にFirebase Authを初期化解決させる
   if (auth) {
+    // 既存セッションが存在する場合は即ロード
+    if (auth.currentUser) {
+      if (!isFirebaseListenersBound) {
+        setupFirebaseListeners();
+        isFirebaseListenersBound = true;
+      }
+      if (isJoined) {
+        await joinRoom(true);
+      }
+      D.joinBtn.disabled = false;
+      validateNameField();
+      updateAdminUI();
+    }
+
     auth.onAuthStateChanged(async (user) => {
       let activeUid = null;
       if (!user) {
@@ -1833,25 +1988,32 @@ const initAuthProcess = async () => {
           activeUid = userCredential.user.uid;
         } catch (err) {
           console.warn("認証エラー:", err);
+          myUid = safeLS.get("nz_permanent_uid") || "guest_" + Date.now();
+          safeLS.set("nz_permanent_uid", myUid);
+          
+          if (!isFirebaseListenersBound) {
+            setupFirebaseListeners();
+            isFirebaseListenersBound = true;
+          }
+          
+          validateNameField();
+          updateAdminUI();
           return;
         }
       } else {
         activeUid = user.uid;
       }
 
-      // 予測UIDと実際のFirebase UIDが異なる場合のみ、再描画・再初期化を実行
       if (myUid !== activeUid) {
         myUid = activeUid;
         safeLS.set("nz_permanent_uid", myUid);
         
-        // UIDが入れ替わった場合のみ完全に再描画（チラつきやボタン消えを完全に防止）
         D.tli.innerHTML = "";
         renderedMwNodes.clear();
         displayedMsgIds.clear();
         loadCachedChat();
       }
 
-      // 認証確定後にリスナー登録（重複呼び出し防止）
       if (!isFirebaseListenersBound) {
         setupFirebaseListeners();
         isFirebaseListenersBound = true;
@@ -1861,17 +2023,7 @@ const initAuthProcess = async () => {
         await joinRoom(true);
       }
 
-      // ★匿名認証の解決が裏側で完了した瞬間に、接続待ちスプラッシュを解除 [1]
-      const splash = $("splash");
-      if (splash) {
-        splash.classList.add("hide");
-      }
-
-      // 接続完了後に参加ボタンの無効ロックを解除してアクティブ化
-      D.joinBtn.disabled = false;
-      D.joinBtn.textContent = "参加する";
-
-      // 管理者用のUI更新
+      validateNameField();
       updateAdminUI();
 
       if (!isConnectedBound) {
@@ -1883,7 +2035,7 @@ const initAuthProcess = async () => {
           
           db.ref(".info/connected").on("value", (snap) => {
             if (snap.val() === true) {
-              if (isJoined && myUid && myName.trim()) { // ★名前が空でない場合のみ送信
+              if (isJoined && myUid && myName.trim()) { 
                 const myPresRef = db.ref(`presence/official/${myUid}`);
                 
                 myPresRef.set({
@@ -1894,7 +2046,7 @@ const initAuthProcess = async () => {
                   p_t: firebase.database.ServerValue.TIMESTAMP
                 }).catch(() => {});
                 
-                // ★ブラウザ閉じ・通信切断時は意図通り生存させるため、onDisconnect().remove() は設定しません
+                // 退室・自動退室ロジックを優先するため、切断時の自動removeはバインドしない（仕様通りに維持）
               }
             }
           });
