@@ -113,6 +113,27 @@ button:focus-visible{outline:2px solid var(--in);outline-offset:2px}
   font-weight: 800 !important; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3) !important; transition: all 0.15s ease !important;
 }
 #copyTripBtn:hover { background: #38bdf8 !important; }
+
+/* =========================================================================
+   インライン削除ボタンの装飾
+   ========================================================================= */
+.del-btn-inline {
+  font-size: 10px;
+  color: var(--ro);
+  background: rgba(244, 63, 94, .1);
+  border: 1px solid rgba(244, 63, 94, .2);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 8px;
+  font-weight: bold;
+  line-height: 1.2;
+  vertical-align: middle;
+  display: inline-block;
+}
+.del-btn-inline:hover {
+  background: rgba(244, 63, 94, .2);
+  border-color: var(--ro);
+}
 </style>
 <script>
 // =========================================================================
@@ -1025,6 +1046,16 @@ function updateExistingMsgNode(m, el) {
   }
 }
 
+// 発言削除の非同期ファンクション
+const deleteMessage = async (mid) => {
+  if (!isAdmin()) return;
+  if (confirm("この発言を削除しますか？")) {
+    await db.ref(`chat/official/${mid}`).update({ deleted: true }).catch(err => {
+      alert("削除に失敗しました: " + err.message);
+    });
+  }
+};
+
 function cMsg(m, isNewIncoming = false) {
   const el = document.createElement("div");
   el.className = "mw" + (isNewIncoming ? " new-msg-anim" : "");
@@ -1038,24 +1069,41 @@ function cMsg(m, isNewIncoming = false) {
 
   if (isSys) {
     let displayTxt = m.m.startsWith("[SYS]::") ? m.m.substring(7) : m.m;
-    el.innerHTML = `<div class="sys-msg">${escapeHtml(displayTxt)}<span class="sys-ts">[${fDT(msgTime)}]</span></div>`;
+    const adminDelHtml = isAdmin() ? `<button class="del-btn-inline" data-mid="${m.id}" title="メッセージを削除">削除</button>` : "";
+    el.innerHTML = `<div class="sys-msg">${escapeHtml(displayTxt)}<span class="sys-ts">[${fDT(msgTime)}]${adminDelHtml}</span></div>`;
+    
+    if (isAdmin()) {
+      const delBtn = el.querySelector(".del-btn-inline");
+      if (delBtn) {
+        delBtn.onclick = () => deleteMessage(m.id);
+      }
+    }
+
     renderedMwNodes.set(m.id, el);
     return el;
   }
 
   const name = m.n || "名無し", trip = m.p || "", color = m.c || "#94a3b8";
+  const adminDelHtml = isAdmin() ? `<button class="del-btn-inline" data-mid="${m.id}" title="メッセージを削除">削除</button>` : "";
 
   el.innerHTML = `
     <div class="mm" style="color: ${color}">
       <span class="mm-name">${escapeHtml(name)}</span>
       <span class="mm-trip" style="display: ${trip ? 'inline' : 'none'}">${escapeHtml(trip)}</span>
-      <span class="ts">${fDT(msgTime)}</span>
+      <span class="ts">${fDT(msgTime)}${adminDelHtml}</span>
     </div>
     <div class="mb" style="border-left: 2px solid ${color}; padding-left: 8px;"></div>
   `;
 
   const mb = el.querySelector(".mb");
   
+  if (isAdmin()) {
+    const delBtn = el.querySelector(".del-btn-inline");
+    if (delBtn) {
+      delBtn.onclick = () => deleteMessage(m.id);
+    }
+  }
+
   if (m.m && m.m.startsWith("IMG::")) {
     const base64Img = m.m.substring(5);
     const img = document.createElement("img");
@@ -1841,6 +1889,15 @@ function setupFirebaseListeners() {
           displayedMsgIds.add(m.id);
           
           insertMessageInOrder(el);
+
+          // 新着メッセージがあった時のバッジ処理
+          if (!isFirstLoad && m.u !== myUid) {
+            // スクロールが最下部でない、あるいはタブが非アクティブな場合に未読としてカウント
+            if (!isAutoScroll || document.visibilityState === "hidden") {
+              unreadMsgIds.add(m.id);
+              updateUnreadBadge();
+            }
+          }
         }
       }
     }
