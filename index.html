@@ -1419,7 +1419,7 @@ function populatePresenceList(membersList) {
 
 D.exBtn.onclick = () => {
   if (isJoined) {
-    if (confirm("退室して参加前の覗き見画面に戻りますか？")) {
+    if (confirm("退室して参加前の画面に戻りますか？")) {
       doExit();
     }
   }
@@ -1838,7 +1838,7 @@ function setupFirebaseListeners() {
     saveChatCacheFromDOM();
   });
 
-  // 更新時の即座の反映
+  // 更新時の即座の反映（相手側の発言削除もここで即時反映・バッジ連動します）
   chatQuery.on("child_changed", snap => {
     const mid = snap.key;
     const m = snap.val();
@@ -1850,6 +1850,11 @@ function setupFirebaseListeners() {
           localEl.remove();
           renderedMwNodes.delete(mid);
           displayedMsgIds.delete(mid);
+        }
+        // 新着バッジ連動：削除された発言が未読リストにあれば除外して再計算
+        if (unreadMsgIds.has(mid)) {
+          unreadMsgIds.delete(mid);
+          updateUnreadBadge();
         }
       } else {
         const el = renderedMwNodes.get(mid);
@@ -1890,9 +1895,9 @@ function setupFirebaseListeners() {
           
           insertMessageInOrder(el);
 
-          // 新着メッセージがあった時のバッジ処理
+          // 新規発言時の新着バッジ処理
           if (!isFirstLoad && m.u !== myUid) {
-            // スクロールが最下部でない、あるいはタブが非アクティブな場合に未読としてカウント
+            // スクロール位置が最下部でない、あるいはタブが非アクティブな場合に未読件数に加算
             if (!isAutoScroll || document.visibilityState === "hidden") {
               unreadMsgIds.add(m.id);
               updateUnreadBadge();
