@@ -1419,7 +1419,7 @@ function populatePresenceList(membersList) {
 
 D.exBtn.onclick = () => {
   if (isJoined) {
-    if (confirm("退室して参加前の画面に戻りますか？")) {
+    if (confirm("退室して参加前の覗き見画面に戻りますか？")) {
       doExit();
     }
   }
@@ -1597,7 +1597,7 @@ function clampPan() {
   const cw = overlayEl.clientWidth, ch = overlayEl.clientHeight;
   const ir = imgEl.naturalWidth / imgEl.naturalHeight, cr = cw / ch;
   let iw, ih;
-  if (ir > cr) { iw = cw; ih = cw / ir; } else { ih = ch; iw = ch * ir; }
+  if (ir > cr) { iw = cw; iw = cw / ir; } else { ih = ch; iw = ch * ir; }
   const currentWidth = iw * scale, currentHeight = ih * scale;
   let limitX = currentWidth > cw ? (currentWidth - cw) / 2 : 0;
   let limitY = currentHeight > ch ? (currentHeight - ch) / 2 : 0;
@@ -1822,6 +1822,18 @@ function setupFirebaseListeners() {
   // childイベントによる軽量・遅延ゼロのリアルタイムリスナー
   const chatQuery = chatRef.limitToLast(currentLimit); 
 
+  // 全消去のリアルタイム検知：データベースが完全に空になった場合、全クライアントの画面とキャッシュをリセットする
+  chatQuery.on("value", snap => {
+    if (!snap.exists()) {
+      displayedMsgIds.clear();
+      D.tli.innerHTML = "";
+      renderedMwNodes.clear();
+      unreadMsgIds.clear();
+      updateUnreadBadge();
+      saveChatCacheFromDOM(); // ローカルキャッシュも完全に空にする
+    }
+  });
+
   // 物理削除されたメッセージの画面からの消去
   chatQuery.on("child_removed", snap => {
     const mid = snap.key;
@@ -1903,6 +1915,25 @@ function setupFirebaseListeners() {
               updateUnreadBadge();
             }
           }
+        } else {
+          // キャッシュから一時表示された el が存在するものの、
+          // 最新データと差異（編集やプロファイルの更新など）がある場合はアップデートする
+          updateExistingMsgNode(m, el);
+        }
+      } else {
+        // [過去ログ・キャッシュゾンビ発言対策] 
+        // 削除済みメッセージ（deleted: trueなど）の場合、
+        // もしローカルキャッシュから古いゾンビメッセージがすでにDOMへ表示されていれば、DOMおよびキャッシュから完全に排除します
+        let el = renderedMwNodes.get(m.id);
+        if (el) {
+          el.remove();
+          renderedMwNodes.delete(m.id);
+          displayedMsgIds.delete(m.id);
+          if (unreadMsgIds.has(m.id)) {
+            unreadMsgIds.delete(m.id);
+            updateUnreadBadge();
+          }
+          saveChatCacheFromDOM();
         }
       }
     }
