@@ -40,7 +40,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #fixedPlayer{display:none;flex-direction:column;background:var(--s2);border-bottom:1px solid var(--bd);width:100%}
 #playerHeader{background:var(--sf);padding:8px 12px;font-size:12px;font-weight:bold;display:flex;justify-content:space-between;align-items:center}
 #playerContent{width:100%;max-width:480px;aspect-ratio:16/9;background:#000;display:flex;justify-content:center;align-items:center;position:relative;margin:0 auto;border-radius:4px;overflow:hidden}
-#tl{flex:1;min-height:0;overflow-y:auto;padding:12px;background-color:#0d1117;overscroll-behavior-y:contain}
+#tl{flex:1;min-height:0;overflow-y:auto;padding:12px;background-color:#0d1117;overscroll-behavior-y:contain;opacity:0;transition:opacity 0.15s ease}
 #tl-inner{display:flex;flex-direction:column;justify-content:flex-end;gap:0;width:100%;max-width:800px;margin:0 auto;min-height:100%}
 .mw{position:relative;display:flex;flex-direction:column;width:100%;padding:12px 14px;border-bottom:1px solid rgba(51,65,85,.18)}
 .mw.new-msg-anim{animation:slideInUp .12s cubic-bezier(.16,1,.3,1) forwards}
@@ -153,7 +153,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- ゲスト用参加フォーム -->
+    <!-- ゲスト用参加フォーム（デフォルト折りたたみ） -->
     <div id="joinForm">
       <div id="joinFormHeader" style="padding: 12px; text-align: center; cursor: pointer; font-size: 12.5px; color: var(--tx); font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; user-select: none; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02);">
         <span>💬 チャットに参加する (タップで展開)</span>
@@ -163,7 +163,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         <div class="jrow">
           <input type="text" id="ni" class="inp" placeholder="名前 (10文字まで)" maxlength="10" autocomplete="off">
           <input type="text" id="tripi" class="inp" placeholder="トリップキー (任意)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
-          <button class="btn bp" id="joinBtn" style="height: 42px; padding: 0 16px;" disabled>接続中...</button>
+          <button class="btn bp" id="joinBtn" style="height: 42px; padding: 0 16px;">参加する</button>
         </div>
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px; width: 100%; gap: 8px;">
           <span id="tripPrevText" style="font-size: 11.5px; font-weight: bold; color: var(--usr-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">トリッププレビュー: 名無し</span>
@@ -243,9 +243,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   let db = null, auth = null;
   if (typeof firebase !== 'undefined') {
-    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    db = firebase.database();
-    auth = firebase.auth();
+    try {
+      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+      if (typeof firebase.database === 'function') db = firebase.database();
+      if (typeof firebase.auth === 'function') auth = firebase.auth();
+    } catch (e) {
+      console.error("Firebase SDK init error:", e);
+    }
   } else {
     console.error("Firebase SDK missing.");
   }
@@ -279,7 +283,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let savedOldScrollHeight = 0;
   let savedOldScrollTop = 0;
 
-  let isJoinFormExpanded = false;
+  let isJoinFormExpanded = false; // デフォルトで折りたたみの状態にする
   let scale = 1, panX = 0, panY = 0;
   let lastPanX = 0, lastPanY = 0, isPanning = false;
   let initialDistance = 0;
@@ -361,14 +365,17 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     return "◆" + res;
   };
 
-  const syncProfileValues = async () => {
+  const syncProfileValues = () => {
     const niVal = safeLS.get("nz_ni") || "", tripiVal = safeLS.get("nz_tripi") || "";
     if (D.ni) D.ni.value = niVal;
     if (D.tripi) D.tripi.value = tripiVal;
-    const tLobby = tripiVal ? await window.makeTrip(niVal || "名無し", tripiVal) : "";
-    if (D.tripPrevText) {
-      D.tripPrevText.textContent = `トリッププレビュー: ${niVal || "名無し"} ${tLobby}`;
-      D.tripPrevText.style.color = "var(--usr-color)";
+    
+    if (tripiVal) {
+      window.makeTrip(niVal || "名無し", tripiVal).then(tLobby => {
+        if (D.tripPrevText) D.tripPrevText.textContent = `トリッププレビュー: ${niVal || "名無し"} ${tLobby}`;
+      });
+    } else {
+      if (D.tripPrevText) D.tripPrevText.textContent = `トリッププレビュー: ${niVal || "名無し"}`;
     }
     if (D.copyTripBtn) D.copyTripBtn.style.display = tripiVal ? "inline-flex" : "none";
     validateNameField();
@@ -390,7 +397,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       D.clrBtn.style.display = "none";
       const kb = $("kbKeepOpenContainer");
       if (kb) kb.style.display = "none";
-      isJoinFormExpanded = false;
+      isJoinFormExpanded = false; // ゲスト時のアコーディオン初期状態は折りたたむ
       const jc = $("joinFormContent"), ja = $("joinFormArrow");
       if (jc) jc.style.display = "none";
       if (ja) ja.style.transform = "rotate(0deg)";
@@ -502,10 +509,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     opt[myUid || "temp_uid"] = { id: myUid || "temp_uid", n: myName, p: myTrip, c: curColor, t: nowTime, p_t: nowTime };
     renderPresence(opt);
 
-    await db.ref(`presence/official/${myUid}`).set({ n: myName, p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP, p_t: firebase.database.ServerValue.TIMESTAMP }).catch(err => {
-      alert("入室エラー:\n" + err.message);
-      doExit();
-      throw err;
+    db.ref(`presence/official/${myUid}`).set({ n: myName, p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP, p_t: firebase.database.ServerValue.TIMESTAMP }).catch(err => {
+      console.warn("Presence registration failed:", err);
     });
 
     updateAdminUI();
@@ -1172,64 +1177,77 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
   }
 
-  const initAuthProcess = async () => {
+  const initAuthProcess = () => {
     loadCachedPresence();
-    await syncProfileValues();
-    if (!isFirebaseListenersBound) { setupFirebaseListeners(); isFirebaseListenersBound = true; }
+    syncProfileValues();
+
     myUid = safeLS.get("nz_permanent_uid");
-    if (!myUid) {
-      myUid = "user_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
-      safeLS.set("nz_permanent_uid", myUid);
-    }
-    const hasNi = (safeLS.get("nz_ni") || "").trim();
-    isJoined = (safeLS.get("nz_is_joined") === "true") && (hasNi !== ""); 
-    myName = hasNi;
-    myTrip = await window.makeTrip(myName, safeLS.get("nz_tripi") || "");
-    switchUIMode(isJoined ? "joined" : "guest");
-    if (D.tl) D.tl.style.opacity = "1";
 
     if (auth) {
-      auth.onAuthStateChanged(async (user) => {
-        let activeUid = null;
-        if (!user) {
-          try {
-            const userCredential = await auth.signInAnonymously();
-            activeUid = userCredential.user.uid;
-          } catch (err) {
-            console.warn("Auth error:", err);
-            myUid = safeLS.get("nz_permanent_uid") || "guest_" + Date.now();
+      // 匿名認証の最速化（バックグラウンドで開始し、サインインが成立した瞬間に同期リスナーを結合）
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        myUid = currentUser.uid;
+        safeLS.set("nz_permanent_uid", myUid);
+        if (!isFirebaseListenersBound) { setupFirebaseListeners(); isFirebaseListenersBound = true; }
+        if (isJoined) joinRoom(true);
+        updateAdminUI();
+      } else {
+        auth.signInAnonymously()
+          .then((userCredential) => {
+            myUid = userCredential.user.uid;
             safeLS.set("nz_permanent_uid", myUid);
-            validateNameField(); updateAdminUI(); return;
-          }
-        } else activeUid = user.uid;
+            if (!isFirebaseListenersBound) { setupFirebaseListeners(); isFirebaseListenersBound = true; }
+            if (isJoined) joinRoom(true);
+            updateAdminUI();
+          })
+          .catch((err) => {
+            console.warn("Fast auth failed, fallback to local temporary UID.", err);
+            if (!myUid) {
+              myUid = "user_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
+              safeLS.set("nz_permanent_uid", myUid);
+            }
+            updateAdminUI();
+          });
+      }
 
-        if (myUid !== activeUid) {
-          if (isJoined && myUid && db) db.ref(`presence/official/${myUid}`).remove().catch(()=>{});
-          myUid = activeUid;
+      // 認証の成立・切り替わりを常に最速で反映
+      auth.onAuthStateChanged((user) => {
+        if (user) {
+          myUid = user.uid;
           safeLS.set("nz_permanent_uid", myUid);
-          if (D.tli) D.tli.innerHTML = "";
-          renderedMwNodes.clear(); displayedMsgIds.clear();
-          setupFirebaseListeners(); isFirebaseListenersBound = true;
-        } else if (!isFirebaseListenersBound) {
-          setupFirebaseListeners(); isFirebaseListenersBound = true;
-        }
-
-        if (isJoined) await joinRoom(true);
-        validateNameField(); updateAdminUI();
-
-        if (!isConnectedBound && db) {
-          try {
-            db.ref(".info/serverTimeOffset").on("value", snap => { serverTimeOffset = snap.val() || 0; isOffsetLoaded = true; });
-            db.ref(".info/connected").on("value", snap => {
-              if (snap.val() === true && isJoined && myUid && myName.trim()) {
-                db.ref(`presence/official/${myUid}`).set({ n: myName, p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP, p_t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
-              }
-            });
-            isConnectedBound = true;
-          } catch (e) { console.warn("Fail serverTimeOffset", e); }
+          if (!isFirebaseListenersBound) { setupFirebaseListeners(); isFirebaseListenersBound = true; }
+          updateAdminUI();
         }
       });
+
+      if (!isConnectedBound && db) {
+        try {
+          db.ref(".info/serverTimeOffset").on("value", snap => { serverTimeOffset = snap.val() || 0; isOffsetLoaded = true; });
+          db.ref(".info/connected").on("value", snap => {
+            if (snap.val() === true && isJoined && myUid && myName.trim()) {
+              db.ref(`presence/official/${myUid}`).set({
+                n: myName,
+                p: myTrip,
+                c: curColor,
+                t: firebase.database.ServerValue.TIMESTAMP,
+                p_t: firebase.database.ServerValue.TIMESTAMP
+              }).catch(()=>{});
+            }
+          });
+          isConnectedBound = true;
+        } catch (e) { console.warn("Fail serverTimeOffset", e); }
+      }
+    } else {
+      if (!myUid) {
+        myUid = "user_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
+        safeLS.set("nz_permanent_uid", myUid);
+      }
     }
+
+    // 開いた瞬間に、匿名認証の成立を待つことなくUI描画状態に遷移
+    switchUIMode(isJoined ? "joined" : "guest");
+    if (D.tl) D.tl.style.opacity = "1";
   };
 
   function initApp() {
@@ -1443,9 +1461,22 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       overlay.addEventListener("click", (e) => { if (e.target === overlay && D.imgViewMod) D.imgViewMod.classList.remove("show"); });
     }
 
+    initAppProcess = true;
     initAuthProcess();
+
+    // セーフティロック解除タイマー（ローカル環境や通信の遅延等で接続中から動かない場合、1.5秒で強制復元します）
+    setTimeout(() => {
+      const joinBtn = $("joinBtn");
+      if (joinBtn && joinBtn.textContent === "接続中...") {
+        console.warn("Connection locked. Force activating UI states.");
+        validateNameField();
+        switchUIMode(isJoined ? "joined" : "guest");
+        if (D.tl) D.tl.style.opacity = "1";
+      }
+    }, 1500);
   }
 
+  let initAppProcess = false;
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initApp); else initApp();
 })();
 </script>
