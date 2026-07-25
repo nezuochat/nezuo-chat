@@ -19,149 +19,81 @@
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{--bg:#090d16;--sf:#151c2c;--s2:#0b101c;--bd:#27314f;--tx:#f1f5f9;--mu:#94a3b8;--m2:#4e5e78;--in:#4f46e5;--i2:#3b32c0;--em:#10b981;--e2:#059669;--ro:#f43f5e;--rg:rgba(244,63,94,.12);--safe:env(safe-area-inset-bottom,0px);--usr-color:#94a3b8;--app-viewport-height:100dvh}
-html,body{height:100dvh;width:100%;overflow:hidden;background:#05070a;color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Hiragino Sans","Noto Sans JP",sans-serif;touch-action:pan-y;overscroll-behavior:none;-webkit-text-size-adjust:100%;font-size:15px}
-input,textarea,select{font-family:inherit;-webkit-user-select:text;user-select:text;font-size:16px!important}
-button,.chip,.btn,.jump-btn,.bsd,.bclrm,.battach,.open-player-btn,.modal-bottom-close,.del-btn-inline{cursor:pointer;font-family:inherit;border:none;background:none;touch-action:manipulation;transition:transform .08s cubic-bezier(0,0,.2,1),opacity .08s cubic-bezier(0,0,.2,1),background-color .12s ease,border-color .12s ease}
-button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:active,.battach:active,.open-player-btn:active,.modal-bottom-close:active,.del-btn-inline:active{transform:scale(.93)!important;opacity:.75!important;transition:transform .01s linear,opacity .01s linear!important}
-button:focus-visible{outline:2px solid var(--in);outline-offset:2px}
-#app{height:100vh;height:var(--app-viewport-height,100dvh);display:flex;position:fixed;inset:0;flex-direction:column;overflow:hidden;z-index:50;background:#05070a}
-#cp{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;background:#0d1117;position:relative;max-width:900px;width:100%;margin:0 auto;border-left:1px solid var(--bd);border-right:1px solid var(--bd);height:100%}
-#hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:8px 12px;flex-shrink:0;box-shadow:0 4px 20px rgba(0,0,0,.25)}
-.hr{display:flex;align-items:center;justify-content:space-between;gap:8px;height:auto;padding:4px 0}
-.pcnt{font-size:11px;font-weight:900;color:var(--tx);background:rgba(255,255,255,.08);padding:4px 8px;border-radius:6px;white-space:nowrap;line-height:1;border:1px solid rgba(255,255,255,.05)}
-.hbs{display:flex;gap:8px;align-items:center;flex-shrink:0}
-.hbs button{padding:6px 14px;height:40px;border-radius:8px;font-size:12.5px;font-weight:700;background:var(--bg);border:1px solid var(--bd);color:var(--tx);display:flex;align-items:center;gap:6px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.hbs button:hover{background:var(--sf);border-color:var(--in)}
+:root{--bg:#090d16;--sf:#151c2c;--s2:#0b101c;--bd:#27314f;--tx:#f1f5f9;--mu:#94a3b8;--m2:#4e5e78;--in:#4f46e5;--i2:#3b32c0;--em:#10b981;--e2:#059669;--ro:#f43f5e;--usr-color:#94a3b8;--safe:env(safe-area-inset-bottom,0px);--app-viewport-height:100dvh}
+html,body{height:100dvh;width:100%;overflow:hidden;background:#05070a;color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
+input,textarea,select{font-family:inherit;font-size:16px!important}
+button,.chip,.btn,.jump-btn,.bsd,.bclrm,.battach,.open-player-btn,.modal-bottom-close,.del-btn-inline{cursor:pointer;font-family:inherit;border:none;background:none;transition:transform .08s ease,opacity .08s ease}
+button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:active,.battach:active,.open-player-btn:active,.modal-bottom-close:active,.del-btn-inline:active{transform:scale(.93)!important;opacity:.75!important}
+#app{height:var(--app-viewport-height,100dvh);display:flex;position:fixed;inset:0;flex-direction:column;z-index:50;background:#05070a}
+#cp{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;background:#0d1117;position:relative;max-width:900px;width:100%;margin:0 auto;border-left:1px solid var(--bd);border-right:1px solid var(--bd)}
+#hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:8px 12px;flex-shrink:0}
+.hr{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.pcnt{font-size:11px;font-weight:900;background:rgba(255,255,255,.08);padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.05)}
+.hbs{display:flex;gap:8px;align-items:center}
+.hbs button{padding:6px 14px;height:40px;border-radius:8px;font-size:12.5px;font-weight:700;background:var(--bg);border:1px solid var(--bd);color:var(--tx);display:flex;align-items:center;gap:6px}
 .bclr{border-color:var(--usr-color)!important}
-.bclr-dot{width:11px;height:10px;border-radius:50%;display:inline-block;transition:background .15s;background:var(--usr-color)!important}
+.bclr-dot{width:11px;height:10px;border-radius:50%;background:var(--usr-color)!important}
 .bx{background:rgba(244,63,94,.16)!important;border-color:rgba(244,63,94,.4)!important;color:#fda4af!important;font-weight:900!important;padding:6px 16px!important;display:none}
-.bx:hover{background:rgba(244,63,94,.25)!important;border-color:var(--ro)!important}
-.logo{font-size:16.5px;font-weight:900;letter-spacing:.04em;background:linear-gradient(90deg,#38bdf8 0%,#818cf8 50%,#f472b6 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;display:inline-block;text-shadow:0 0 25px rgba(129,140,248,.25);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;user-select:none}
-#pl{display:flex;gap:6px;padding:6px 12px;background:var(--s2);border-bottom:1px solid rgba(255,255,255,.02);flex-shrink:0;align-items:center;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;white-space:nowrap;-webkit-overflow-scrolling:touch;min-height:40px;max-height:40px}
-#pl::-webkit-scrollbar{height:3px}
-#pl::-webkit-scrollbar-track{background:rgba(0,0,0,.05)}
-#pl::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
-.chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--bg);border:1px solid rgba(255,255,255,.06);display:inline-flex;align-items:center;color:var(--tx);height:28px;flex-shrink:0}
-#fixedPlayer{display:none;flex-direction:column;background:var(--s2);border-bottom:1px solid var(--bd);flex-shrink:0;width:100%;box-shadow:0 4px 15px rgba(0,0,0,.2)}
-#playerHeader{background:var(--sf);padding:8px 12px;font-size:12px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;user-select:none;border-bottom:1px solid var(--bd)}
+.logo{font-size:16.5px;font-weight:900;background:linear-gradient(90deg,#38bdf8,#818cf8,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#pl{display:flex;gap:6px;padding:6px 12px;background:var(--s2);border-bottom:1px solid rgba(255,255,255,.02);overflow-x:auto;white-space:nowrap;min-height:40px;max-height:40px}
+.chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--bg);border:1px solid rgba(255,255,255,.06);display:inline-flex;align-items:center;color:var(--tx);height:28px}
+#fixedPlayer{display:none;flex-direction:column;background:var(--s2);border-bottom:1px solid var(--bd);width:100%}
+#playerHeader{background:var(--sf);padding:8px 12px;font-size:12px;font-weight:bold;display:flex;justify-content:space-between;align-items:center}
 #playerContent{width:100%;max-width:480px;aspect-ratio:16/9;background:#000;display:flex;justify-content:center;align-items:center;position:relative;margin:0 auto;border-radius:4px;overflow:hidden}
-#tl{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:12px;background-color:#0d1117;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;contain:layout;will-change:scroll-position}
+#tl{flex:1;min-height:0;overflow-y:auto;padding:12px;background-color:#0d1117;overscroll-behavior-y:contain}
 #tl-inner{display:flex;flex-direction:column;justify-content:flex-end;gap:0;width:100%;max-width:800px;margin:0 auto;min-height:100%}
-.mw{position:relative;display:flex;flex-direction:column;width:100%;opacity:1;user-select:text;-webkit-user-select:text;padding:12px 14px;border-bottom:1px solid rgba(51,65,85,.18);contain:content}
-.mw.new-msg-anim{animation:slideInUp .12s cubic-bezier(.16,1,.3,1) forwards;will-change:transform,opacity}
+.mw{position:relative;display:flex;flex-direction:column;width:100%;padding:12px 14px;border-bottom:1px solid rgba(51,65,85,.18)}
+.mw.new-msg-anim{animation:slideInUp .12s cubic-bezier(.16,1,.3,1) forwards}
 .mm{display:flex;align-items:center;gap:6px;font-size:12.5px;margin-bottom:6px;width:100%;overflow:hidden;white-space:nowrap}
-.mm-name{font-weight:bold;flex-shrink:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mm-trip{font-size:11px;margin-left:2px;flex-shrink:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.ts{color:var(--mu);opacity:.6;font-size:10px;margin-left:auto;font-family:monospace;flex-shrink:0}
-.mb{align-self:start;background:transparent;border:none;padding:0;font-size:15px;line-height:1.6;max-width:100%;word-break:break-all;white-space:pre-wrap;color:var(--tx);padding-right:65px;letter-spacing:.01em}
-.sys-msg{position:relative;text-align:center;font-size:12px;font-weight:bold;color:var(--mu);margin:10px 0;background:rgba(255,255,255,.02);padding:10px 16px;border-radius:8px;width:100%;align-self:center;border:1px solid rgba(255,255,255,.04);white-space:pre-wrap;word-break:break-all;line-height:1.5;box-shadow:inset 0 1px 4px rgba(0,0,0,.15)}
-.sys-ts{display:block;font-size:11px;color:var(--mu);opacity:.75;font-family:monospace;font-weight:bold;margin-top:6px}
-
-#joinForm{display:none;flex-direction:column;background:var(--sf);border-top:1px solid var(--bd);gap:0;flex-shrink:0;width:100%;box-shadow:0 -4px 20px rgba(0,0,0,.25)}
-.jrow{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center}
+.mm-name{font-weight:bold;overflow:hidden;text-overflow:ellipsis}
+.mm-trip{font-size:11px;margin-left:2px;overflow:hidden;text-overflow:ellipsis}
+.ts{color:var(--mu);opacity:.6;font-size:10px;margin-left:auto;font-family:monospace}
+.mb{align-self:start;font-size:15px;line-height:1.6;max-width:100%;word-break:break-all;white-space:pre-wrap;color:var(--tx);padding-right:65px}
+.sys-msg{position:relative;text-align:center;font-size:12px;font-weight:bold;color:var(--mu);margin:10px 0;background:rgba(255,255,255,.02);padding:10px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.04);word-break:break-all;line-height:1.5}
+.sys-ts{display:block;font-size:11px;color:var(--mu);opacity:.75;font-family:monospace;margin-top:6px}
+#joinForm{display:none;flex-direction:column;background:var(--sf);border-top:1px solid var(--bd)}
+.jrow{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;padding:12px}
 @media (max-width:580px){.jrow{grid-template-columns:1fr;gap:10px}#joinBtn{width:100%;height:44px!important}}
-#ib{display:none;flex-direction:column;padding:6px calc(8px + env(safe-area-inset-right,0px)) calc(6px + var(--safe)) calc(8px + env(safe-area-inset-left,0px));background:var(--sf);border-top:1px solid var(--bd);gap:6px;flex-shrink:0;width:100%;transform:translate3d(0,0,0);will-change:transform;box-shadow:0 -4px 20px rgba(0,0,0,.25)}
+#ib{display:none;flex-direction:column;padding:6px calc(8px + env(safe-area-inset-right,0px)) calc(6px + var(--safe)) calc(8px + env(safe-area-inset-left,0px));background:var(--sf);border-top:1px solid var(--bd);gap:6px}
 #ib.show{display:flex}
 #ibToolbar{width:100%;align-items:center;display:flex;gap:6px}
-.jump-btns{display:flex;flex-direction:row;gap:6px;flex-shrink:0}
-.jump-btn{width:56px;height:34px;border-radius:8px;background:var(--s2);border:1px solid var(--bd);color:var(--tx);font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center;line-height:1;padding:0;cursor:pointer}
-.jump-btn:active{background:var(--in);color:#fff}
-.jump-btn:disabled{opacity:.3;cursor:not-allowed}
+.jump-btns{display:flex;gap:6px}
+.jump-btn{width:56px;height:34px;border-radius:8px;background:var(--s2);border:1px solid var(--bd);color:var(--tx);font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center}
+.jump-btn:disabled{opacity:.3}
 .mi-container{position:relative;flex:1;display:flex;align-items:center;background:var(--bg);border:1px solid var(--bd);border-radius:20px;min-height:40px;padding:4px 34px 4px 40px}
-.battach{position:absolute;left:6px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--mu);cursor:pointer}
+.battach{position:absolute;left:6px;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--mu)}
 .battach svg{width:20px;height:18px}
 #mi{width:100%;background:none;border:none;color:var(--tx);outline:none;resize:none;font-size:15px;max-height:120px;line-height:1.5;padding:4px 0}
-.bclrm{position:absolute;right:6px;width:28px;height:28px;border-radius:50%;color:var(--mu);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer}
-.bsd{width:40px;height:40px;border-radius:50%;background:var(--in);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-bottom:0;box-shadow:0 2px 10px rgba(79,70,229,.4)}
-.bsd svg{width:18px;height:18px;transform:rotate(45deg);margin-top:-1px;margin-right:1px}
-.mod-overlay{position:fixed;inset:0;background:rgba(5,7,22,.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:10000;padding:12px}
+.bclrm{position:absolute;right:6px;width:28px;height:28px;border-radius:50%;color:var(--mu);font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.bsd{width:40px;height:40px;border-radius:50%;background:var(--in);color:#fff;display:flex;align-items:center;justify-content:center}
+.bsd svg{width:18px;height:18px;transform:rotate(45deg);margin-top:-1px}
+.mod-overlay{position:fixed;inset:0;background:rgba(5,7,22,.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:10000;padding:12px}
 .mod-overlay.show{display:flex}
-.gc,.clrmc{background:var(--sf);border:1px solid var(--bd);border-radius:12px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px;padding:16px;max-height:80vh;overflow-y:auto;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.gc,.clrmc{background:var(--sf);border:1px solid var(--bd);border-radius:12px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px;padding:16px;max-height:80vh;overflow-y:auto}
 .clr-prev{background:var(--bg);padding:12px;border-radius:8px;text-align:center;font-size:11px;font-weight:700}
-.clr-btns{display:flex;gap:8px;margin-top:4px}
+.clr-btns{display:flex;gap:8px}
 .clr-cancel,.clr-ok{flex:1;padding:11px;border-radius:8px;font-size:12.5px;font-weight:700;text-align:center}
 .clr-cancel{background:var(--bg);border:1px solid var(--bd);color:var(--tx)}
 .clr-ok{background:var(--in);color:#fff}
 .spin{display:inline-block;width:16px;height:14px;border:2px solid rgba(255,255,255,.2);border-radius:50%;border-top-color:var(--tx);animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes slideInUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
-.inp{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;color:var(--tx);outline:none;font-size:14px;transition:border-color .15s;height:42px}
-.inp:focus{border-color:var(--in)}
-.btn{padding:10px 8px;border-radius:8px;font-size:13.5px;font-weight:700;text-align:center;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all 0.15s ease}
-#imgViewMod{background:rgba(0,0,0,.96);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);flex-direction:column;align-items:center;justify-content:center;touch-action:none}
+.inp{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;color:var(--tx);outline:none;font-size:14px;height:42px}
+.btn{padding:10px 8px;border-radius:8px;font-size:13.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
+#imgViewMod{background:rgba(0,0,0,.96);backdrop-filter:blur(10px);flex-direction:column}
 #imgViewMod.show{display:flex!important}
 #zoomViewport{width:100%;height:calc(100dvh - 100px);position:absolute;top:0;left:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
-#imgViewSrc{max-width:95%;max-height:95%;object-fit:contain;border-radius:0!important;box-shadow:0 10px 40px rgba(0,0,0,.5)}
-.modal-bottom-close-container{width:100%;display:flex;justify-content:center;position:absolute;bottom:0;left:0;padding:16px 0 calc(16px + var(--safe));background:linear-gradient(to top,rgba(0,0,0,.85) 40%,rgba(0,0,0,0));backdrop-filter:blur(2px);z-index:10001}
-.modal-bottom-close{width:auto;min-width:160px;padding:12px 24px;background:var(--ro);color:#fff;border-radius:24px;font-weight:bold;font-size:14px;text-align:center;border:none;box-shadow:0 4px 16px rgba(244,63,94,.4);cursor:pointer}
+#imgViewSrc{max-width:95%;max-height:95%;object-fit:contain}
+.modal-bottom-close-container{width:100%;display:flex;justify-content:center;position:absolute;bottom:0;left:0;padding:16px 0 calc(16px + var(--safe))}
+.modal-bottom-close{padding:12px 24px;background:var(--ro);color:#fff;border-radius:24px;font-weight:bold;font-size:14px}
 .clrpick-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
-.clrc2{aspect-ratio:1;width:100%;max-width:24px;border-radius:50%;margin:0 auto;border:2px solid transparent;cursor:pointer;transition:transform .15s,border-color .15s}
-.clrc2.sel{border-color:var(--tx)!important;transform:scale(1.25);box-shadow:0 0 10px rgba(255,255,255,.5);border-width:2px!important}
-
-/* =========================================================================
-   参加・トリップコピーボタンの装飾強化
-   ========================================================================= */
-#joinBtn {
-  background: linear-gradient(135deg, var(--in) 0%, #6366f1 100%) !important;
-  color: #fff !important; font-weight: 900 !important; border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4) !important; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important;
-}
-#joinBtn:hover { background: linear-gradient(135deg, #6366f1 0%, #818cf8 100%) !important; }
-#copyTripBtn {
-  background: #0ea5e9 !important; color: #fff !important; border: none !important;
-  font-weight: 800 !important; box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3) !important; transition: all 0.15s ease !important;
-}
-#copyTripBtn:hover { background: #38bdf8 !important; }
-
-/* =========================================================================
-   インライン削除ボタンの装飾
-   ========================================================================= */
-.del-btn-inline {
-  font-size: 10px;
-  color: var(--ro);
-  background: rgba(244, 63, 94, .1);
-  border: 1px solid rgba(244, 63, 94, .2);
-  border-radius: 4px;
-  padding: 2px 6px;
-  margin-left: 8px;
-  font-weight: bold;
-  line-height: 1.2;
-  vertical-align: middle;
-  display: inline-block;
-}
-.del-btn-inline:hover {
-  background: rgba(244, 63, 94, .2);
-  border-color: var(--ro);
-}
+.clrc2{aspect-ratio:1;width:100%;max-width:24px;border-radius:50%;margin:0 auto;border:2px solid transparent}
+.clrc2.sel{border-color:var(--tx)!important;transform:scale(1.25)}
+#joinBtn{background:linear-gradient(135deg,var(--in),#6366f1)!important;color:#fff!important;font-weight:900!important}
+#copyTripBtn{background:#0ea5e9!important;color:#fff!important;font-weight:800!important}
+.del-btn-inline{font-size:10px;color:var(--ro);background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);border-radius:4px;padding:2px 6px;margin-left:8px;font-weight:bold}
+.inline-img{max-width:140px;max-height:140px;width:auto;height:auto;border-radius:8px;margin-top:6px;border:1px solid var(--bd);display:block}
 </style>
-<script>
-// =========================================================================
-// 1. 最優先でストレージヘルパー（safeLS/safeSS）を定義（起動クラッシュ防止）
-// =========================================================================
-var _localStorage;
-try {
-  _localStorage = window.localStorage;
-  _localStorage.getItem("__nz_test_key__");
-} catch (e) {
-  var mockLS = {};
-  _localStorage = {
-    getItem: function(k) { return mockLS[k] || null; },
-    setItem: function(k, v) { mockLS[k] = String(v); },
-    removeItem: function(k) { delete mockLS[k]; },
-    clear: function() { mockLS = {}; }
-  };
-}
-var _sessionStorage = _localStorage;
-
-const safeLS = {
-  get: k => { try { return _localStorage.getItem(k); } catch(e) { return null; } },
-  set: (k, v) => { try { _localStorage.setItem(k, v); } catch(e) {} },
-  remove: k => { try { _localStorage.removeItem(k); } catch(e) {} }
-};
-
-const safeSS = safeLS; // 永続的ストレージに統一してブラウザ終了時も自動復帰をサポート
-</script>
 </head>
 <body>
 <div id="app">
@@ -204,7 +136,7 @@ const safeSS = safeLS; // 永続的ストレージに統一してブラウザ終
       <div id="tl-inner"></div>
     </div>
 
-    <!-- タイムライン操作バー (ゲスト・参加者問わず常に表示) -->
+    <!-- タイムライン操作バー -->
     <div id="ibTopBar" style="background: var(--sf); border-top: 1px solid var(--bd); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0;">
       <div style="display: flex; align-items: center; gap: 6px; height: 34px;">
         <div id="kbKeepOpenContainer" style="display: none; align-items: center; gap: 6px;">
@@ -221,7 +153,7 @@ const safeSS = safeLS; // 永続的ストレージに統一してブラウザ終
       </div>
     </div>
 
-    <!-- ゲスト用参加フォーム（折りたたみアコーディオン） -->
+    <!-- ゲスト用参加フォーム -->
     <div id="joinForm">
       <div id="joinFormHeader" style="padding: 12px; text-align: center; cursor: pointer; font-size: 12.5px; color: var(--tx); font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; user-select: none; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02);">
         <span>💬 チャットに参加する (タップで展開)</span>
@@ -292,751 +224,477 @@ const safeSS = safeLS; // 永続的ストレージに統一してブラウザ終
 </div>
 
 <script>
-// =========================================================================
-// 部屋管理用のグローバルステート
-// =========================================================================
-let currentRoomId = "official"; 
+(function() {
+  const safeLS = {
+    get(key) { try { return localStorage.getItem(key); } catch (e) { return null; } },
+    set(key, val) { try { localStorage.setItem(key, val); } catch (e) {} },
+    remove(key) { try { localStorage.removeItem(key); } catch (e) {} }
+  };
 
-// DOM取得用のショートカット定義 ($ と D の定義)
-const $ = id => document.getElementById(id);
-const D = {
-  adminClearBtn: $("adminClearBtn"),
-  clrBtn: $("clrBtn"),
-  clrDot: $("clrDot"),
-  exBtn: $("exBtn"),
-  pl: $("pl"),
-  fixedPlayer: $("fixedPlayer"),
-  playerCloseBtn: $("playerCloseBtn"),
-  playerContent: $("playerContent"),
-  tl: $("tl"),
-  tli: $("tl-inner"),
-  unreadBadge: $("unreadBadge"),
-  jumpUpBtn: $("jumpUpBtn"),
-  jumpDownBtn: $("jumpDownBtn"),
-  joinForm: $("joinForm"),
-  ib: $("ib"),
-  ni: $("ni"),
-  tripi: $("tripi"),
-  joinBtn: $("joinBtn"),
-  tripPrevText: $("tripPrevText"),
-  copyTripBtn: $("copyTripBtn"),
-  fileInput: $("fileInput"),
-  imgBtn: $("imgBtn"),
-  mi: $("mi"),
-  clrMsgBtn: $("clrMsgBtn"),
-  sdBtn: $("sdBtn"),
-  clrmod: $("clrmod"),
-  clrPrev: $("clrPrev"),
-  clrPick2: $("clrPick2"),
-  clrCancel: $("clrCancel"),
-  clrOk: $("clrOk"),
-  imgViewMod: $("imgViewMod"),
-  imgViewSrc: $("imgViewSrc"),
-  imgViewCloseBtn: $("imgViewCloseBtn"),
-  kbKeepOpenChk: $("kbKeepOpenChk"),
-  pcnt: $("pcnt"),
-  loadMoreBlock: $("loadMoreBlock"),
-  loadMoreBtn: $("loadMoreBtn"),
-  loadMoreStatus: $("loadMoreStatus")
-};
+  const firebaseConfig = {
+    apiKey: "AIzaSyCsRidc0smUQDaBwq-oki5NzxSHx6-ljiw",
+    authDomain: "nezuochat.firebaseapp.com",
+    databaseURL: "https://nezuochat-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "nezuochat",
+    storageBucket: "nezuochat.firebasestorage.app",
+    messagingSenderId: "154725381397",
+    appId: "1:154725381397:web:8742ccd957e20cee8ce51c"
+  };
 
-// 鍵情報
-const firebaseConfig = {
-  apiKey: "AIzaSyCsRidc0smUQDaBwq-oki5NzxSHx6-ljiw",
-  authDomain: "nezuochat.firebaseapp.com",
-  databaseURL: "https://nezuochat-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "nezuochat",
-  storageBucket: "nezuochat.firebasestorage.app",
-  messagingSenderId: "154725381397",
-  appId: "1:154725381397:web:8742ccd957e20cee8ce51c"
-};
+  let db = null, auth = null;
+  if (typeof firebase !== 'undefined') {
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    db = firebase.database();
+    auth = firebase.auth();
+  } else {
+    console.error("Firebase SDK missing.");
+  }
 
-if (!firebase.apps.length) {
-  firebase.initializeApp(firebaseConfig);
-}
-const db = firebase.database();
-const auth = firebase.auth();
+  const $ = id => document.getElementById(id);
+  let D = {};
 
-// キャッシュからセッションデータをロード
-let myUid = safeLS.get("nz_permanent_uid"); 
-if (!myUid) {
-  myUid = "user_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
-  safeLS.set("nz_permanent_uid", myUid);
-}
-let myName = safeLS.get("nz_ni") || "";
-let myTrip = "";
-let isJoined = (safeLS.get("nz_is_joined") === "true") && (myName.trim() !== ""); 
+  let myUid = safeLS.get("nz_permanent_uid") || ""; 
+  let myName = safeLS.get("nz_ni") || "";
+  let myTrip = "";
+  let isJoined = (safeLS.get("nz_is_joined") === "true") && (myName.trim() !== ""); 
 
-let keepKbOpen = safeLS.get("nz_keep_kb_open") === "true";
-let isAutoScroll = true; 
-const unreadMsgIds = new Set(); 
-let _scPending = false; 
-let autoExitTimer = null; 
-let serverTimeOffset = 0; 
-let isOffsetLoaded = false;
-const displayedMsgIds = new Set();
-let curColor = safeLS.get("nz_color") || "#94a3b8";
-let tmpColor = curColor;
-let lastSendTime = 0;
-let isFirstLoad = true; 
-let isFirebaseListenersBound = false; 
+  let keepKbOpen = safeLS.get("nz_keep_kb_open") === "true";
+  let isAutoScroll = true; 
+  const unreadMsgIds = new Set(); 
+  let _scPending = false; 
+  let autoExitTimer = null; 
+  let serverTimeOffset = 0; 
+  let isOffsetLoaded = false;
+  const displayedMsgIds = new Set();
+  let curColor = safeLS.get("nz_color") || "#94a3b8";
+  let tmpColor = curColor;
+  let lastSendTime = 0;
+  let isFirstLoad = true; 
+  let isFirebaseListenersBound = false; 
 
-// 動的取得用のリミット設定 (初期表示25件、最大上限100件)
-let currentLimit = 25;
-const maxLimit = 100;
-let isLoadingMore = false;
-let isLoadMoreTriggered = false;
-let savedOldScrollHeight = 0;
-let savedOldScrollTop = 0;
+  let currentLimit = 25;
+  const maxLimit = 100;
+  let isLoadingMore = false;
+  let isLoadMoreTriggered = false;
+  let savedOldScrollHeight = 0;
+  let savedOldScrollTop = 0;
 
-let isJoinFormExpanded = false;
+  let isJoinFormExpanded = false;
+  let scale = 1, panX = 0, panY = 0;
+  let lastPanX = 0, lastPanY = 0, isPanning = false;
+  let initialDistance = 0;
 
-let scale = 1, panX = 0, panY = 0;
-let lastPanX = 0, lastPanY = 0, isPanning = false;
-let initialDistance = 0;
+  let currentPresenceMap = {}; 
+  let isConnectedBound = false;
 
-let currentPresenceMap = {}; 
-let isConnectedBound = false;
+  const UR = /(https?:\/\/[^\s\n<>"]+)/gi;
 
-const UR = /(https?:\/\/[^\s\n<>"]+)/gi;
+  const COLORS = [
+    {v:"#94a3b8",n:"グレー"},{v:"#e2e8f0",n:"スレート"},{v:"#06b6d4",n:"シアン"},{v:"#7dd3fc",n:"パステルスカイ"},{v:"#38bdf8",n:"スカイ"},{v:"#6366f1",n:"インディゴ"},{v:"#818cf8",n:"パステルインディゴ"},{v:"#bef264",n:"パステルライム"},
+    {v:"#a3e635",n:"ライム1"},{v:"#84cc16",n:"ライム2"},{v:"#10b981",n:"エメラルド"},{v:"#34d399",n:"ミント"},{v:"#a7f3d0",n:"パステルミント"},{v:"#2dd4bf",n:"ティール"},{v:"#99f6e4",n:"パステルティール"},{v:"#14b8a6",n:"アクア"},
+    {v:"#fde68a",n:"パステルイエロー"},{v:"#fb9e0b",n:"アンバー"},{v:"#f59e0b",n:"イエロー"},{v:"#fdba74",n:"パステルオレンジ"},{v:"#fb923c",n:"オレンジ1"},{v:"#fb923c",n:"orange2"},{v:"#fca5a5",n:"パステルレッド"},{v:"#f87171",n:"レッド2"},
+    {v:"#ef4444",n:"レッド1"},{v:"#db2777",n:"ローズ"},{v:"#f472b6",n:"ピンク"},{v:"#f9a8d4",n:"ライトピンク"},{v:"#fda4af",n:"パステルローズ"},{v:"#a855f7",n:"パープル"},{v:"#c084fc",n:"ライトパープル"},{v:"#c4b5fd",n:"パステルパープル"}
+  ];
 
-const COLORS = [
-  {v:"#94a3b8",n:"グレー (標準)"},{v:"#e2e8f0",n:"スレート"},{v:"#06b6d4",n:"シアン"},{v:"#7dd3fc",n:"パステルスカイ"},{v:"#38bdf8",n:"スカイ"},{v:"#6366f1",n:"インディゴ"},{v:"#818cf8",n:"パステルインディゴ"},{v:"#bef264",n:"パステルライム"},
-  {v:"#a3e635",n:"ライム1"},{v:"#84cc16",n:"ライム2"},{v:"#10b981",n:"エメラルド"},{v:"#34d399",n:"ミント"},{v:"#a7f3d0",n:"パステルミント"},{v:"#2dd4bf",n:"ティール"},{v:"#99f6e4",n:"パステルティール"},{v:"#14b8a6",n:"アクア"},
-  {v:"#fde68a",n:"パステルイエロー"},{v:"#fb9e0b",n:"アンバー"},{v:"#f59e0b",n:"イエロー"},{v:"#fdba74",n:"パステルオレンジ"},{v:"#fb923c",n:"オレンジ1"},{v:"#fb923c",n:"オレンジ2"},{v:"#fca5a5",n:"パステルレッド"},{v:"#f87171",n:"レッド2"},
-  {v:"#ef4444",n:"レッド1"},{v:"#db2777",n:"ローズ"},{v:"#f472b6",n:"ピンク"},{v:"#f9a8d4",n:"ライトピンク"},{v:"#fda4af",n:"パステルローズ"},{v:"#a855f7",n:"パープル"},{v:"#c084fc",n:"ライトパープル"},{v:"#c4b5fd",n:"パステルパープル"}
-];
+  const setGlobalColor = c => document.documentElement.style.setProperty("--usr-color", c);
+  setGlobalColor(curColor);
 
-const setGlobalColor = c => { 
-  document.documentElement.style.setProperty("--usr-color", c); 
-};
+  const getTrueTime = () => Date.now() + serverTimeOffset;
 
-setGlobalColor(curColor);
-
-const getTrueTime = () => Date.now() + serverTimeOffset;
-
-const getMsgTime = (m) => {
-  if (m && m.t) {
-    if (typeof m.t === "number") return m.t;
-    if (typeof m.t === "object" || typeof m.t === "string") {
+  const getMsgTime = (m) => {
+    if (m && m.t) {
+      if (typeof m.t === "number") return m.t;
       const parsed = parseInt(m.t, 10);
       return isNaN(parsed) ? getTrueTime() : parsed;
     }
+    return getTrueTime();
+  };
+
+  const escapeHtml = str => typeof str !== "string" ? "" : str.replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t] || t));
+  const isAdmin = () => myUid === "J64MocsPo0QD7hSwZpQgEeDdO6X2";
+
+  const fDT = (ts) => {
+    if (!ts || typeof ts !== "number") return "--:--:--";
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return "--:--:--";
+    const pad = n => String(n).padStart(2, "0");
+    return `${d.getMonth() + 1}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  };
+
+  const updateAdminUI = () => { if (D.adminClearBtn) D.adminClearBtn.style.display = isAdmin() ? "block" : "none"; };
+
+  window.SYSTEM_SALT = window.SYSTEM_SALT || "nz_chat_salt_default_key";
+
+  window.sha256 = async (str) => {
+    if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
+      try {
+        const buf = new TextEncoder().encode(str);
+        const hash = await window.crypto.subtle.digest("SHA-256", buf);
+        return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) {
+        console.warn("Fallback to simplified hash logic", e);
+      }
+    }
+    let h1 = 0x811c9dc5, h2 = 0xcbf29ce4;
+    const len = str.length;
+    for (let i = 0; i < len; i++) {
+      h1 = Math.imul(h1 ^ str.charCodeAt(i), 0x01000193);
+      h2 = Math.imul(h2 ^ str.charCodeAt(i), 0x01000193);
+    }
+    const p1 = (h1 >>> 0).toString(16).padStart(8, '0');
+    const p2 = (h2 >>> 0).toString(16).padStart(8, '0');
+    return p1 + p2 + p1 + p2;
+  };
+
+  window.makeTrip = async (name, tripKey) => {
+    if (!tripKey) return "";
+    const revKey = tripKey.split("").reverse().join("");
+    const mixed = window.SYSTEM_SALT + "_" + name + "_[SALT]_" + revKey;
+    const hashHex = await window.sha256(mixed);
+    if (!hashHex) return "";
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let res = "";
+    for (let i = 0; i < 10; i++) {
+      const val = parseInt(hashHex.substring(i * 6, i * 6 + 6), 16);
+      res += chars[val % 62];
+    }
+    return "◆" + res;
+  };
+
+  const syncProfileValues = async () => {
+    const niVal = safeLS.get("nz_ni") || "", tripiVal = safeLS.get("nz_tripi") || "";
+    if (D.ni) D.ni.value = niVal;
+    if (D.tripi) D.tripi.value = tripiVal;
+    const tLobby = tripiVal ? await window.makeTrip(niVal || "名無し", tripiVal) : "";
+    if (D.tripPrevText) {
+      D.tripPrevText.textContent = `トリッププレビュー: ${niVal || "名無し"} ${tLobby}`;
+      D.tripPrevText.style.color = "var(--usr-color)";
+    }
+    if (D.copyTripBtn) D.copyTripBtn.style.display = tripiVal ? "inline-flex" : "none";
+    validateNameField();
+  };
+
+  function validateNameField() {
+    if (!D.ni || !D.joinBtn) return;
+    const empty = D.ni.value.trim() === "";
+    D.joinBtn.disabled = empty;
+    D.joinBtn.textContent = empty ? "名前を入力してください" : "参加する";
   }
-  return getTrueTime();
-};
 
-const escapeHtml = (str) => {
-  if (typeof str !== "string") return "";
-  return str.replace(/[&<>'"]/g, tag => ({
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    "'": '&#39;',
-    '"': '&quot;'
-  }[tag] || tag));
-};
-
-const isAdmin = () => {
-  return myUid === "J64MocsPo0QD7hSwZpQgEeDdO6X2";
-};
-
-const fDT = (ts) => {
-  if (!ts || typeof ts !== "number") return "--:--:--";
-  const d = new Date(ts);
-  if (isNaN(d.getTime())) return "--:--:--";
-  const pad = n => String(n).padStart(2, "0");
-  return `${d.getMonth() + 1}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-};
-
-const updateAdminUI = () => {
-  const adminBtn = D.adminClearBtn;
-  if (adminBtn) {
-    adminBtn.style.display = isAdmin() ? "block" : "none";
-  }
-};
-
-window.SYSTEM_SALT = window.SYSTEM_SALT || "nz_chat_salt_default_key";
-
-window.sha256 = async (str) => {
-  if (window.crypto && crypto.subtle) {
-    try {
-      const buf = new TextEncoder().encode(str);
-      const hash = await crypto.subtle.digest("SHA-256", buf);
-      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-    } catch (e) {
-      console.warn("CryptoAPI failed, falling back:", e);
+  function switchUIMode(mode) {
+    if (!D.ib || !D.joinForm || !D.exBtn || !D.clrBtn) return;
+    if (mode === "guest") {
+      D.ib.style.display = "none";
+      D.joinForm.style.display = "flex";
+      D.exBtn.style.display = "none";
+      D.clrBtn.style.display = "none";
+      const kb = $("kbKeepOpenContainer");
+      if (kb) kb.style.display = "none";
+      isJoinFormExpanded = false;
+      const jc = $("joinFormContent"), ja = $("joinFormArrow");
+      if (jc) jc.style.display = "none";
+      if (ja) ja.style.transform = "rotate(0deg)";
+    } else if (mode === "joined") {
+      D.ib.style.display = "flex";
+      D.joinForm.style.display = "none";
+      D.exBtn.style.display = "block";
+      D.exBtn.textContent = "退室";
+      D.clrBtn.style.display = "block";
+      const kb = $("kbKeepOpenContainer");
+      if (kb) kb.style.display = "flex";
     }
   }
-  let h1 = 0x811c9dc5, h2 = 0xcbf29ce4;
-  const len = str.length;
-  for (let i = 0; i < len; i++) {
-    h1 = Math.imul(h1 ^ str.charCodeAt(i), 0x01000193);
-    h2 = Math.imul(h2 ^ str.charCodeAt(i), 0x01000193);
+
+  const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
+
+  function checkActivityTimeout() {
+    if (!isJoined) return;
+    const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
+    if (lastPost && (getTrueTime() - lastPost >= 30 * 60 * 1000)) {
+      stopAutoExitTimer();
+      doExit(true);
+    }
   }
-  const p1 = (h1 >>> 0).toString(16).padStart(8, '0');
-  const p2 = (h2 >>> 0).toString(16).padStart(8, '0');
-  return p1 + p2 + p1 + p2;
-};
 
-window.makeTrip = async (name, tripKey) => {
-  if (!tripKey) return "";
-  const revKey = tripKey.split("").reverse().join("");
-  const mixed = window.SYSTEM_SALT + "_" + name + "_[SALT]_" + revKey;
-  const hashHex = await window.sha256(mixed);
-  if (!hashHex) return "";
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  let res = "";
-  for (let i = 0; i < 10; i++) {
-    const sub = hashHex.substring(i * 6, i * 6 + 6);
-    const val = parseInt(sub, 16);
-    res += chars[val % 62];
+  function startAutoExitChecker() {
+    if (autoExitTimer) clearInterval(autoExitTimer);
+    if (!isJoined) return;
+    checkActivityTimeout();
+    autoExitTimer = setInterval(checkActivityTimeout, 10000);
   }
-  return "◆" + res;
-};
 
-const syncProfileValues = async () => {
-  const niVal = safeLS.get("nz_ni") || "";
-  const tripiVal = safeLS.get("nz_tripi") || "";
-  
-  if (D.ni) D.ni.value = niVal;
-  if (D.tripi) D.tripi.value = tripiVal;
+  async function doExit(isAuto = false) {
+    if (!isJoined || !db) return;
+    const cleanName = (myName || "").trim();
+    if (!cleanName) {
+      isJoined = false;
+      stopAutoExitTimer();
+      safeLS.remove("nz_is_joined");
+      safeLS.remove("nz_last_post_time");
+      if (myUid) await db.ref(`presence/official/${myUid}`).remove().catch(()=>{});
+      renderPresence(currentPresenceMap);
+      switchUIMode("guest");
+      updateAdminUI();
+      return;
+    }
+    const cleanTrip = myTrip || "", cleanUid = myUid, cleanColor = curColor;
+    const logText = "[SYS]::" + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が退室しました (自動退室)" : " が退室しました");
+    const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
+    const exitTimeMillis = isAuto ? (lastPost + 30 * 60 * 1000) : getTrueTime();
 
-  const nLobby = niVal || "名無し";
-  const tLobby = tripiVal ? await window.makeTrip(nLobby, tripiVal) : "";
+    const tempId = "pnd_sys_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+    const tempObj = { id: tempId, u: cleanUid || "sys_exit", n: cleanName, p: cleanTrip, c: cleanColor, m: logText, t: exitTimeMillis };
+    pendingMsgs.set(tempId, tempObj);
+    displayedMsgIds.add(tempId);
 
-  if (D.tripPrevText) {
-    D.tripPrevText.textContent = `トリッププレビュー: ${nLobby} ${tLobby}`;
-    D.tripPrevText.style.color = "var(--usr-color)";
-  }
-  
-  if (D.copyTripBtn) {
-    D.copyTripBtn.style.display = tripiVal ? "inline-flex" : "none";
-  }
-  
-  validateNameField();
-};
+    const tempEl = cMsg(tempObj, true);
+    insertMessageInOrder(tempEl);
+    isAutoScroll = true;
+    scBottom(true);
 
-function validateNameField() {
-  const nameVal = D.ni.value.trim();
-  if (nameVal === "") {
-    D.joinBtn.disabled = true;
-    D.joinBtn.textContent = "名前を入力してください";
-  } else {
-    D.joinBtn.disabled = false;
-    D.joinBtn.textContent = "参加する";
-  }
-}
-
-function switchUIMode(mode) {
-  if (mode === "guest") {
-    D.ib.style.display = "none";
-    D.joinForm.style.display = "flex";
-    D.exBtn.style.display = "none";
-    D.clrBtn.style.display = "none";
-    $("kbKeepOpenContainer").style.display = "none";
-    isJoinFormExpanded = false;
-    $("joinFormContent").style.display = "none";
-    $("joinFormArrow").style.transform = "rotate(0deg)";
-  } else if (mode === "joined") {
-    D.ib.style.display = "flex";
-    D.joinForm.style.display = "none";
-    D.exBtn.style.display = "block";
-    D.exBtn.textContent = "退室";
-    D.clrBtn.style.display = "block";
-    $("kbKeepOpenContainer").style.display = "flex";
-  }
-}
-
-const updateLastPostTime = (time) => {
-  safeLS.set("nz_last_post_time", time.toString()); 
-};
-
-function checkActivityTimeout() {
-  if (!isJoined) return;
-  const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0"); 
-  if (!lastPost) return;
-
-  const elapsed = getTrueTime() - lastPost;
-  if (elapsed >= 30 * 60 * 1000) {
-    stopAutoExitTimer();
-    doExit(true); 
-  }
-}
-
-function startAutoExitChecker() {
-  if (autoExitTimer) clearInterval(autoExitTimer);
-  if (!isJoined) return;
-  checkActivityTimeout();
-  autoExitTimer = setInterval(checkActivityTimeout, 10000); 
-}
-
-async function doExit(isAuto = false) {
-  if (!isJoined) return;
-
-  const cleanName = (myName || "").trim();
-  if (!cleanName) {
     isJoined = false;
     stopAutoExitTimer();
-    safeLS.remove("nz_is_joined"); 
+    safeLS.remove("nz_is_joined");
     safeLS.remove("nz_last_post_time");
-    if (myUid) {
-      await db.ref(`presence/official/${myUid}`).remove().catch(() => {});
-    }
     renderPresence(currentPresenceMap);
     switchUIMode("guest");
     updateAdminUI();
-    return;
+
+    if (cleanUid) await db.ref(`presence/official/${cleanUid}`).remove().catch(()=>{});
+    await db.ref(`chat/official`).push({ u: cleanUid || "sys_exit", pnd: tempId, n: cleanName, p: cleanTrip, c: cleanColor, m: logText, t: exitTimeMillis }).catch(()=>{});
   }
 
-  const cleanTrip = myTrip || "";
-  const cleanUid = myUid;
-  const cleanColor = curColor;
+  function stopAutoExitTimer() { if (autoExitTimer) { clearInterval(autoExitTimer); autoExitTimer = null; } }
 
-  const logText = "[SYS]::" + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が退室しました (自動退室)" : " が退室しました");
-  const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
-  const exitTimeMillis = isAuto ? (lastPost + 30 * 60 * 1000) : getTrueTime();
-
-  const tempId = "pnd_sys_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-  const tempObj = {
-    id: tempId,
-    u: cleanUid || "sys_exit",
-    n: cleanName,
-    p: cleanTrip,
-    c: cleanColor,
-    m: logText,
-    t: exitTimeMillis
-  };
-  pendingMsgs.set(tempId, tempObj);
-  displayedMsgIds.add(tempId);
-
-  const tempEl = cMsg(tempObj, true);
-  insertMessageInOrder(tempEl);
-  
-  isAutoScroll = true;
-  scBottom(true);
-
-  isJoined = false;
-  stopAutoExitTimer();
-
-  safeLS.remove("nz_is_joined"); 
-  safeLS.remove("nz_last_post_time");
-
-  renderPresence(currentPresenceMap);
-  switchUIMode("guest");
-  updateAdminUI(); 
-
-  if (cleanUid) {
-    await db.ref(`presence/official/${cleanUid}`).remove().catch(() => {});
-  }
-
-  await db.ref(`chat/official`).push({
-    u: cleanUid || "sys_exit",
-    pnd: tempId, 
-    n: cleanName,
-    p: cleanTrip,
-    c: cleanColor,
-    m: logText,
-    t: exitTimeMillis
-  }).catch(() => {});
-}
-
-function stopAutoExitTimer() {
-  if (autoExitTimer) {
-    clearInterval(autoExitTimer);
-    autoExitTimer = null;
-  }
-}
-
-function triggerOtherExit(targetId, targetUser, calculatedTimeoutTime) {
-  if (targetUser.exiting) return;
-  targetUser.exiting = true;
-
-  db.ref(`presence/official/${targetId}`).transaction((current) => {
-    if (current === null) return null; 
-    if (current.exiting) return null; 
-    current.exiting = true;
-    return current;
-  }, (error, committed, snapshot) => {
-    if (error) {
-      targetUser.exiting = false;
-      return;
-    }
-    if (committed && snapshot.exists()) {
-      const actualUser = snapshot.val();
-      const userDisplayName = (actualUser.n || "").trim();
-      
-      if (!userDisplayName) {
-        db.ref(`presence/official/${targetId}`).remove().catch(() => {});
-        return;
+  function triggerOtherExit(targetId, targetUser, calculatedTimeoutTime) {
+    if (targetUser.exiting || !db) return;
+    targetUser.exiting = true;
+    db.ref(`presence/official/${targetId}`).transaction(c => {
+      if (!c || c.exiting) return null;
+      c.exiting = true;
+      return c;
+    }, (err, committed, snap) => {
+      if (err) { targetUser.exiting = false; return; }
+      if (committed && snap.exists()) {
+        const u = snap.val(), display = (u.n || "").trim();
+        if (!display) { db.ref(`presence/official/${targetId}`).remove().catch(()=>{}); return; }
+        const encLog = "[SYS]::" + `${display} ${u.p || ""}`.trim() + " が退室しました (自動退室)";
+        db.ref(`chat/official`).push({ u: targetId, n: display, p: u.p || "", c: u.c || "#94a3b8", m: encLog, t: calculatedTimeoutTime }).catch(()=>{});
+        db.ref(`presence/official/${targetId}`).remove().catch(()=>{});
+      } else {
+        targetUser.exiting = false;
       }
-
-      const rawLog = `${userDisplayName} ${actualUser.p || ""}`.trim() + " が退室しました (自動退室)";
-      const encLog = "[SYS]::" + rawLog;
-
-      db.ref(`chat/official`).push({
-        u: targetId,
-        n: userDisplayName,
-        p: actualUser.p || "",
-        c: actualUser.c || "#94a3b8",
-        m: encLog,
-        t: calculatedTimeoutTime 
-      }).catch(() => {});
-
-      db.ref(`presence/official/${targetId}`).remove().catch(() => {});
-    } else {
-      targetUser.exiting = false;
-    }
-  });
-}
-
-async function joinRoom(isReconnect = false) {
-  let n = isReconnect ? (safeLS.get("nz_ni") || "") : D.ni.value.trim();
-  
-  if (!n) { 
-    if (!isReconnect) alert("名前を入力してください。"); 
-    return; 
+    });
   }
 
-  const tk = isReconnect ? (safeLS.get("nz_tripi") || "") : D.tripi.value.trim();
-  myName = n; myTrip = await window.makeTrip(n, tk); isJoined = true;
-  safeLS.set("nz_ni", n); safeLS.set("nz_tripi", tk); safeLS.set("nz_is_joined", "true"); 
-  
-  const nowTime = getTrueTime();
-  updateLastPostTime(nowTime);
+  async function joinRoom(isReconnect = false) {
+    if (!D.ni || !D.tripi || !db) return;
+    let n = isReconnect ? (safeLS.get("nz_ni") || "") : D.ni.value.trim();
+    if (!n) { if (!isReconnect) alert("名前を入力してください。"); return; }
+    const tk = isReconnect ? (safeLS.get("nz_tripi") || "") : D.tripi.value.trim();
+    myName = n; myTrip = await window.makeTrip(n, tk); isJoined = true;
+    safeLS.set("nz_ni", n); safeLS.set("nz_tripi", tk); safeLS.set("nz_is_joined", "true");
+    const nowTime = getTrueTime();
+    updateLastPostTime(nowTime);
+    switchUIMode("joined");
 
-  switchUIMode("joined");
+    const opt = { ...currentPresenceMap };
+    opt[myUid || "temp_uid"] = { id: myUid || "temp_uid", n: myName, p: myTrip, c: curColor, t: nowTime, p_t: nowTime };
+    renderPresence(opt);
 
-  const optimisticMembers = { ...currentPresenceMap };
-  optimisticMembers[myUid || "temp_uid"] = {
-    id: myUid || "temp_uid",
-    n: myName,
-    p: myTrip,
-    c: curColor,
-    t: nowTime,
-    p_t: nowTime
-  };
-  renderPresence(optimisticMembers);
+    await db.ref(`presence/official/${myUid}`).set({ n: myName, p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP, p_t: firebase.database.ServerValue.TIMESTAMP }).catch(err => {
+      alert("入室エラー:\n" + err.message);
+      doExit();
+      throw err;
+    });
 
-  const myPresRef = db.ref(`presence/official/${myUid}`);
-  await myPresRef.set({
-    n: myName,
-    p: myTrip,
-    c: curColor,
-    t: firebase.database.ServerValue.TIMESTAMP,
-    p_t: firebase.database.ServerValue.TIMESTAMP
-  }).catch(err => {
-    alert("入室エラー:\n" + err.message);
-    doExit();
-    throw err;
-  });
+    updateAdminUI();
+    startAutoExitChecker();
 
-  updateAdminUI(); 
-  startAutoExitChecker();
-
-  if (!isReconnect) {
     const cleanName = (myName || "").trim();
-    if (cleanName) {
+    if (!isReconnect && cleanName) {
       const enterText = `${cleanName} ${myTrip}`.trim() + " が入室しました", encEnterText = "[SYS]::" + enterText;
       const tempId = "pnd_sys_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-      
-      const tempObj = {
-        id: tempId,
-        u: myUid,
-        n: myName,
-        p: myTrip,
-        c: curColor,
-        m: "[SYS]::" + enterText,
-        t: nowTime
-      };
+      const tempObj = { id: tempId, u: myUid, n: myName, p: myTrip, c: curColor, m: encEnterText, t: nowTime };
       pendingMsgs.set(tempId, tempObj);
       displayedMsgIds.add(tempId);
       const tempEl = cMsg(tempObj, true);
       insertMessageInOrder(tempEl);
-      
       isAutoScroll = true;
       scBottom(true);
-
-      await db.ref(`chat/official`).push({
-        u: myUid,
-        pnd: tempId, 
-        n: myName,
-        p: myTrip,
-        c: curColor,
-        m: encEnterText,
-        t: firebase.database.ServerValue.TIMESTAMP
-      }).catch(() => {
-        const localEl = renderedMwNodes.get(tempId); if (localEl) localEl.remove();
+      await db.ref(`chat/official`).push({ u: myUid, pnd: tempId, n: myName, p: myTrip, c: curColor, m: encEnterText, t: firebase.database.ServerValue.TIMESTAMP }).catch(() => {
+        const local = renderedMwNodes.get(tempId); if (local) local.remove();
         renderedMwNodes.delete(tempId); pendingMsgs.delete(tempId); displayedMsgIds.delete(tempId);
       });
     }
+    scBottom(true);
   }
 
-  scBottom(true);
-}
+  const pendingMsgs = new Map();
 
-const pendingMsgs = new Map();
+  async function sendMsg(overrideText = null, imgData = null) {
+    if (!isJoined || !D.mi || !db) return;
+    const txt = overrideText !== null ? overrideText : D.mi.value.trim();
+    if (!txt && !imgData) return;
+    const now = Date.now();
+    if (now - lastSendTime < 350) return;
+    lastSendTime = now;
+    D.mi.value = "";
+    D.mi.style.height = "auto";
+    if (!keepKbOpen) D.mi.blur(); else D.mi.focus();
 
-async function sendMsg(overrideText = null, imgData = null) {
-  if (!isJoined) return;
-  const txt = overrideText !== null ? overrideText : D.mi.value.trim();
-  if (!txt && !imgData) return;
-  
-  const now = Date.now(); 
-  if (now - lastSendTime < 350) return; 
-  lastSendTime = now;
-  
-  D.mi.value = ""; 
-  D.mi.style.height = "auto";
-  
-  if (!keepKbOpen) {
-    D.mi.blur();
-  } else {
-    D.mi.focus();
-  }
+    const nowTime = getTrueTime();
+    updateLastPostTime(nowTime);
 
-  const nowTime = getTrueTime();
-  updateLastPostTime(nowTime);
+    const tempId = "pnd_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+    const tempObj = { id: tempId, u: myUid, n: myName, p: myTrip, c: curColor, m: imgData ? "IMG::" + imgData : txt, t: nowTime };
+    pendingMsgs.set(tempId, tempObj);
+    displayedMsgIds.add(tempId);
 
-  const tempId = "pnd_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-  const tempObj = {
-    id: tempId,
-    u: myUid,
-    n: myName,
-    p: myTrip,
-    c: curColor,
-    m: imgData ? "IMG::" + imgData : txt,
-    t: nowTime
-  };
+    const tempEl = cMsg(tempObj, true);
+    tempEl.style.opacity = "0.7";
+    insertMessageInOrder(tempEl);
+    isAutoScroll = true;
+    unreadMsgIds.clear();
+    updateUnreadBadge();
+    scBottom(true);
 
-  pendingMsgs.set(tempId, tempObj);
-  displayedMsgIds.add(tempId);
+    db.ref(`presence/official/${myUid}/p_t`).set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
+    db.ref(`presence/official/${myUid}/t`).set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
 
-  const tempEl = cMsg(tempObj, true);
-  tempEl.style.opacity = "0.7"; 
-  insertMessageInOrder(tempEl);
-  
-  isAutoScroll = true;
-  unreadMsgIds.clear();
-  updateUnreadBadge();
-  scBottom(true);
-
-  db.ref(`presence/official/${myUid}/p_t`).set(firebase.database.ServerValue.TIMESTAMP).catch(() => {});
-  db.ref(`presence/official/${myUid}/t`).set(firebase.database.ServerValue.TIMESTAMP).catch(() => {});
-
-  let payloadMsg = imgData ? "IMG::" + imgData : txt;
-
-  const pushData = { 
-    u: myUid, 
-    pnd: tempId, 
-    n: myName,
-    p: myTrip,
-    c: curColor,
-    m: payloadMsg, 
-    t: firebase.database.ServerValue.TIMESTAMP
-  };
-
-  await db.ref(`chat/official`).push(pushData).catch(() => {
-    const localEl = renderedMwNodes.get(tempId); if (localEl) localEl.remove();
-    renderedMwNodes.delete(tempId); pendingMsgs.delete(tempId); displayedMsgIds.delete(tempId);
-    alert("送信に失敗しました。");
-  });
-}
-
-const renderedMwNodes = new Map();
-
-let lastChatHash = "";
-
-// メッセージを時系列順に正しく並べてDOMに挿入する関数
-function insertMessageInOrder(el) {
-  const ts = parseInt(el.dataset.ts || "0");
-  const children = Array.from(D.tli.children);
-  
-  let inserted = false;
-  for (let i = 0; i < children.length; i++) {
-    const childTs = parseInt(children[i].dataset.ts || "0");
-    if (ts < childTs) {
-      D.tli.insertBefore(el, children[i]);
-      inserted = true;
-      break;
-    }
-  }
-  if (!inserted) {
-    D.tli.appendChild(el);
-  }
-}
-
-// 現在表示されているメッセージから、ローカルストレージのキャッシュを構築・同期
-function saveChatCacheFromDOM() {
-  try {
-    const cachedMsgs = [];
-    const children = Array.from(D.tli.children);
-    children.forEach(node => {
-      const mid = node.dataset.mid;
-      if (!mid || mid.startsWith("pnd_")) return;
-      
-      const isSys = node.querySelector(".sys-msg") !== null;
-      let m = {
-        id: mid,
-        t: parseInt(node.dataset.ts || "0"),
-        sys: isSys,
-        u: node.dataset.uid || ""
-      };
-
-      if (isSys) {
-        m.m = node.dataset.rawMsg;
-      } else {
-        const mm = node.querySelector(".mm");
-        const nameSpan = mm ? mm.querySelector(".mm-name") : null;
-        const tripSpan = mm ? mm.querySelector(".mm-trip") : null;
-        m.n = nameSpan ? nameSpan.textContent : "名無し";
-        m.p = (tripSpan && tripSpan.style.display !== "none") ? tripSpan.textContent : "";
-        m.c = mm ? mm.style.color : "#94a3b8";
-        m.m = node.dataset.rawMsg;
-      }
-      cachedMsgs.push(m);
+    let payload = imgData ? "IMG::" + imgData : txt;
+    await db.ref(`chat/official`).push({ u: myUid, pnd: tempId, n: myName, p: myTrip, c: curColor, m: payload, t: firebase.database.ServerValue.TIMESTAMP }).catch(() => {
+      const local = renderedMwNodes.get(tempId); if (local) local.remove();
+      renderedMwNodes.delete(tempId); pendingMsgs.delete(tempId); displayedMsgIds.delete(tempId);
+      alert("送信に失敗しました。");
     });
-    const sliceMsgs = cachedMsgs.slice(-100);
-    safeLS.set("nz_chat_cache", JSON.stringify(sliceMsgs));
-  } catch (e) {
-    console.warn("キャッシュ保存失敗:", e);
   }
-}
 
-function syncMessagesDOM(targetMsgs) {
-  if (!targetMsgs || !Array.isArray(targetMsgs)) return;
-  const cleanMsgs = targetMsgs.filter(m => m && m.id);
+  const renderedMwNodes = new Map();
+  let lastChatHash = "";
 
-  const currentHash = cleanMsgs.map(m => `${m.id}_${m.u}_${m.n}_${m.m}`).join("|");
-  if (currentHash === lastChatHash && pendingMsgs.size === 0) {
-    return; 
-  }
-  lastChatHash = currentHash;
-
-  const currentNodes = Array.from(D.tli.children);
-  const targetIds = new Set(cleanMsgs.map(m => m.id));
-
-  currentNodes.forEach(node => {
-    const mid = node.dataset.mid;
-    if (!mid || mid.startsWith("pnd_")) return;
-    if (!targetIds.has(mid)) {
-      node.remove();
-      renderedMwNodes.delete(mid);
-      displayedMsgIds.delete(mid);
+  function insertMessageInOrder(el) {
+    if (!D.tli) return;
+    const ts = parseInt(el.dataset.ts || "0"), children = Array.from(D.tli.children);
+    let inserted = false;
+    for (let i = 0; i < children.length; i++) {
+      if (ts < parseInt(children[i].dataset.ts || "0")) {
+        D.tli.insertBefore(el, children[i]);
+        inserted = true;
+        break;
+      }
     }
-  });
+    if (!inserted) D.tli.appendChild(el);
+  }
 
-  cleanMsgs.forEach((m, idx) => {
-    let el = renderedMwNodes.get(m.id);
-    if (el) {
-      updateExistingMsgNode(m, el);
+  function saveChatCacheFromDOM() { try { safeLS.remove("nz_chat_cache"); } catch(e) {} }
+
+  function syncMessagesDOM(targetMsgs) {
+    if (!D.tli || !targetMsgs || !Array.isArray(targetMsgs)) return;
+    const clean = targetMsgs.filter(m => m && m.id);
+    const currentHash = clean.map(m => `${m.id}_${m.u}_${m.n}_${m.m}`).join("|");
+    if (currentHash === lastChatHash && pendingMsgs.size === 0) return;
+    lastChatHash = currentHash;
+
+    const currentNodes = Array.from(D.tli.children), targetIds = new Set(clean.map(m => m.id));
+    currentNodes.forEach(n => {
+      const mid = n.dataset.mid;
+      if (mid && !mid.startsWith("pnd_") && !targetIds.has(mid)) {
+        n.remove();
+        renderedMwNodes.delete(mid);
+        displayedMsgIds.delete(mid);
+      }
+    });
+
+    clean.forEach((m, idx) => {
+      let el = renderedMwNodes.get(m.id);
+      if (el) updateExistingMsgNode(m, el); else {
+        el = cMsg(m, !isFirstLoad);
+        renderedMwNodes.set(m.id, el);
+        displayedMsgIds.add(m.id);
+      }
+      if (D.tli.children[idx] !== el) D.tli.insertBefore(el, D.tli.children[idx] || null);
+    });
+
+    pendingMsgs.forEach((pMsg, tempId) => {
+      let pNode = renderedMwNodes.get(tempId);
+      if (!pNode) {
+        pNode = cMsg(pMsg, true);
+        pNode.style.opacity = "0.7";
+        renderedMwNodes.set(tempId, pNode);
+      }
+      if (D.tli.lastElementChild !== pNode) D.tli.appendChild(pNode);
+    });
+
+    if (isLoadMoreTriggered) {
+      isLoadMoreTriggered = false;
+      isLoadingMore = false;
+      requestAnimationFrame(() => {
+        if (D.tl) D.tl.scrollTop = savedOldScrollTop + (D.tl.scrollHeight - savedOldScrollHeight);
+      });
     } else {
-      el = cMsg(m, !isFirstLoad);
-      renderedMwNodes.set(m.id, el);
-      displayedMsgIds.add(m.id);
+      scBottom();
     }
-
-    const currentChildren = D.tli.children;
-    const expectedSibling = currentChildren[idx];
-    if (expectedSibling !== el) {
-      D.tli.insertBefore(el, expectedSibling || null);
-    }
-  });
-
-  pendingMsgs.forEach((pMsg, tempId) => {
-    let pNode = renderedMwNodes.get(tempId);
-    if (!pNode) {
-      pNode = cMsg(pMsg, true);
-      pNode.style.opacity = "0.7";
-      renderedMwNodes.set(tempId, pNode);
-    }
-    if (D.tli.lastElementChild !== pNode) {
-      D.tli.appendChild(pNode);
-    }
-  });
-
-  if (isLoadMoreTriggered) {
-    isLoadMoreTriggered = false;
-    isLoadingMore = false;
-    requestAnimationFrame(() => {
-      const newScrollHeight = D.tl.scrollHeight;
-      D.tl.scrollTop = savedOldScrollTop + (newScrollHeight - savedOldScrollHeight);
-    });
-  } else {
-    scBottom();
-  }
-  
-  updateJumpBtns();
-}
-
-function updateExistingMsgNode(m, el) {
-  const isSys = m.sys === true || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
-  const currentIsSys = el.querySelector(".sys-msg") !== null;
-
-  if (isSys !== currentIsSys) {
-    const newEl = cMsg(m, false);
-    el.replaceWith(newEl);
-    renderedMwNodes.set(m.id, newEl);
-    return;
+    updateJumpBtns();
   }
 
-  if (isSys) {
-    const sysDiv = el.querySelector(".sys-msg");
-    if (sysDiv) {
-      const displayTxt = m.m.startsWith("[SYS]::") ? m.m.substring(7) : m.m;
-      if (sysDiv.firstChild && sysDiv.firstChild.textContent !== displayTxt) {
-        sysDiv.firstChild.textContent = displayTxt;
+  function updateExistingMsgNode(m, el) {
+    const isSys = m.sys === true || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
+    if (isSys !== (el.querySelector(".sys-msg") !== null)) {
+      const newEl = cMsg(m, false);
+      el.replaceWith(newEl);
+      renderedMwNodes.set(m.id, newEl);
+      return;
+    }
+    if (isSys) {
+      const sysDiv = el.querySelector(".sys-msg");
+      if (sysDiv) {
+        const display = m.m.startsWith("[SYS]::") ? m.m.substring(7) : m.m;
+        if (sysDiv.firstChild && sysDiv.firstChild.textContent !== display) sysDiv.firstChild.textContent = display;
       }
-    }
-  } else {
-    const mm = el.querySelector(".mm");
-    if (mm) {
-      const targetColor = m.c || "#94a3b8";
-      if (mm.style.color !== targetColor) mm.style.color = targetColor;
-      
-      const nameSpan = mm.querySelector(".mm-name");
-      if (nameSpan && nameSpan.textContent !== m.n) nameSpan.textContent = m.n || "名無し";
-      
-      const tripSpan = mm.querySelector(".mm-trip");
-      if (tripSpan) {
-        if (m.p) {
-          if (tripSpan.textContent !== m.p) tripSpan.textContent = m.p;
-          if (tripSpan.style.display === "none") tripSpan.style.display = "inline";
-        } else {
-          tripSpan.style.display = "none";
+    } else {
+      const mm = el.querySelector(".mm");
+      if (mm) {
+        const col = m.c || "#94a3b8";
+        if (mm.style.color !== col) mm.style.color = col;
+        const nameSpan = mm.querySelector(".mm-name");
+        if (nameSpan && nameSpan.textContent !== m.n) nameSpan.textContent = m.n || "名無し";
+        const tripSpan = mm.querySelector(".mm-trip");
+        if (tripSpan) {
+          if (m.p) {
+            if (tripSpan.textContent !== m.p) tripSpan.textContent = m.p;
+            tripSpan.style.display = "inline";
+          } else tripSpan.style.display = "none";
         }
       }
-    }
-    
-    const mb = el.querySelector(".mb");
-    if (mb) {
-      const targetColor = m.c || "#94a3b8";
-      if (mb.style.borderColor !== targetColor) mb.style.borderLeftColor = targetColor;
-      
-      if (el.dataset.rawMsg !== m.m) {
-        el.dataset.rawMsg = m.m;
-        mb.innerHTML = "";
-        if (m.m && m.m.startsWith("IMG::")) {
-          const base64Img = m.m.substring(5);
-          const img = document.createElement("img");
-          img.className = "inline-img";
-          img.src = base64Img;
-          img.onload = () => scBottom();
-          img.onclick = () => {
-            D.imgViewSrc.src = base64Img;
-            resetZoom();
-            D.imgViewMod.classList.add("show");
-          };
-          mb.appendChild(img);
-        } else if (m.m) {
-          const parsedNodes = parseTxtSplit(m.m);
-          parsedNodes.forEach(node => mb.appendChild(node));
-          if (m.m.includes("http")) {
-            const urls = m.m.match(UR);
-            if (urls) {
-              urls.forEach(url => {
-                const mediaContainer = createMediaContainer(url);
-                if (mediaContainer) mb.appendChild(mediaContainer);
+      const mb = el.querySelector(".mb");
+      if (mb) {
+        const col = m.c || "#94a3b8";
+        if (mb.style.borderColor !== col) mb.style.borderLeftColor = col;
+        if (el.dataset.rawMsg !== m.m) {
+          el.dataset.rawMsg = m.m;
+          mb.innerHTML = "";
+          if (m.m && m.m.startsWith("IMG::")) {
+            const base64 = m.m.substring(5);
+            const img = document.createElement("img");
+            img.className = "inline-img";
+            img.src = base64;
+            img.onload = () => scBottom();
+            img.onclick = () => {
+              if (D.imgViewSrc && D.imgViewMod) {
+                D.imgViewSrc.src = base64;
+                resetZoom();
+                D.imgViewMod.classList.add("show");
+              }
+            };
+            mb.appendChild(img);
+          } else if (m.m) {
+            parseTxtSplit(m.m).forEach(node => mb.appendChild(node));
+            if (m.m.includes("http")) {
+              const urls = m.m.match(UR);
+              if (urls) urls.forEach(u => {
+                const media = createMediaContainer(u);
+                if (media) mb.appendChild(media);
               });
             }
           }
@@ -1044,38 +702,78 @@ function updateExistingMsgNode(m, el) {
       }
     }
   }
-}
 
-// 発言削除の非同期ファンクション
-const deleteMessage = async (mid) => {
-  if (!isAdmin()) return;
-  if (confirm("この発言を削除しますか？")) {
-    await db.ref(`chat/official/${mid}`).update({ deleted: true }).catch(err => {
-      alert("削除に失敗しました: " + err.message);
-    });
-  }
-};
+  const deleteMessage = async (mid) => {
+    if (!db) return;
+    if (confirm("この発言を完全に削除しますか？\n（復元できません）")) {
+      await db.ref(`chat/official/${mid}`).remove().catch(err => alert("削除に失敗しました: " + err.message));
+    }
+  };
 
-function cMsg(m, isNewIncoming = false) {
-  const el = document.createElement("div");
-  el.className = "mw" + (isNewIncoming ? " new-msg-anim" : "");
-  el.dataset.mid = m.id;
-  const msgTime = getMsgTime(m);
-  el.dataset.ts = msgTime;
-  el.dataset.rawMsg = m.m;
-  el.dataset.uid = m.u || ""; // キャッシュ保存用UID属性
+  function cMsg(m, isNewIncoming = false) {
+    const el = document.createElement("div");
+    el.className = "mw" + (isNewIncoming ? " new-msg-anim" : "");
+    el.dataset.mid = m.id;
+    const msgTime = getMsgTime(m);
+    el.dataset.ts = msgTime;
+    el.dataset.rawMsg = m.m;
+    el.dataset.uid = m.u || "";
 
-  const isSys = m.sys === true || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
+    const isSys = m.sys === true || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
+    if (isSys) {
+      let display = m.m.startsWith("[SYS]::") ? m.m.substring(7) : m.m;
+      const canDel = isAdmin() || (m.u && m.u === myUid);
+      const delHtml = canDel ? `<button class="del-btn-inline" data-mid="${m.id}">削除</button>` : "";
+      el.innerHTML = `<div class="sys-msg">${escapeHtml(display)}<span class="sys-ts">[${fDT(msgTime)}]${delHtml}</span></div>`;
+      if (canDel) {
+        const btn = el.querySelector(".del-btn-inline");
+        if (btn) btn.onclick = () => deleteMessage(m.id);
+      }
+      renderedMwNodes.set(m.id, el);
+      return el;
+    }
 
-  if (isSys) {
-    let displayTxt = m.m.startsWith("[SYS]::") ? m.m.substring(7) : m.m;
-    const adminDelHtml = isAdmin() ? `<button class="del-btn-inline" data-mid="${m.id}" title="メッセージを削除">削除</button>` : "";
-    el.innerHTML = `<div class="sys-msg">${escapeHtml(displayTxt)}<span class="sys-ts">[${fDT(msgTime)}]${adminDelHtml}</span></div>`;
-    
-    if (isAdmin()) {
-      const delBtn = el.querySelector(".del-btn-inline");
-      if (delBtn) {
-        delBtn.onclick = () => deleteMessage(m.id);
+    const name = m.n || "名無し", trip = m.p || "", color = m.c || "#94a3b8";
+    const canDel = isAdmin() || (m.u && m.u === myUid);
+    const delHtml = canDel ? `<button class="del-btn-inline" data-mid="${m.id}">削除</button>` : "";
+
+    el.innerHTML = `
+      <div class="mm" style="color: ${color}">
+        <span class="mm-name">${escapeHtml(name)}</span>
+        <span class="mm-trip" style="display: ${trip ? 'inline' : 'none'}">${escapeHtml(trip)}</span>
+        <span class="ts">${fDT(msgTime)}${delHtml}</span>
+      </div>
+      <div class="mb" style="border-left: 2px solid ${color}; padding-left: 8px;"></div>
+    `;
+
+    const mb = el.querySelector(".mb");
+    if (canDel) {
+      const btn = el.querySelector(".del-btn-inline");
+      if (btn) btn.onclick = () => deleteMessage(m.id);
+    }
+
+    if (m.m && m.m.startsWith("IMG::")) {
+      const base64 = m.m.substring(5);
+      const img = document.createElement("img");
+      img.className = "inline-img";
+      img.src = base64;
+      img.onload = () => scBottom();
+      img.onclick = () => {
+        if (D.imgViewSrc && D.imgViewMod) {
+          D.imgViewSrc.src = base64;
+          resetZoom();
+          D.imgViewMod.classList.add("show");
+        }
+      };
+      mb.appendChild(img);
+    } else if (m.m) {
+      parseTxtSplit(m.m).forEach(node => mb.appendChild(node));
+      if (m.m.includes("http")) {
+        const urls = m.m.match(UR);
+        if (urls) urls.forEach(u => {
+          const media = createMediaContainer(u);
+          if (media) mb.appendChild(media);
+        });
       }
     }
 
@@ -1083,1017 +781,673 @@ function cMsg(m, isNewIncoming = false) {
     return el;
   }
 
-  const name = m.n || "名無し", trip = m.p || "", color = m.c || "#94a3b8";
-  const adminDelHtml = isAdmin() ? `<button class="del-btn-inline" data-mid="${m.id}" title="メッセージを削除">削除</button>` : "";
+  function scBottom(force = false) {
+    if (!isAutoScroll && !force) return;
+    if (_scPending) return;
+    _scPending = true;
+    requestAnimationFrame(() => {
+      if (D.tl) D.tl.scrollTop = D.tl.scrollHeight;
+      _scPending = false;
+    });
+  }
 
-  el.innerHTML = `
-    <div class="mm" style="color: ${color}">
-      <span class="mm-name">${escapeHtml(name)}</span>
-      <span class="mm-trip" style="display: ${trip ? 'inline' : 'none'}">${escapeHtml(trip)}</span>
-      <span class="ts">${fDT(msgTime)}${adminDelHtml}</span>
-    </div>
-    <div class="mb" style="border-left: 2px solid ${color}; padding-left: 8px;"></div>
-  `;
+  function updateUnreadBadge() {
+    const badge = D.unreadBadge;
+    if (!badge) return;
+    const count = unreadMsgIds.size;
+    if (count > 0) {
+      badge.textContent = count > 99 ? "99+" : count;
+      badge.style.display = "inline-flex";
+    } else badge.style.display = "none";
+  }
 
-  const mb = el.querySelector(".mb");
-  
-  if (isAdmin()) {
-    const delBtn = el.querySelector(".del-btn-inline");
-    if (delBtn) {
-      delBtn.onclick = () => deleteMessage(m.id);
+  function updateJumpBtns() {
+    if (!D.tl || !D.jumpUpBtn || !D.jumpDownBtn) return;
+    const scrollTop = D.tl.scrollTop, clientHeight = D.tl.clientHeight, scrollHeight = D.tl.scrollHeight;
+    const scrollable = scrollHeight > clientHeight;
+    D.jumpUpBtn.disabled = !scrollable || (scrollTop <= 2);
+    D.jumpDownBtn.disabled = !scrollable || (scrollTop + clientHeight >= scrollHeight - 2);
+  }
+
+  async function loadMoreLogs() {
+    if (isLoadingMore || currentLimit >= maxLimit) return;
+    isLoadingMore = true;
+    if (D.loadMoreBtn) {
+      D.loadMoreBtn.disabled = true;
+      D.loadMoreBtn.textContent = "🔄 読み込み中...";
     }
-  }
-
-  if (m.m && m.m.startsWith("IMG::")) {
-    const base64Img = m.m.substring(5);
-    const img = document.createElement("img");
-    img.className = "inline-img";
-    img.src = base64Img;
-    img.onload = () => scBottom();
-    img.onclick = () => {
-      D.imgViewSrc.src = base64Img;
-      resetZoom();
-      D.imgViewMod.classList.add("show");
-    };
-    mb.appendChild(img);
-  } else if (m.m) {
-    const parsedNodes = parseTxtSplit(m.m);
-    parsedNodes.forEach(node => mb.appendChild(node));
-
-    if (m.m.includes("http")) {
-      const urls = m.m.match(UR);
-      if (urls) {
-        urls.forEach(url => {
-          const mediaContainer = createMediaContainer(url);
-          if (mediaContainer) mb.appendChild(mediaContainer);
-        });
-      }
+    if (D.tl) {
+      savedOldScrollHeight = D.tl.scrollHeight;
+      savedOldScrollTop = D.tl.scrollTop;
     }
-  }
-
-  renderedMwNodes.set(m.id, el);
-  return el;
-}
-
-function scBottom(force = false) {
-  if (!isAutoScroll && !force) return;
-  if (_scPending) return;
-  _scPending = true;
-  requestAnimationFrame(() => {
-    const tl = D.tl;
-    if (tl) {
-      tl.scrollTop = tl.scrollHeight; 
-    }
-    _scPending = false;
-  });
-}
-
-function updateUnreadBadge() {
-  const badge = D.unreadBadge;
-  if (!badge) return;
-  const count = unreadMsgIds.size;
-  if (count > 0) {
-    badge.textContent = count > 99 ? "99+" : count;
-    badge.style.display = "inline-flex";
-  } else {
-    badge.style.display = "none";
-  }
-}
-
-function updateJumpBtns() {
-  if (!D.tl) return;
-  const scrollTop = D.tl.scrollTop;
-  const clientHeight = D.tl.clientHeight;
-  const scrollHeight = D.tl.scrollHeight;
-  const isScrollable = scrollHeight > clientHeight;
-
-  if (!isScrollable) {
-    D.jumpUpBtn.disabled = true;
-    D.jumpDownBtn.disabled = true;
-  } else {
-    D.jumpUpBtn.disabled = (scrollTop <= 2);
-    D.jumpDownBtn.disabled = (scrollTop + clientHeight >= scrollHeight - 2);
-  }
-}
-
-// 過去ログを読み込む実処理
-async function loadMoreLogs() {
-  if (isLoadingMore || currentLimit >= maxLimit) return;
-  isLoadingMore = true;
-  
-  if (D.loadMoreBtn) {
-    D.loadMoreBtn.disabled = true;
-    D.loadMoreBtn.textContent = "🔄 読み込み中...";
-  }
-
-  savedOldScrollHeight = D.tl.scrollHeight;
-  savedOldScrollTop = D.tl.scrollTop;
-
-  currentLimit = Math.min(maxLimit, currentLimit + 25);
-  isLoadMoreTriggered = true;
-
-  setupFirebaseListeners();
-}
-
-function updateLoadMoreUI(loadedCount) {
-  if (!D.loadMoreBlock || !D.loadMoreBtn || !D.loadMoreStatus) return;
-
-  D.loadMoreBlock.style.display = "block";
-
-  if (currentLimit >= maxLimit) {
-    D.loadMoreBtn.disabled = true;
-    D.loadMoreBtn.style.color = "var(--mu)";
-    D.loadMoreBtn.textContent = "✨ これ以上の過去ログはありません (上限100件)";
-  } else if (loadedCount < currentLimit) {
-    D.loadMoreBtn.disabled = true;
-    D.loadMoreBtn.style.color = "var(--mu)";
-    D.loadMoreBtn.textContent = `✨ これ以上の過去ログはありません (全 ${loadedCount} 件)`;
-  } else {
-    D.loadMoreBtn.disabled = false;
-    D.loadMoreBtn.style.color = "#38bdf8";
-    D.loadMoreBtn.innerHTML = `▲ さらに過去のログを読み込む (<span id="loadMoreStatus">${loadedCount}/${maxLimit}件表示中</span>)`;
-  }
-}
-
-D.loadMoreBtn.onclick = loadMoreLogs;
-
-D.tl.addEventListener("scroll", () => {
-  const scrollTop = D.tl.scrollTop;
-  const clientHeight = D.tl.clientHeight;
-  const scrollHeight = D.tl.scrollHeight;
-
-  if (scrollTop <= 0 && !isLoadingMore && currentLimit < maxLimit) {
-    loadMoreLogs();
-  }
-
-  const isNearBottom = scrollTop + clientHeight >= scrollHeight - 40;
-
-  if (!_scPending) {
-    if (isNearBottom) {
-      isAutoScroll = true;
-      if (unreadMsgIds.size > 0) {
-        unreadMsgIds.clear(); 
-        updateUnreadBadge();
-      }
-    } else {
-      isAutoScroll = false;
-    }
-  }
-
-  updateJumpBtns();
-});
-
-function parseTxtSplit(txt) {
-  if (!txt.includes("http")) return [document.createTextNode(txt)];
-  const norm = txt.replace(/[\u3000]/g, " ");
-  const elements = [];
-  let last = 0, m;
-  UR.lastIndex = 0;
-  while ((m = UR.exec(norm)) !== null) {
-    if (m.index > last) elements.push(document.createTextNode(norm.slice(last, m.index)));
-    const a = document.createElement("a");
-    a.href = m[0]; a.target = "_blank"; a.rel = "noopener noreferrer";
-    a.style.color = "#60a5fa"; a.style.textDecoration = "underline"; a.textContent = m[0];
-    elements.push(a);
-    last = m.index + m[0].length;
-  }
-  if (last < norm.length) elements.push(document.createTextNode(norm.slice(last)));
-  return elements;
-}
-
-const getYoutubeId = (url) => {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/|live\/)([^#\&\?]*).*/;
-  const match = url.match(regExp);
-  return (match && match[2].length === 11) ? match[2] : null;
-};
-
-const getNicoId = (url) => {
-  const regExp = /(?:nicovideo\.jp\/watch\/|nico\.ms\/|embed\.nicovideo\.jp\/watch\/)(sm[0-9]+|so[0-9]+|nm[0-9]+|[0-9]+)/i;
-  const match = url.match(regExp);
-  return match ? match[1] : null;
-};
-
-function createMediaContainer(url) {
-  const ytId = getYoutubeId(url);
-  const nicoId = getNicoId(url);
-  if (!ytId && !nicoId) return null;
-
-  const container = document.createElement("div");
-  container.className = "media-link-container";
-  const row = document.createElement("div");
-  row.className = "media-inline-row";
-
-  const badge = document.createElement("span");
-  badge.className = "media-badge";
-  let type = "";
-  if (ytId) { type = "youtube"; badge.textContent = "YouTube"; badge.style.background = "#ef4444"; }
-  else if (nicoId) { type = "niconico"; badge.textContent = "ニコニコ"; badge.style.background = "#2563eb"; }
-  row.appendChild(badge);
-
-  const playBtn = document.createElement("button");
-  playBtn.className = "open-player-btn";
-  playBtn.textContent = "▶ プレイヤーで再生";
-  playBtn.onclick = (e) => {
-    e.preventDefault();
-    openFloatingPlayer(url, type);
-  };
-  row.appendChild(playBtn);
-  container.appendChild(row);
-  return container;
-}
-
-const closePlayer = () => {
-  D.fixedPlayer.style.display = "none";
-  D.playerContent.innerHTML = "";
-  updateJumpBtns();
-};
-
-function openFloatingPlayer(url, type) {
-  D.fixedPlayer.style.display = "flex";
-  D.playerContent.innerHTML = ""; 
-
-  if (type === "youtube") {
-    const ytId = getYoutubeId(url);
-    if (ytId) {
-      const iframe = document.createElement("iframe");
-      let originParam = "";
-      if (window.location.protocol.startsWith("http")) {
-        originParam = `&origin=${encodeURIComponent(window.location.origin)}`;
-      }
-      iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&enablejsapi=1${originParam}`;
-      iframe.frameBorder = "0";
-      iframe.allow = "autoplay; encrypted-media";
-      iframe.allowFullscreen = true;
-      iframe.style.width = "100%"; iframe.style.height = "100%";
-      D.playerContent.appendChild(iframe);
-    }
-  } else if (type === "niconico") {
-    const nicoId = getNicoId(url);
-    if (nicoId) {
-      const iframe = document.createElement("iframe");
-      iframe.src = `https://embed.nicovideo.jp/watch/${nicoId}?jsapi=1&autoplay=0&playerId=nezu_inline`;
-      iframe.frameBorder = "0";
-      iframe.allowFullscreen = true;
-      iframe.style.width = "100%"; iframe.style.height = "100%";
-      D.playerContent.appendChild(iframe);
-    }
-  }
-  scBottom();
-  updateJumpBtns();
-}
-
-window.addEventListener("message", (e) => {
-  if (typeof e.origin === "string" && (e.origin.includes("youtube.com") || e.origin.includes("youtube-nocookie.com"))) {
-    try {
-      const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
-      if (data) {
-        if (data.event === "infoDelivery" && data.info && data.info.playerState === 0) closePlayer();
-        if (data.event === "onStateChange" && (data.info === 0 || data.data === 0)) closePlayer();
-      }
-    } catch (err) {}
-  }
-  if (typeof e.origin === "string" && e.origin.includes("nicovideo.jp")) {
-    try {
-      if (e.data && e.data.eventName === "playerStatusChange" && e.data.data && e.data.data.playerStatus === 4) {
-        closePlayer();
-      }
-    } catch (err) {}
-  }
-});
-
-D.playerCloseBtn.onclick = closePlayer;
-
-function renderPresence(serverListMap) {
-  const cleanMap = { ...serverListMap };
-
-  if (isJoined && myUid) {
-    if (!cleanMap[myUid]) {
-      cleanMap[myUid] = {
-        id: myUid,
-        n: myName,
-        p: myTrip,
-        c: curColor,
-        t: getTrueTime(),
-        p_t: getTrueTime()
-      };
-    }
-  } else if (!isJoined && myUid) {
-    delete cleanMap[myUid];
-  }
-
-  const members = Object.values(cleanMap).filter(m => m && m.n);
-  populatePresenceList(members);
-}
-
-let lastPresenceHash = "";
-
-function populatePresenceList(membersList) {
-  const sortedList = [...membersList]
-    .filter(m => m.n && m.n.trim() !== "")
-    .sort((a, b) => a.id.localeCompare(b.id));
-
-  const currentHash = sortedList.map(m => `${m.id}_${m.n}_${m.p || ""}_${m.c}`).join("|");
-  if (currentHash === lastPresenceHash) {
-    return; 
-  }
-  lastPresenceHash = currentHash;
-
-  const fragment = document.createDocumentFragment();
-  const mLen = sortedList.length;
-  for (let i = 0; i < mLen; i++) {
-    const m = sortedList[i];
-    const sp = document.createElement("span");
-    sp.className = "chip";
-    sp.style.color = m.c || "#94a3b8";
-    sp.style.borderColor = (m.c || "#94a3b8") + "44";
-    sp.textContent = m.p ? `${m.n} ${m.p}` : m.n;
-    fragment.appendChild(sp);
-  }
-  D.pl.innerHTML = "";
-  D.pl.appendChild(fragment);
-  if (D.pcnt) {
-    D.pcnt.textContent = `${mLen}人`;
-  }
-  updateJumpBtns(); 
-}
-
-D.exBtn.onclick = () => {
-  if (isJoined) {
-    if (confirm("退室して参加前の覗き見画面に戻りますか？")) {
-      doExit();
-    }
-  }
-};
-
-D.adminClearBtn.onclick = async () => {
-  if (!isAdmin()) return;
-  if (confirm("⚠️ チャット履歴を完全に全消去しますか？")) {
-    if (confirm("本当に実行しますか？")) {
-      displayedMsgIds.clear();
-      D.tli.innerHTML = "";
-      renderedMwNodes.clear();
-      
-      const tempId = "pnd_sys_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-      const clearText = "[SYS]::管理者によってチャット履歴が全消去されました";
-      const tempObj = {
-        id: tempId,
-        u: myUid,
-        n: "管理者",
-        p: "",
-        c: "#f43f5e",
-        m: clearText,
-        t: getTrueTime()
-      };
-      
-      pendingMsgs.set(tempId, tempObj);
-      displayedMsgIds.add(tempId);
-      const tempEl = cMsg(tempObj, true);
-      insertMessageInOrder(tempEl);
-      
-      isAutoScroll = true;
-      scBottom(true);
-
-      await db.ref(`chat/official`).set(null).catch(() => {});
-      
-      const clearRef = db.ref(`chat/official`).push();
-      await clearRef.set({
-        u: myUid,
-        pnd: tempId,
-        n: "管理者",
-        p: "",
-        c: "#f43f5e",
-        m: clearText,
-        t: firebase.database.ServerValue.TIMESTAMP
-      }).catch((err) => {
-        alert("全消去失敗: " + err.message);
-        const el = renderedMwNodes.get(tempId); if (el) el.remove();
-        renderedMwNodes.delete(tempId); pendingMsgs.delete(tempId); displayedMsgIds.delete(tempId);
-      });
-    }
-  }
-};
-
-const preventFocusLoss = (el) => {
-  el.addEventListener("mousedown", e => e.preventDefault());
-  el.addEventListener("touchstart", e => {
-    if (document.activeElement === D.mi) e.preventDefault();
-  });
-};
-preventFocusLoss(D.sdBtn);
-preventFocusLoss(D.clrMsgBtn);
-preventFocusLoss(D.imgBtn);
-
-D.sdBtn.onclick = () => sendMsg();
-D.clrMsgBtn.onclick = () => {
-  D.mi.value = ""; 
-  D.mi.style.height = "auto"; 
-  D.mi.dispatchEvent(new Event("input"));
-};
-D.imgBtn.onclick = () => D.fileInput.click();
-
-D.jumpUpBtn.onclick = () => {
-  D.tl.scrollTo({ top: 0, behavior: "smooth" });
-  if (currentLimit < maxLimit) {
-    setTimeout(loadMoreLogs, 300);
-  }
-};
-
-D.jumpDownBtn.onclick = () => {
-  isAutoScroll = true;
-  unreadMsgIds.clear();
-  updateUnreadBadge();
-  D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" });
-};
-
-D.mi.addEventListener("focus", () => { 
-  isAutoScroll = true;
-  unreadMsgIds.clear();
-  updateUnreadBadge();
-  scBottom(true); 
-});
-
-D.mi.addEventListener("input", () => {
-  D.mi.style.height = "auto";
-  D.mi.style.height = Math.min(120, D.mi.scrollHeight) + "px";
-  scBottom(true); 
-});
-
-D.mi.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" && !e.shiftKey) {
-    if (e.isComposing) return;
-    e.preventDefault(); sendMsg();
-  }
-});
-
-D.fileInput.onchange = (e) => {
-  const file = e.target.files[0]; if (!file) return;
-  const svgEl = D.imgBtn.querySelector("svg"); if (svgEl) svgEl.style.display = "none";
-  D.imgBtn.disabled = true;
-  const spin = document.createElement("div"); spin.className = "spin"; D.imgBtn.appendChild(spin);
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    const img = new Image();
-    img.onload = async () => {
-      const cvs = document.createElement("canvas"); 
-      let w = img.width, h = img.height; const maxDim = 640; 
-      if (w > maxDim || h > maxDim) {
-        if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
-        else { w = Math.round((w * maxDim) / h); h = maxDim; }
-      }
-      cvs.width = w; cvs.height = h; 
-      cvs.getContext("2d").drawImage(img, 0, 0, w, h);
-      await sendMsg(null, cvs.toDataURL("image/jpeg", 0.6)); 
-      spin.remove(); if (svgEl) svgEl.style.display = "";
-      D.imgBtn.disabled = false; D.fileInput.value = "";
-    };
-    img.src = ev.target.result;
-  };
-  reader.readAsDataURL(file);
-};
-
-D.clrBtn.onclick = () => {
-  tmpColor = curColor; updateModalColorPreview(tmpColor);
-  buildPicker(D.clrPick2, tmpColor, "clrc2", (v) => {
-    tmpColor = v; updateModalColorPreview(v);
-    D.clrPick2.querySelectorAll("button").forEach(b => b.classList.toggle("sel", b.dataset.color === v));
-  });
-  D.clrmod.classList.add("show");
-};
-
-D.clrCancel.onclick = () => D.clrmod.classList.remove("show");
-D.clrOk.onclick = async () => {
-  curColor = tmpColor; setGlobalColor(curColor); safeLS.set("nz_color", curColor);
-  D.clrmod.classList.remove("show"); await syncProfileValues();
-  if (isJoined) {
-    await db.ref(`presence/official/${myUid}`).set({ n: myName, p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP });
-  }
-};
-
-function buildPicker(con, sel, cls, onChange) {
-  if (!con) return; con.innerHTML = "";
-  COLORS.forEach(({v,n}) => {
-    const b = document.createElement("button");
-    b.className = cls + (v === sel ? " sel" : ""); b.style.background = v; b.title = n; b.dataset.color = v;
-    b.addEventListener("click", () => onChange(v)); con.appendChild(b);
-  });
-}
-
-function updateModalColorPreview(color) {
-  const con = D.clrPrev; if (!con) return; con.innerHTML = "";
-  con.style.background = "rgba(0, 0, 0, 0.25)"; con.style.border = "1px solid var(--bd)"; con.style.borderRadius = "4px"; con.style.padding = "8px"; con.style.textAlign = "left";
-  const n = myName || "名無し";
-  const wrap = document.createElement("div"); wrap.style.fontSize = "12px"; wrap.style.color = color; wrap.style.fontWeight = "bold"; 
-  wrap.textContent = n;
-  con.appendChild(wrap);
-  const bodyMock = document.createElement("div"); bodyMock.style.fontSize = "13px"; bodyMock.style.color = "var(--tx)"; bodyMock.style.marginTop = "4px"; bodyMock.style.borderLeft = `2px solid ${color}`; bodyMock.style.paddingLeft = "8px"; bodyMock.textContent = "この色で発言が表示されます。";
-  con.appendChild(bodyMock);
-}
-
-const overlayEl = $("zoomViewport"), imgEl = D.imgViewSrc;
-function resetZoom() { scale = 1; panX = 0; panY = 0; imgEl.style.transformOrigin = "center center"; updateTransform(); }
-function updateTransform() { imgEl.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; }
-function clampPan() {
-  if (scale <= 1) { panX = 0; panY = 0; return; }
-  const cw = overlayEl.clientWidth, ch = overlayEl.clientHeight;
-  const ir = imgEl.naturalWidth / imgEl.naturalHeight, cr = cw / ch;
-  let iw, ih;
-  if (ir > cr) { iw = cw; iw = cw / ir; } else { ih = ch; iw = ch * ir; }
-  const currentWidth = iw * scale, currentHeight = ih * scale;
-  let limitX = currentWidth > cw ? (currentWidth - cw) / 2 : 0;
-  let limitY = currentHeight > ch ? (currentHeight - ch) / 2 : 0;
-  panX = Math.max(-limitX, Math.min(limitX, panX)); panY = Math.max(-limitY, Math.min(limitY, panY));
-}
-function getDistance(t1, t2) { return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY); }
-
-overlayEl.addEventListener('touchstart', (e) => {
-  if (e.target === D.imgViewCloseBtn) return;
-  if (e.touches.length === 2) { isPanning = false; initialDistance = getDistance(e.touches[0], e.touches[1]); }
-  else if (e.touches.length === 1 && scale > 1) { isPanning = true; lastPanX = e.touches[0].clientX; lastPanY = e.touches[0].clientY; }
-}, { passive: true });
-
-overlayEl.addEventListener('touchmove', (e) => {
-  if (e.target === D.imgViewCloseBtn) return;
-  if (e.touches.length === 2) {
-    const dist = getDistance(e.touches[0], e.touches[1]); scale = Math.max(1, Math.min(5, scale * (dist / initialDistance)));
-    initialDistance = dist; clampPan(); updateTransform();
-  } else if (e.touches.length === 1 && isPanning) {
-    panX += e.touches[0].clientX - lastPanX; panY += e.touches[0].clientY - lastPanY;
-    lastPanX = e.touches[0].clientX; lastPanY = e.touches[0].clientY; clampPan(); updateTransform();
-  }
-}, { passive: true });
-
-overlayEl.addEventListener('wheel', (e) => {
-  e.preventDefault(); scale = Math.max(1, Math.min(5, scale * (e.deltaY > 0 ? 0.9 : 1.1))); clampPan(); updateTransform();
-}, { passive: false });
-
-overlayEl.addEventListener("click", (e) => { if (e.target === overlayEl) { D.imgViewMod.classList.remove("show"); } });
-D.imgViewCloseBtn.onclick = () => D.imgViewMod.classList.remove("show");
-
-D.ni.addEventListener("input", async () => {
-  safeLS.set("nz_ni", D.ni.value.trim());
-  await syncProfileValues();
-});
-D.tripi.addEventListener("input", async () => {
-  safeLS.set("nz_tripi", D.tripi.value.trim());
-  await syncProfileValues();
-});
-
-D.joinBtn.onclick = () => joinRoom();
-
-D.copyTripBtn.onclick = async () => {
-  const niVal = D.ni.value.trim() || "名無し";
-  const tripiVal = D.tripi.value.trim();
-  if (!tripiVal) return;
-  const tLobby = await window.makeTrip(niVal, tripiVal);
-  if (tLobby) {
-    try {
-      await navigator.clipboard.writeText(tLobby);
-      const copyBtn = D.copyTripBtn;
-      const originalText = copyBtn.textContent;
-      copyBtn.textContent = "コピー完了！";
-      copyBtn.style.background = "#10b981"; 
-      setTimeout(() => {
-        copyBtn.textContent = originalText;
-        copyBtn.style.background = "";
-      }, 1500);
-    } catch (err) {
-      alert("コピーに失敗しました。");
-    }
-  }
-};
-
-const handleJoinKey = (e) => {
-  if (e.key === "Enter" && !D.joinBtn.disabled) {
-    joinRoom();
-  }
-};
-D.ni.addEventListener("keydown", handleJoinKey);
-D.tripi.addEventListener("keydown", handleJoinKey);
-
-let lastBoostTime = 0;
-const boostSync = () => { 
-  const now = Date.now();
-  if (now - lastBoostTime < 800) return; 
-  lastBoostTime = now;
-
-  if (db) {
-    db.goOnline(); 
-  }
-  checkActivityTimeout(); 
-  if (db && isJoined && myUid) { 
-    startAutoExitChecker(); 
-    const myPresRef = db.ref(`presence/official/${myUid}`);
-    myPresRef.update({
-      t: firebase.database.ServerValue.TIMESTAMP,
-      p_t: firebase.database.ServerValue.TIMESTAMP
-    }).catch(() => {});
-  } 
-};
-
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { boostSync(); } });
-window.addEventListener("focus", boostSync); window.addEventListener("pageshow", boostSync);
-
-const adjustViewport = () => {
-  const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  document.documentElement.style.setProperty('--app-viewport-height', `${h}px`);
-};
-if (window.visualViewport) {
-  window.visualViewport.addEventListener('resize', () => { adjustViewport(); scBottom(true); });
-  window.visualViewport.addEventListener('scroll', () => { if (document.activeElement === D.mi) { window.scrollTo(0, 0); } });
-}
-window.addEventListener('resize', adjustViewport);
-
-$("joinFormHeader").onclick = () => {
-  isJoinFormExpanded = !isJoinFormExpanded;
-  if (isJoinFormExpanded) {
-    $("joinFormContent").style.display = "flex";
-    $("joinFormArrow").style.transform = "rotate(180deg)";
-  } else {
-    $("joinFormContent").style.display = "none";
-    $("joinFormArrow").style.transform = "rotate(0deg)";
-  }
-  scBottom(true);
-};
-
-window.addEventListener('storage', (e) => {
-  if (e.key === "nz_is_joined") {
-    const joined = e.newValue === "true";
-    if (joined !== isJoined) {
-      isJoined = joined;
-      if (isJoined) {
-        myName = safeLS.get("nz_ni") || "";
-        if (!myName.trim()) {
-          isJoined = false;
-          safeLS.set("nz_is_joined", "false"); 
-          switchUIMode("guest");
-          return;
-        }
-        const tk = safeLS.get("nz_tripi") || "";
-        window.makeTrip(myName, tk).then(t => {
-          myTrip = t;
-          curColor = safeLS.get("nz_color") || "#94a3b8";
-          setGlobalColor(curColor);
-          switchUIMode("joined");
-          startAutoExitChecker();
-          renderPresence(currentPresenceMap);
-        });
-      } else {
-        stopAutoExitTimer();
-        switchUIMode("guest");
-        renderPresence(currentPresenceMap);
-      }
-    }
-  }
-  if (e.key === "nz_ni" || e.key === "nz_tripi") {
-    syncProfileValues();
-  }
-  if (e.key === "nz_color") {
-    curColor = e.newValue || "#94a3b8";
-    setGlobalColor(curColor);
-    updateModalColorPreview(curColor);
-  }
-  if (e.key === "nz_keep_kb_open") {
-    keepKbOpen = e.newValue === "true";
-    if (D.kbKeepOpenChk) D.kbKeepOpenChk.checked = keepKbOpen;
-  }
-});
-
-function filterMsg(m) {
-  if (m.deleted) return false;
-  
-  if (!m.m || typeof m.m !== "string" || m.m.trim() === "") {
-    return false;
-  }
-  if (!m.n || typeof m.n !== "string" || m.n.trim() === "") {
-    return false;
-  }
-  if (m.m.startsWith("[SYS]::")) {
-    const sysText = m.m.substring(7).trim();
-    if (sysText.startsWith("が退室しました") || sysText.startsWith("が入室しました") || !sysText) {
-      return false;
-    }
-  }
-  
-  return true;
-}
-
-function loadCachedPresence() {
-  try {
-    const cachedStr = safeLS.get("nz_presence_cache"); 
-    if (cachedStr) {
-      const cachedPres = JSON.parse(cachedStr);
-      if (cachedPres && typeof cachedPres === "object") {
-        currentPresenceMap = cachedPres;
-        renderPresence(cachedPres);
-      }
-    }
-  } catch (e) {
-    console.warn("キャッシュ読み込み失敗:", e);
-  }
-}
-
-function loadCachedChat() {
-  try {
-    const cachedStr = safeLS.get("nz_chat_cache"); 
-    if (cachedStr) {
-      const cachedMsgs = JSON.parse(cachedStr);
-      if (Array.isArray(cachedMsgs) && cachedMsgs.length > 0) {
-        const activeCached = cachedMsgs.filter(m => filterMsg(m));
-        syncMessagesDOM(activeCached);
-      }
-    }
-  } catch (e) {
-    console.warn("キャッシュ読み込み失敗:", e);
-  }
-}
-
-function savePresenceCache() {
-  try {
-    safeLS.set("nz_presence_cache", JSON.stringify(currentPresenceMap)); 
-  } catch (e) {}
-}
-
-function setupFirebaseListeners() {
-  const chatRef = db.ref(`chat/official`), presenceRef = db.ref(`presence/official`);
-
-  chatRef.off();
-  presenceRef.off();
-
-  // childイベントによる軽量・遅延ゼロのリアルタイムリスナー
-  const chatQuery = chatRef.limitToLast(currentLimit); 
-
-  // 全消去のリアルタイム検知：データベースが完全に空になった場合、全クライアントの画面とキャッシュをリセットする
-  chatQuery.on("value", snap => {
-    if (!snap.exists()) {
-      displayedMsgIds.clear();
-      D.tli.innerHTML = "";
-      renderedMwNodes.clear();
-      unreadMsgIds.clear();
-      updateUnreadBadge();
-      saveChatCacheFromDOM(); // ローカルキャッシュも完全に空にする
-    }
-  });
-
-  // 物理削除されたメッセージの画面からの消去
-  chatQuery.on("child_removed", snap => {
-    const mid = snap.key;
-    const localEl = renderedMwNodes.get(mid);
-    if (localEl) {
-      localEl.remove();
-      renderedMwNodes.delete(mid);
-      displayedMsgIds.delete(mid);
-    }
-    if (unreadMsgIds.has(mid)) {
-      unreadMsgIds.delete(mid);
-      updateUnreadBadge();
-    }
-    saveChatCacheFromDOM();
-  });
-
-  // 更新時の即座の反映（相手側の発言削除もここで即時反映・バッジ連動します）
-  chatQuery.on("child_changed", snap => {
-    const mid = snap.key;
-    const m = snap.val();
-    if (m) {
-      m.id = mid;
-      if (m.deleted || !filterMsg(m)) {
-        const localEl = renderedMwNodes.get(mid);
-        if (localEl) {
-          localEl.remove();
-          renderedMwNodes.delete(mid);
-          displayedMsgIds.delete(mid);
-        }
-        // 新着バッジ連動：削除された発言が未読リストにあれば除外して再計算
-        if (unreadMsgIds.has(mid)) {
-          unreadMsgIds.delete(mid);
-          updateUnreadBadge();
-        }
-      } else {
-        const el = renderedMwNodes.get(mid);
-        if (el) {
-          updateExistingMsgNode(m, el);
-        }
-      }
-      saveChatCacheFromDOM();
-    }
-  });
-
-  // 新規投稿時のDOMへの即時挿入
-  chatQuery.on("child_added", snap => {
-    const m = snap.val();
-    if (m) {
-      m.id = snap.key;
-
-      if (m.pnd && pendingMsgs.has(m.pnd)) {
-        pendingMsgs.delete(m.pnd);
-        const tempEl = renderedMwNodes.get(m.pnd);
-        if (tempEl) {
-          tempEl.dataset.mid = m.id;
-          tempEl.classList.remove("new-msg-anim"); 
-          tempEl.style.opacity = "1"; 
-          renderedMwNodes.delete(m.pnd);
-          renderedMwNodes.set(m.id, tempEl);
-          displayedMsgIds.delete(m.pnd);
-          displayedMsgIds.add(m.id);
-        }
-      }
-
-      if (filterMsg(m)) {
-        let el = renderedMwNodes.get(m.id);
-        if (!el) {
-          el = cMsg(m, !isFirstLoad);
-          renderedMwNodes.set(m.id, el);
-          displayedMsgIds.add(m.id);
-          
-          insertMessageInOrder(el);
-
-          // 新規発言時の新着バッジ処理
-          if (!isFirstLoad && m.u !== myUid) {
-            // スクロール位置が最下部でない、あるいはタブが非アクティブな場合に未読件数に加算
-            if (!isAutoScroll || document.visibilityState === "hidden") {
-              unreadMsgIds.add(m.id);
-              updateUnreadBadge();
-            }
-          }
-        } else {
-          // キャッシュから一時表示された el が存在するものの、
-          // 最新データと差異（編集やプロファイルの更新など）がある場合はアップデートする
-          updateExistingMsgNode(m, el);
-        }
-      } else {
-        // [過去ログ・キャッシュゾンビ発言対策] 
-        // 削除済みメッセージ（deleted: trueなど）の場合、
-        // もしローカルキャッシュから古いゾンビメッセージがすでにDOMへ表示されていれば、DOMおよびキャッシュから完全に排除します
-        let el = renderedMwNodes.get(m.id);
-        if (el) {
-          el.remove();
-          renderedMwNodes.delete(m.id);
-          displayedMsgIds.delete(m.id);
-          if (unreadMsgIds.has(m.id)) {
-            unreadMsgIds.delete(m.id);
-            updateUnreadBadge();
-          }
-          saveChatCacheFromDOM();
-        }
-      }
-    }
-  });
-
-  // 初回のロード完了時
-  chatQuery.once("value", snap => {
-    isFirstLoad = false;
-    isLoadingMore = false;
-    isLoadMoreTriggered = false;
-    
-    const msgsLength = snap.numChildren();
-    updateLoadMoreUI(msgsLength);
-    saveChatCacheFromDOM();
-    scBottom();
-  });
-
-  // 在室者リストの遅延ゼロ同期
-  presenceRef.on("value", s => {
-    const list = s.val() || {}; 
-    const membersMap = {};
-    const nowTrue = getTrueTime();
-
-    for (const [id, u] of Object.entries(list)) {
-      if (u && u.n) {
-        let ut = u.t;
-        if (ut && typeof ut === "object") ut = nowTrue;
-        if (!ut || typeof ut !== "number") continue;
-
-        let pt = u.p_t || ut;
-
-        if (isOffsetLoaded && id !== myUid && (nowTrue - pt >= 1800000)) {
-          triggerOtherExit(id, u, pt + 1800000);
-          continue; 
-        }
-
-        membersMap[id] = { id, ...u, t: ut, p_t: pt };
-      }
-    }
-
-    currentPresenceMap = membersMap;
-    savePresenceCache();
-    renderPresence(membersMap);
-  });
-}
-
-const initAuthProcess = async () => {
-  // [超高速化] 認証を待つことなく開いた瞬間にキャッシュを最速表示
-  loadCachedPresence();
-  loadCachedChat();
-  await syncProfileValues();
-
-  // [遅延ゼロ] 匿名認証する前であっても、即座にFirebaseの同期（最新表示）を開始します
-  if (!isFirebaseListenersBound) {
+    currentLimit = Math.min(maxLimit, currentLimit + 25);
+    isLoadMoreTriggered = true;
     setupFirebaseListeners();
-    isFirebaseListenersBound = true;
   }
 
-  myUid = safeLS.get("nz_permanent_uid");
-  if (!myUid) {
-    myUid = "user_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
-    safeLS.set("nz_permanent_uid", myUid);
+  function updateLoadMoreUI(loadedCount) {
+    if (!D.loadMoreBlock || !D.loadMoreBtn || !D.loadMoreStatus) return;
+    D.loadMoreBlock.style.display = "block";
+    if (currentLimit >= maxLimit) {
+      D.loadMoreBtn.disabled = true;
+      D.loadMoreBtn.style.color = "var(--mu)";
+      D.loadMoreBtn.textContent = "✨ これ以上の過去ログはありません (上限100件)";
+    } else if (loadedCount < currentLimit) {
+      D.loadMoreBtn.disabled = true;
+      D.loadMoreBtn.style.color = "var(--mu)";
+      D.loadMoreBtn.textContent = `✨ これ以上の過去ログはありません (全 ${loadedCount} 件)`;
+    } else {
+      D.loadMoreBtn.disabled = false;
+      D.loadMoreBtn.style.color = "#38bdf8";
+      D.loadMoreBtn.innerHTML = `▲ さらに過去のログを読み込む (<span id="loadMoreStatus">${loadedCount}/${maxLimit}件表示中</span>)`;
+    }
   }
 
-  const hasNi = (safeLS.get("nz_ni") || "").trim();
-  isJoined = (safeLS.get("nz_is_joined") === "true") && (hasNi !== ""); 
-
-  myName = hasNi; 
-  const tk = safeLS.get("nz_tripi") || ""; 
-  myTrip = await window.makeTrip(myName, tk);
-
-  if (isJoined) {
-    switchUIMode("joined");
-  } else {
-    switchUIMode("guest");
+  function parseTxtSplit(txt) {
+    if (!txt.includes("http")) return [document.createTextNode(txt)];
+    const norm = txt.replace(/[\u3000]/g, " "), elements = [];
+    let last = 0, m;
+    UR.lastIndex = 0;
+    while ((m = UR.exec(norm)) !== null) {
+      if (m.index > last) elements.push(document.createTextNode(norm.slice(last, m.index)));
+      const a = document.createElement("a");
+      a.href = m[0]; a.target = "_blank"; a.rel = "noopener noreferrer";
+      a.style.color = "#60a5fa"; a.style.textDecoration = "underline"; a.textContent = m[0];
+      elements.push(a);
+      last = m.index + m[0].length;
+    }
+    if (last < norm.length) elements.push(document.createTextNode(norm.slice(last)));
+    return elements;
   }
-  D.tl.style.opacity = "1";
 
-  if (auth) {
-    auth.onAuthStateChanged(async (user) => {
-      let activeUid = null;
-      if (!user) {
-        try {
-          const userCredential = await auth.signInAnonymously();
-          activeUid = userCredential.user.uid;
-        } catch (err) {
-          console.warn("認証エラー:", err);
-          myUid = safeLS.get("nz_permanent_uid") || "guest_" + Date.now();
-          safeLS.set("nz_permanent_uid", myUid);
-          
-          validateNameField();
-          updateAdminUI();
-          return;
-        }
-      } else {
-        activeUid = user.uid;
+  const getYoutubeId = (url) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/|live\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const getNicoId = (url) => {
+    const regExp = /(?:nicovideo\.jp\/watch\/|nico\.ms\/|embed\.nicovideo\.jp\/watch\/)(sm[0-9]+|so[0-9]+|nm[0-9]+|[0-9]+)/i;
+    const match = url.match(regExp);
+    return match ? match[1] : null;
+  };
+
+  function createMediaContainer(url) {
+    const ytId = getYoutubeId(url), nicoId = getNicoId(url);
+    if (!ytId && !nicoId) return null;
+    const container = document.createElement("div");
+    container.className = "media-link-container";
+    const row = document.createElement("div");
+    row.className = "media-inline-row";
+    const badge = document.createElement("span");
+    badge.className = "media-badge";
+    let type = "";
+    if (ytId) { type = "youtube"; badge.textContent = "YouTube"; badge.style.background = "#ef4444"; }
+    else if (nicoId) { type = "niconico"; badge.textContent = "ニコニコ"; badge.style.background = "#2563eb"; }
+    row.appendChild(badge);
+    const playBtn = document.createElement("button");
+    playBtn.className = "open-player-btn";
+    playBtn.textContent = "▶ プレイヤーで再生";
+    playBtn.onclick = (e) => { e.preventDefault(); openFloatingPlayer(url, type); };
+    row.appendChild(playBtn);
+    container.appendChild(row);
+    return container;
+  }
+
+  const closePlayer = () => {
+    if (!D.fixedPlayer || !D.playerContent) return;
+    D.fixedPlayer.style.display = "none";
+    D.playerContent.innerHTML = "";
+    updateJumpBtns();
+  };
+
+  function openFloatingPlayer(url, type) {
+    if (!D.fixedPlayer || !D.playerContent) return;
+    D.fixedPlayer.style.display = "flex";
+    D.playerContent.innerHTML = ""; 
+    if (type === "youtube") {
+      const ytId = getYoutubeId(url);
+      if (ytId) {
+        const iframe = document.createElement("iframe");
+        let origin = window.location.protocol.startsWith("http") ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
+        iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&enablejsapi=1${origin}`;
+        iframe.frameBorder = "0";
+        iframe.allow = "autoplay; encrypted-media";
+        iframe.allowFullscreen = true;
+        iframe.style.width = "100%"; iframe.style.height = "100%";
+        D.playerContent.appendChild(iframe);
       }
-
-      // 仮UIDから本UIDへの移行が発生した場合の処理
-      if (myUid !== activeUid) {
-        // 入室中であった場合、古い仮UIDの在室情報をデータベースから消去（移行を完全クリアに）
-        if (isJoined && myUid) {
-          db.ref(`presence/official/${myUid}`).remove().catch(() => {});
-        }
-        
-        myUid = activeUid;
-        safeLS.set("nz_permanent_uid", myUid);
-        
-        // メッセージDOMを一旦クリアして最新で完全にバインド
-        D.tli.innerHTML = "";
-        renderedMwNodes.clear();
-        displayedMsgIds.clear();
-        loadCachedChat();
+    } else if (type === "niconico") {
+      const nicoId = getNicoId(url);
+      if (nicoId) {
+        const iframe = document.createElement("iframe");
+        iframe.src = `https://embed.nicovideo.jp/watch/${nicoId}?jsapi=1&autoplay=0&playerId=nezu_inline`;
+        iframe.frameBorder = "0";
+        iframe.allowFullscreen = true;
+        iframe.style.width = "100%"; iframe.style.height = "100%";
+        D.playerContent.appendChild(iframe);
       }
+    }
+    scBottom();
+    updateJumpBtns();
+  }
 
-      // 最新のリスナーを再確認
-      if (!isFirebaseListenersBound) {
-        setupFirebaseListeners();
-        isFirebaseListenersBound = true;
-      }
+  function renderPresence(serverListMap) {
+    const clean = { ...serverListMap };
+    if (isJoined && myUid) {
+      if (!clean[myUid]) clean[myUid] = { id: myUid, n: myName, p: myTrip, c: curColor, t: getTrueTime(), p_t: getTrueTime() };
+    } else if (!isJoined && myUid) delete clean[myUid];
+    populatePresenceList(Object.values(clean).filter(m => m && m.n));
+  }
 
-      if (isJoined) {
-        await joinRoom(true);
-      }
+  let lastPresenceHash = "";
+  function populatePresenceList(membersList) {
+    if (!D.pl) return;
+    const sorted = [...membersList].filter(m => m.n && m.n.trim() !== "").sort((a, b) => a.id.localeCompare(b.id));
+    const currentHash = sorted.map(m => `${m.id}_${m.n}_${m.p || ""}_${m.c}`).join("|");
+    if (currentHash === lastPresenceHash) return;
+    lastPresenceHash = currentHash;
+    const fragment = document.createDocumentFragment();
+    sorted.forEach(m => {
+      const sp = document.createElement("span");
+      sp.className = "chip";
+      sp.style.color = m.c || "#94a3b8";
+      sp.style.borderColor = (m.c || "#94a3b8") + "44";
+      sp.textContent = m.p ? `${m.n} ${m.p}` : m.n;
+      fragment.appendChild(sp);
+    });
+    D.pl.innerHTML = "";
+    D.pl.appendChild(fragment);
+    if (D.pcnt) D.pcnt.textContent = `${sorted.length}人`;
+    updateJumpBtns();
+  }
 
-      validateNameField();
-      updateAdminUI();
+  const preventFocusLoss = (el) => {
+    if (!el) return;
+    el.addEventListener("mousedown", e => e.preventDefault());
+    el.addEventListener("touchstart", e => { if (D.mi && document.activeElement === D.mi) e.preventDefault(); });
+  };
 
-      if (!isConnectedBound) {
-        try {
-          db.ref(".info/serverTimeOffset").on("value", (snap) => { 
-            serverTimeOffset = snap.val() || 0; 
-            isOffsetLoaded = true; 
+  function buildPicker(con, sel, cls, onChange) {
+    if (!con) return; con.innerHTML = "";
+    COLORS.forEach(({v,n}) => {
+      const b = document.createElement("button");
+      b.className = cls + (v === sel ? " sel" : ""); b.style.background = v; b.title = n; b.dataset.color = v;
+      b.addEventListener("click", () => onChange(v)); con.appendChild(b);
+    });
+  }
+
+  function updateModalColorPreview(color) {
+    const con = D.clrPrev; if (!con) return; con.innerHTML = "";
+    con.style.background = "rgba(0, 0, 0, 0.25)"; con.style.border = "1px solid var(--bd)"; con.style.borderRadius = "4px"; con.style.padding = "8px"; con.style.textAlign = "left";
+    const wrap = document.createElement("div"); wrap.style.fontSize = "12px"; wrap.style.color = color; wrap.style.fontWeight = "bold"; wrap.textContent = myName || "名無し";
+    con.appendChild(wrap);
+    const mock = document.createElement("div"); mock.style.fontSize = "13px"; mock.style.color = "var(--tx)"; mock.style.marginTop = "4px"; mock.style.borderLeft = `2px solid ${color}`; mock.style.paddingLeft = "8px"; mock.textContent = "この色で発言が表示されます。";
+    con.appendChild(mock);
+  }
+
+  function resetZoom() { 
+    const imgEl = D.imgViewSrc;
+    if (!imgEl) return; 
+    scale = 1; panX = 0; panY = 0; imgEl.style.transformOrigin = "center center"; updateTransform(); 
+  }
+  function updateTransform() { 
+    const imgEl = D.imgViewSrc;
+    if (imgEl) imgEl.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; 
+  }
+  function clampPan() {
+    const overlayEl = $("zoomViewport");
+    const imgEl = D.imgViewSrc;
+    if (!overlayEl || !imgEl) return;
+    if (scale <= 1) { panX = 0; panY = 0; return; }
+    const cw = overlayEl.clientWidth, ch = overlayEl.clientHeight, ir = imgEl.naturalWidth / imgEl.naturalHeight, cr = cw / ch;
+    let iw = (ir > cr) ? cw : ch * ir, ih = (ir > cr) ? cw / ir : ch;
+    let limitX = (iw * scale > cw) ? (iw * scale - cw) / 2 : 0, limitY = (ih * scale > ch) ? (ih * scale - ch) / 2 : 0;
+    panX = Math.max(-limitX, Math.min(limitX, panX)); panY = Math.max(-limitY, Math.min(limitY, panY));
+  }
+  const getDistance = (t1, t2) => Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+
+  const handleJoinKey = e => { if (e.key === "Enter" && D.joinBtn && !D.joinBtn.disabled) joinRoom(); };
+
+  let lastBoostTime = 0;
+  const boostSync = () => { 
+    const now = Date.now();
+    if (now - lastBoostTime < 800) return; 
+    lastBoostTime = now;
+    if (db) db.goOnline(); 
+    checkActivityTimeout(); 
+    if (db && isJoined && myUid) { 
+      startAutoExitChecker(); 
+      db.ref(`presence/official/${myUid}`).update({ t: firebase.database.ServerValue.TIMESTAMP, p_t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
+    } 
+  };
+
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") boostSync(); });
+  window.addEventListener("focus", boostSync); window.addEventListener("pageshow", boostSync);
+
+  const adjustViewport = () => {
+    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty('--app-viewport-height', `${h}px`);
+  };
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => { adjustViewport(); scBottom(true); });
+    window.visualViewport.addEventListener('scroll', () => { if (D.mi && document.activeElement === D.mi) window.scrollTo(0, 0); });
+  }
+  window.addEventListener('resize', adjustViewport);
+
+  window.addEventListener('storage', (e) => {
+    if (e.key === "nz_is_joined") {
+      const joined = e.newValue === "true";
+      if (joined !== isJoined) {
+        isJoined = joined;
+        if (isJoined) {
+          myName = safeLS.get("nz_ni") || "";
+          if (!myName.trim()) { isJoined = false; safeLS.set("nz_is_joined", "false"); switchUIMode("guest"); return; }
+          window.makeTrip(myName, safeLS.get("nz_tripi") || "").then(t => {
+            myTrip = t; curColor = safeLS.get("nz_color") || "#94a3b8"; setGlobalColor(curColor); switchUIMode("joined"); startAutoExitChecker(); renderPresence(currentPresenceMap);
           });
-          
-          db.ref(".info/connected").on("value", (snap) => {
-            if (snap.val() === true) {
-              if (isJoined && myUid && myName.trim()) { 
-                const myPresRef = db.ref(`presence/official/${myUid}`);
-                
-                myPresRef.set({
-                  n: myName,
-                  p: myTrip,
-                  c: curColor,
-                  t: firebase.database.ServerValue.TIMESTAMP,
-                  p_t: firebase.database.ServerValue.TIMESTAMP
-                }).catch(() => {});
-              }
+        } else { stopAutoExitTimer(); switchUIMode("guest"); renderPresence(currentPresenceMap); }
+      }
+    }
+    if (e.key === "nz_ni" || e.key === "nz_tripi") syncProfileValues();
+    if (e.key === "nz_color") { curColor = e.newValue || "#94a3b8"; setGlobalColor(curColor); updateModalColorPreview(curColor); }
+    if (e.key === "nz_keep_kb_open") { keepKbOpen = e.newValue === "true"; const openChk = $("kbKeepOpenChk"); if (openChk) openChk.checked = keepKbOpen; }
+  });
+
+  function loadCachedPresence() {
+    try {
+      const cached = safeLS.get("nz_presence_cache"); 
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === "object") { currentPresenceMap = parsed; renderPresence(parsed); }
+      }
+    } catch (e) { console.warn("Cache presence failed", e); }
+  }
+
+  function savePresenceCache() { try { safeLS.set("nz_presence_cache", JSON.stringify(currentPresenceMap)); } catch(e) {} }
+
+  function filterMsg(m) {
+    if (!m || m.deleted || !m.m || typeof m.m !== "string" || !m.m.trim() || !m.n || typeof m.n !== "string" || !m.n.trim()) return false;
+    if (m.m.startsWith("[SYS]::")) {
+      const sys = m.m.substring(7).trim();
+      if (sys.startsWith("が退室しました") || sys.startsWith("が入室しました") || !sys) return false;
+    }
+    return true;
+  }
+
+  function setupFirebaseListeners() {
+    if (!db) return;
+    const chatRef = db.ref(`chat/official`), presenceRef = db.ref(`presence/official`);
+    chatRef.off(); presenceRef.off();
+
+    const chatQuery = chatRef.limitToLast(currentLimit); 
+    chatQuery.on("value", snap => {
+      if (!snap.exists()) {
+        displayedMsgIds.clear(); if (D.tli) D.tli.innerHTML = ""; renderedMwNodes.clear(); unreadMsgIds.clear(); updateUnreadBadge(); saveChatCacheFromDOM(); 
+      }
+    });
+
+    chatQuery.on("child_removed", snap => {
+      const mid = snap.key, local = renderedMwNodes.get(mid);
+      if (local) { local.remove(); renderedMwNodes.delete(mid); displayedMsgIds.delete(mid); }
+      if (unreadMsgIds.has(mid)) { unreadMsgIds.delete(mid); updateUnreadBadge(); }
+      saveChatCacheFromDOM();
+    });
+
+    chatQuery.on("child_changed", snap => {
+      const mid = snap.key, m = snap.val();
+      if (m) {
+        m.id = mid;
+        if (m.deleted || !filterMsg(m)) {
+          const local = renderedMwNodes.get(mid);
+          if (local) { local.remove(); renderedMwNodes.delete(mid); displayedMsgIds.delete(mid); }
+          if (unreadMsgIds.has(mid)) { unreadMsgIds.delete(mid); updateUnreadBadge(); }
+        } else {
+          const el = renderedMwNodes.get(mid); if (el) updateExistingMsgNode(m, el);
+        }
+        saveChatCacheFromDOM();
+      }
+    });
+
+    chatQuery.on("child_added", snap => {
+      const m = snap.val();
+      if (m) {
+        m.id = snap.key;
+        if (m.pnd && pendingMsgs.has(m.pnd)) {
+          pendingMsgs.delete(m.pnd);
+          const tempEl = renderedMwNodes.get(m.pnd);
+          if (tempEl) {
+            tempEl.dataset.mid = m.id;
+            tempEl.classList.remove("new-msg-anim"); 
+            tempEl.style.opacity = "1"; 
+            renderedMwNodes.delete(m.pnd);
+            renderedMwNodes.set(m.id, tempEl);
+            displayedMsgIds.delete(m.pnd);
+            displayedMsgIds.add(m.id);
+          }
+        }
+        if (filterMsg(m)) {
+          let el = renderedMwNodes.get(m.id);
+          if (!el) {
+            el = cMsg(m, !isFirstLoad);
+            renderedMwNodes.set(m.id, el);
+            displayedMsgIds.add(m.id);
+            insertMessageInOrder(el);
+            if (!isFirstLoad && m.u !== myUid) {
+              if (!isAutoScroll || document.visibilityState === "hidden") { unreadMsgIds.add(m.id); updateUnreadBadge(); }
             }
-          });
-          isConnectedBound = true;
-        } catch (e) {
-          console.warn("接続情報監視の設定に失敗:", e);
+          } else updateExistingMsgNode(m, el);
+        } else {
+          let el = renderedMwNodes.get(m.id);
+          if (el) {
+            el.remove(); renderedMwNodes.delete(m.id); displayedMsgIds.delete(m.id);
+            if (unreadMsgIds.has(m.id)) { unreadMsgIds.delete(m.id); updateUnreadBadge(); }
+            saveChatCacheFromDOM();
+          }
         }
       }
     });
-  }
-};
 
-initAuthProcess();
+    chatQuery.once("value", snap => {
+      isFirstLoad = false; isLoadingMore = false; isLoadMoreTriggered = false;
+      updateLoadMoreUI(snap.numChildren());
+      saveChatCacheFromDOM();
+      scBottom();
+    });
+
+    presenceRef.on("value", s => {
+      const list = s.val() || {}, members = {}, nowTrue = getTrueTime();
+      for (const [id, u] of Object.entries(list)) {
+        if (u && u.n) {
+          let ut = (u.t && typeof u.t === "object") ? nowTrue : u.t;
+          if (!ut || typeof ut !== "number") continue;
+          let pt = u.p_t || ut;
+          if (isOffsetLoaded && id !== myUid && (nowTrue - pt >= 1800000)) { triggerOtherExit(id, u, pt + 1800000); continue; }
+          members[id] = { id, ...u, t: ut, p_t: pt };
+        }
+      }
+      currentPresenceMap = members;
+      savePresenceCache();
+      renderPresence(members);
+    });
+  }
+
+  const initAuthProcess = async () => {
+    loadCachedPresence();
+    await syncProfileValues();
+    if (!isFirebaseListenersBound) { setupFirebaseListeners(); isFirebaseListenersBound = true; }
+    myUid = safeLS.get("nz_permanent_uid");
+    if (!myUid) {
+      myUid = "user_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
+      safeLS.set("nz_permanent_uid", myUid);
+    }
+    const hasNi = (safeLS.get("nz_ni") || "").trim();
+    isJoined = (safeLS.get("nz_is_joined") === "true") && (hasNi !== ""); 
+    myName = hasNi;
+    myTrip = await window.makeTrip(myName, safeLS.get("nz_tripi") || "");
+    switchUIMode(isJoined ? "joined" : "guest");
+    if (D.tl) D.tl.style.opacity = "1";
+
+    if (auth) {
+      auth.onAuthStateChanged(async (user) => {
+        let activeUid = null;
+        if (!user) {
+          try {
+            const userCredential = await auth.signInAnonymously();
+            activeUid = userCredential.user.uid;
+          } catch (err) {
+            console.warn("Auth error:", err);
+            myUid = safeLS.get("nz_permanent_uid") || "guest_" + Date.now();
+            safeLS.set("nz_permanent_uid", myUid);
+            validateNameField(); updateAdminUI(); return;
+          }
+        } else activeUid = user.uid;
+
+        if (myUid !== activeUid) {
+          if (isJoined && myUid && db) db.ref(`presence/official/${myUid}`).remove().catch(()=>{});
+          myUid = activeUid;
+          safeLS.set("nz_permanent_uid", myUid);
+          if (D.tli) D.tli.innerHTML = "";
+          renderedMwNodes.clear(); displayedMsgIds.clear();
+          setupFirebaseListeners(); isFirebaseListenersBound = true;
+        } else if (!isFirebaseListenersBound) {
+          setupFirebaseListeners(); isFirebaseListenersBound = true;
+        }
+
+        if (isJoined) await joinRoom(true);
+        validateNameField(); updateAdminUI();
+
+        if (!isConnectedBound && db) {
+          try {
+            db.ref(".info/serverTimeOffset").on("value", snap => { serverTimeOffset = snap.val() || 0; isOffsetLoaded = true; });
+            db.ref(".info/connected").on("value", snap => {
+              if (snap.val() === true && isJoined && myUid && myName.trim()) {
+                db.ref(`presence/official/${myUid}`).set({ n: myName, p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP, p_t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
+              }
+            });
+            isConnectedBound = true;
+          } catch (e) { console.warn("Fail serverTimeOffset", e); }
+        }
+      });
+    }
+  };
+
+  function initApp() {
+    D = {
+      adminClearBtn: $("adminClearBtn"),
+      ni: $("ni"),
+      tripi: $("tripi"),
+      tripPrevText: $("tripPrevText"),
+      copyTripBtn: $("copyTripBtn"),
+      ib: $("ib"),
+      joinForm: $("joinForm"),
+      exBtn: $("exBtn"),
+      clrBtn: $("clrBtn"),
+      fixedPlayer: $("fixedPlayer"),
+      playerCloseBtn: $("playerCloseBtn"),
+      playerContent: $("playerContent"),
+      tl: $("tl"),
+      tli: $("tl-inner"),
+      loadMoreBtn: $("loadMoreBtn"),
+      loadMoreBlock: $("loadMoreBlock"),
+      loadMoreStatus: $("loadMoreStatus"),
+      unreadBadge: $("unreadBadge"),
+      jumpUpBtn: $("jumpUpBtn"),
+      jumpDownBtn: $("jumpDownBtn"),
+      fileInput: $("fileInput"),
+      imgBtn: $("imgBtn"),
+      clrMsgBtn: $("clrMsgBtn"),
+      clrmod: $("clrmod"),
+      imgViewMod: $("imgViewMod"),
+      imgViewSrc: $("imgViewSrc"),
+      imgViewCloseBtn: $("imgViewCloseBtn"),
+      clrCancel: $("clrCancel"),
+      clrOk: $("clrOk"),
+      clrPick2: $("clrPick2"),
+      clrPrev: $("clrPrev"),
+      pcnt: $("pcnt"),
+      pl: $("pl"),
+      mi: $("mi")
+    };
+
+    if (D.loadMoreBtn) D.loadMoreBtn.onclick = loadMoreLogs;
+    if (D.tl) {
+      D.tl.addEventListener("scroll", () => {
+        const scrollTop = D.tl.scrollTop, clientHeight = D.tl.clientHeight, scrollHeight = D.tl.scrollHeight;
+        if (scrollTop <= 0 && !isLoadingMore && currentLimit < maxLimit) loadMoreLogs();
+        if (!_scPending) {
+          if (scrollTop + clientHeight >= scrollHeight - 40) {
+            isAutoScroll = true;
+            if (unreadMsgIds.size > 0) { unreadMsgIds.clear(); updateUnreadBadge(); }
+          } else isAutoScroll = false;
+        }
+        updateJumpBtns();
+      });
+    }
+
+    if (D.playerCloseBtn) D.playerCloseBtn.onclick = closePlayer;
+    if (D.exBtn) D.exBtn.onclick = () => { if (isJoined && confirm("退室して参加前の覗き見画面に戻りますか？")) doExit(); };
+
+    if (D.adminClearBtn) {
+      D.adminClearBtn.onclick = async () => {
+        if (!isAdmin() || !confirm("⚠️ チャット履歴を完全に全消去しますか？\n本当に実行しますか？")) return;
+        displayedMsgIds.clear(); if (D.tli) D.tli.innerHTML = ""; renderedMwNodes.clear();
+        const tempId = "pnd_sys_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6), clearText = "[SYS]::管理者によってチャット履歴が全消去されました";
+        const tempObj = { id: tempId, u: myUid, n: "管理者", p: "", c: "#f43f5e", m: clearText, t: getTrueTime() };
+        pendingMsgs.set(tempId, tempObj); displayedMsgIds.add(tempId);
+        insertMessageInOrder(cMsg(tempObj, true)); isAutoScroll = true; scBottom(true);
+        if (db) {
+          await db.ref(`chat/official`).set(null).catch(err => alert("全消去エラー: " + err.message));
+          await db.ref(`chat/official`).push({ u: myUid, pnd: tempId, n: "管理者", p: "", c: "#f43f5e", m: clearText, t: firebase.database.ServerValue.TIMESTAMP }).catch(err => {
+            alert("全消去後ログ作成に失敗: " + err.message);
+            const el = renderedMwNodes.get(tempId); if (el) el.remove();
+            renderedMwNodes.delete(tempId); pendingMsgs.delete(tempId); displayedMsgIds.delete(tempId);
+          });
+        }
+      };
+    }
+
+    if (D.sdBtn) { D.sdBtn.onclick = () => sendMsg(); preventFocusLoss(D.sdBtn); }
+    if (D.clrMsgBtn) {
+      D.clrMsgBtn.onclick = () => { if (D.mi) { D.mi.value = ""; D.mi.style.height = "auto"; D.mi.dispatchEvent(new Event("input")); } };
+      preventFocusLoss(D.clrMsgBtn);
+    }
+    if (D.imgBtn) { D.imgBtn.onclick = () => { if (D.fileInput) D.fileInput.click(); }; preventFocusLoss(D.imgBtn); }
+
+    if (D.jumpUpBtn) {
+      D.jumpUpBtn.onclick = () => { if (D.tl) { D.tl.scrollTo({ top: 0, behavior: "smooth" }); if (currentLimit < maxLimit) setTimeout(loadMoreLogs, 300); } };
+    }
+    if (D.jumpDownBtn) {
+      D.jumpDownBtn.onclick = () => { isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); if (D.tl) D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" }); };
+    }
+
+    if (D.mi) {
+      D.mi.addEventListener("focus", () => { isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); scBottom(true); });
+      D.mi.addEventListener("input", () => { D.mi.style.height = "auto"; D.mi.style.height = Math.min(120, D.mi.scrollHeight) + "px"; scBottom(true); });
+      D.mi.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { if (e.isComposing) return; e.preventDefault(); sendMsg(); } });
+    }
+
+    if (D.fileInput) {
+      D.fileInput.onchange = (e) => {
+        const file = e.target.files[0]; if (!file) return;
+        const svg = D.imgBtn ? D.imgBtn.querySelector("svg") : null; if (svg) svg.style.display = "none";
+        if (D.imgBtn) D.imgBtn.disabled = true;
+        const spin = document.createElement("div"); spin.className = "spin"; if (D.imgBtn) D.imgBtn.appendChild(spin);
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const img = new Image();
+          img.onload = async () => {
+            const cvs = document.createElement("canvas"); let w = img.width, h = img.height, maxDim = 480;
+            if (w > maxDim || h > maxDim) { if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; } else { w = Math.round((w * maxDim) / h); h = maxDim; } }
+            cvs.width = w; cvs.height = h;
+            if (cvs.getContext("2d")) cvs.getContext("2d").drawImage(img, 0, 0, w, h);
+            await sendMsg(null, cvs.toDataURL("image/jpeg", 0.4));
+            spin.remove(); if (svg) svg.style.display = "";
+            if (D.imgBtn) D.imgBtn.disabled = false; if (D.fileInput) D.fileInput.value = "";
+          };
+          img.src = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+      };
+    }
+
+    if (D.clrBtn) {
+      D.clrBtn.onclick = () => {
+        tmpColor = curColor; updateModalColorPreview(tmpColor);
+        buildPicker(D.clrPick2, tmpColor, "clrc2", (v) => {
+          tmpColor = v; updateModalColorPreview(v);
+          if (D.clrPick2) D.clrPick2.querySelectorAll("button").forEach(b => b.classList.toggle("sel", b.dataset.color === v));
+        });
+        if (D.clrmod) D.clrmod.classList.add("show");
+      };
+    }
+
+    if (D.clrCancel) D.clrCancel.onclick = () => { if (D.clrmod) D.clrmod.classList.remove("show"); };
+    if (D.clrOk) {
+      D.clrOk.onclick = async () => {
+        curColor = tmpColor; setGlobalColor(curColor); safeLS.set("nz_color", curColor);
+        if (D.clrmod) D.clrmod.classList.remove("show"); await syncProfileValues();
+        if (isJoined && db) {
+          await db.ref(`presence/official/${myUid}`).set({ n: myName, p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP });
+        }
+      };
+    }
+
+    if (D.ni) {
+      D.ni.addEventListener("input", async () => { safeLS.set("nz_ni", D.ni.value.trim()); await syncProfileValues(); });
+      D.ni.addEventListener("keydown", handleJoinKey);
+    }
+    if (D.tripi) {
+      D.tripi.addEventListener("input", async () => { safeLS.set("nz_tripi", D.tripi.value.trim()); await syncProfileValues(); });
+      D.tripi.addEventListener("keydown", handleJoinKey);
+    }
+
+    if (D.joinBtn) D.joinBtn.onclick = () => joinRoom();
+    if (D.copyTripBtn) {
+      D.copyTripBtn.onclick = async () => {
+        const niVal = (D.ni ? D.ni.value.trim() : "") || "名無し", tripiVal = D.tripi ? D.tripi.value.trim() : "";
+        if (!tripiVal) return;
+        const tLobby = await window.makeTrip(niVal, tripiVal);
+        if (tLobby) {
+          try {
+            await navigator.clipboard.writeText(tLobby);
+            const copyBtn = D.copyTripBtn, original = copyBtn.textContent;
+            copyBtn.textContent = "コピー完了！"; copyBtn.style.background = "#10b981";
+            setTimeout(() => { copyBtn.textContent = original; copyBtn.style.background = ""; }, 1500);
+          } catch (err) { alert("コピーに失敗しました。"); }
+        }
+      };
+    }
+
+    const joinFormHeader = $("joinFormHeader");
+    if (joinFormHeader) {
+      joinFormHeader.onclick = () => {
+        isJoinFormExpanded = !isJoinFormExpanded;
+        const content = $("joinFormContent"), arrow = $("joinFormArrow");
+        if (isJoinFormExpanded) {
+          if (content) content.style.display = "flex";
+          if (arrow) arrow.style.transform = "rotate(180deg)";
+        } else {
+          if (content) content.style.display = "none";
+          if (arrow) arrow.style.transform = "rotate(0deg)";
+        }
+        scBottom(true);
+      };
+    }
+
+    if (D.imgViewCloseBtn) D.imgViewCloseBtn.onclick = () => { if (D.imgViewMod) D.imgViewMod.classList.remove("show"); };
+
+    const overlay = $("zoomViewport");
+    if (overlay) {
+      overlay.addEventListener('touchstart', (e) => {
+        if (e.target === D.imgViewCloseBtn) return;
+        if (e.touches.length === 2) { isPanning = false; initialDistance = getDistance(e.touches[0], e.touches[1]); }
+        else if (e.touches.length === 1 && scale > 1) { isPanning = true; lastPanX = e.touches[0].clientX; lastPanY = e.touches[0].clientY; }
+      }, { passive: true });
+
+      overlay.addEventListener('touchmove', (e) => {
+        if (e.target === D.imgViewCloseBtn) return;
+        if (e.touches.length === 2) {
+          const dist = getDistance(e.touches[0], e.touches[1]); scale = Math.max(1, Math.min(5, scale * (dist / initialDistance)));
+          initialDistance = dist; clampPan(); updateTransform();
+        } else if (e.touches.length === 1 && isPanning) {
+          panX += e.touches[0].clientX - lastPanX; panY += e.touches[0].clientY - lastPanY;
+          lastPanX = e.touches[0].clientX; lastPanY = e.touches[0].clientY; clampPan(); updateTransform();
+        }
+      }, { passive: true });
+
+      overlay.addEventListener('wheel', (e) => {
+        e.preventDefault(); scale = Math.max(1, Math.min(5, scale * (e.deltaY > 0 ? 0.9 : 1.1))); clampPan(); updateTransform();
+      }, { passive: false });
+
+      overlay.addEventListener("click", (e) => { if (e.target === overlay && D.imgViewMod) D.imgViewMod.classList.remove("show"); });
+    }
+
+    initAuthProcess();
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initApp); else initApp();
+})();
 </script>
 </body>
 </html>
