@@ -242,6 +242,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   };
 
   let db = null, auth = null;
+  const isLocalFile = typeof window !== 'undefined' && window.location.protocol === "file:";
+
   if (typeof firebase !== 'undefined') {
     try {
       if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -257,7 +259,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   const $ = id => document.getElementById(id);
   let D = {};
 
+  // 仮UIDをローカルストレージで管理（無ければその場で新規生成・永続化）
   let myUid = safeLS.get("nz_permanent_uid") || ""; 
+  if (!myUid) {
+    myUid = "usr_" + Math.random().toString(36).slice(2, 12) + "_" + Date.now();
+    safeLS.set("nz_permanent_uid", myUid);
+  }
+
   let myName = safeLS.get("nz_ni") || "";
   let myTrip = "";
   let isJoined = (safeLS.get("nz_is_joined") === "true") && (myName.trim() !== ""); 
@@ -367,15 +375,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const syncProfileValues = () => {
     const niVal = safeLS.get("nz_ni") || "", tripiVal = safeLS.get("nz_tripi") || "";
-    if (D.ni) D.ni.value = niVal;
-    if (D.tripi) D.tripi.value = tripiVal;
+    if (D.ni && D.ni.value !== niVal) D.ni.value = niVal;
+    if (D.tripi && D.tripi.value !== tripiVal) D.tripi.value = tripiVal;
     
+    const trimmedNi = niVal.trim();
     if (tripiVal) {
-      window.makeTrip(niVal || "名無し", tripiVal).then(tLobby => {
-        if (D.tripPrevText) D.tripPrevText.textContent = `トリッププレビュー: ${niVal || "名無し"} ${tLobby}`;
+      window.makeTrip(trimmedNi || "名無し", tripiVal).then(tLobby => {
+        if (D.tripPrevText) D.tripPrevText.textContent = `トリッププレビュー: ${trimmedNi || "名無し"} ${tLobby}`;
       });
     } else {
-      if (D.tripPrevText) D.tripPrevText.textContent = `トリッププレビュー: ${niVal || "名無し"}`;
+      if (D.tripPrevText) D.tripPrevText.textContent = `トリッププレビュー: ${trimmedNi || "名無し"}`;
     }
     if (D.copyTripBtn) D.copyTripBtn.style.display = tripiVal ? "inline-flex" : "none";
     validateNameField();
@@ -494,9 +503,43 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
   }
 
+  function fallbackToLocalUid() {
+    if (!isFirebaseListenersBound) {
+      setupFirebaseListeners();
+      isFirebaseListenersBound = true;
+    }
+    if (isJoined) joinRoom(true);
+    updateAdminUI();
+  }
+
+  function showLocalSystemMessage(text) {
+    const tempId = "err_sys_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+    const tempObj = { id: tempId, u: "system", n: "システムエラー", p: "", c: "#f43f5e", m: "[SYS]::" + text, t: getTrueTime() };
+    if (!displayedMsgIds.has(tempId)) {
+      displayedMsgIds.add(tempId);
+      const tempEl = cMsg(tempObj, false);
+      insertMessageInOrder(tempEl);
+      scBottom(true);
+    }
+  }
+
   async function joinRoom(isReconnect = false) {
-    if (!D.ni || !D.tripi || !db) return;
-    let n = isReconnect ? (safeLS.get("nz_ni") || "") : D.ni.value.trim();
+    if (!D.ni || !D.tripi) return;
+    if (!db) {
+      if (!isReconnect) {
+        alert("Firebaseデータベースへの接続が確立されていません。ネットワーク接続やFirebaseのConfig設定を確認してください。");
+      }
+      return;
+    }
+
+    // もしリスナーが未バインドなら、このタイミングでバインドを強制実行
+    if (!isFirebaseListenersBound) {
+      setupFirebaseListeners();
+      isFirebaseListenersBound = true;
+    }
+
+    let n = isReconnect ? (safeLS.get("nz_ni") || "") : D.ni.value;
+    n = n.trim();
     if (!n) { if (!isReconnect) alert("名前を入力してください。"); return; }
     const tk = isReconnect ? (safeLS.get("nz_tripi") || "") : D.tripi.value.trim();
     myName = n; myTrip = await window.makeTrip(n, tk); isJoined = true;
@@ -509,8 +552,17 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     opt[myUid || "temp_uid"] = { id: myUid || "temp_uid", n: myName, p: myTrip, c: curColor, t: nowTime, p_t: nowTime };
     renderPresence(opt);
 
-    db.ref(`presence/official/${myUid}`).set({ n: myName, p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP, p_t: firebase.database.ServerValue.TIMESTAMP }).catch(err => {
+    db.ref(`presence/official/${myUid}`).set({
+      n: myName,
+      p: myTrip,
+      c: curColor,
+      t: firebase.database.ServerValue.TIMESTAMP,
+      p_t: firebase.database.ServerValue.TIMESTAMP
+    }).catch(err => {
       console.warn("Presence registration failed:", err);
+      if (err.message && err.message.includes("permission_denied")) {
+        showLocalSystemMessage("【セキュリティエラー】入室情報の登録に失敗しました（データベースへの書込権限がありません）。");
+      }
     });
 
     updateAdminUI();
@@ -527,9 +579,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       insertMessageInOrder(tempEl);
       isAutoScroll = true;
       scBottom(true);
-      await db.ref(`chat/official`).push({ u: myUid, pnd: tempId, n: myName, p: myTrip, c: curColor, m: encEnterText, t: firebase.database.ServerValue.TIMESTAMP }).catch(() => {
+      await db.ref(`chat/official`).push({ u: myUid, pnd: tempId, n: myName, p: myTrip, c: curColor, m: encEnterText, t: firebase.database.ServerValue.TIMESTAMP }).catch((err) => {
         const local = renderedMwNodes.get(tempId); if (local) local.remove();
         renderedMwNodes.delete(tempId); pendingMsgs.delete(tempId); displayedMsgIds.delete(tempId);
+        if (err.message && err.message.includes("permission_denied")) {
+          showLocalSystemMessage("【セキュリティエラー】入室時ログの送信が拒否されました。");
+        }
       });
     }
     scBottom(true);
@@ -568,10 +623,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     db.ref(`presence/official/${myUid}/t`).set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
 
     let payload = imgData ? "IMG::" + imgData : txt;
-    await db.ref(`chat/official`).push({ u: myUid, pnd: tempId, n: myName, p: myTrip, c: curColor, m: payload, t: firebase.database.ServerValue.TIMESTAMP }).catch(() => {
+    await db.ref(`chat/official`).push({ u: myUid, pnd: tempId, n: myName, p: myTrip, c: curColor, m: payload, t: firebase.database.ServerValue.TIMESTAMP }).catch((err) => {
       const local = renderedMwNodes.get(tempId); if (local) local.remove();
       renderedMwNodes.delete(tempId); pendingMsgs.delete(tempId); displayedMsgIds.delete(tempId);
       alert("送信に失敗しました。");
+      if (err.message && err.message.includes("permission_denied")) {
+        showLocalSystemMessage("【セキュリティエラー】メッセージの送信が拒否されました。");
+      }
     });
   }
 
@@ -727,7 +785,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     const isSys = m.sys === true || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
     if (isSys) {
       let display = m.m.startsWith("[SYS]::") ? m.m.substring(7) : m.m;
-      const canDel = isAdmin() || (m.u && m.u === myUid);
+      // 管理者（isAdmin()）のみ削除可能に変更
+      const canDel = isAdmin();
       const delHtml = canDel ? `<button class="del-btn-inline" data-mid="${m.id}">削除</button>` : "";
       el.innerHTML = `<div class="sys-msg">${escapeHtml(display)}<span class="sys-ts">[${fDT(msgTime)}]${delHtml}</span></div>`;
       if (canDel) {
@@ -739,7 +798,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     const name = m.n || "名無し", trip = m.p || "", color = m.c || "#94a3b8";
-    const canDel = isAdmin() || (m.u && m.u === myUid);
+    // 管理者（isAdmin()）のみ削除可能に変更
+    const canDel = isAdmin();
     const delHtml = canDel ? `<button class="del-btn-inline" data-mid="${m.id}">削除</button>` : "";
 
     el.innerHTML = `
@@ -1090,6 +1150,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       if (!snap.exists()) {
         displayedMsgIds.clear(); if (D.tli) D.tli.innerHTML = ""; renderedMwNodes.clear(); unreadMsgIds.clear(); updateUnreadBadge(); saveChatCacheFromDOM(); 
       }
+    }, err => {
+      console.warn("Firebase value listener error:", err);
+      if (err.message && err.message.includes("permission_denied")) {
+        showLocalSystemMessage("【セキュリティエラー】データベースへのアクセス権限が拒否されました。");
+      }
     });
 
     chatQuery.on("child_removed", snap => {
@@ -1097,6 +1162,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       if (local) { local.remove(); renderedMwNodes.delete(mid); displayedMsgIds.delete(mid); }
       if (unreadMsgIds.has(mid)) { unreadMsgIds.delete(mid); updateUnreadBadge(); }
       saveChatCacheFromDOM();
+    }, err => {
+      console.warn("Firebase child_removed listener error:", err);
     });
 
     chatQuery.on("child_changed", snap => {
@@ -1112,6 +1179,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         }
         saveChatCacheFromDOM();
       }
+    }, err => {
+      console.warn("Firebase child_changed listener error:", err);
     });
 
     chatQuery.on("child_added", snap => {
@@ -1151,13 +1220,21 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           }
         }
       }
+    }, err => {
+      console.warn("Firebase child_added listener error:", err);
     });
 
-    chatQuery.once("value", snap => {
+    chatQuery.once("value").then(snap => {
       isFirstLoad = false; isLoadingMore = false; isLoadMoreTriggered = false;
       updateLoadMoreUI(snap.numChildren());
       saveChatCacheFromDOM();
       scBottom();
+    }).catch(err => {
+      console.warn("Firebase once('value') load error:", err);
+      isFirstLoad = false; isLoadingMore = false; isLoadMoreTriggered = false;
+      if (err.message && err.message.includes("permission_denied")) {
+        showLocalSystemMessage("【セキュリティエラー】データベースへの読込権限がありません。");
+      }
     });
 
     presenceRef.on("value", s => {
@@ -1174,6 +1251,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       currentPresenceMap = members;
       savePresenceCache();
       renderPresence(members);
+    }, err => {
+      console.warn("Firebase presence listener error:", err);
+      if (err.message && err.message.includes("permission_denied")) {
+        showLocalSystemMessage("【セキュリティエラー】オンライン入室者リストの読み込み権限がありません。");
+      }
     });
   }
 
@@ -1181,71 +1263,66 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     loadCachedPresence();
     syncProfileValues();
 
-    myUid = safeLS.get("nz_permanent_uid");
-
-    if (auth) {
-      // 匿名認証の最速化（バックグラウンドで開始し、サインインが成立した瞬間に同期リスナーを結合）
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        myUid = currentUser.uid;
-        safeLS.set("nz_permanent_uid", myUid);
-        if (!isFirebaseListenersBound) { setupFirebaseListeners(); isFirebaseListenersBound = true; }
-        if (isJoined) joinRoom(true);
-        updateAdminUI();
-      } else {
-        auth.signInAnonymously()
-          .then((userCredential) => {
-            myUid = userCredential.user.uid;
-            safeLS.set("nz_permanent_uid", myUid);
-            if (!isFirebaseListenersBound) { setupFirebaseListeners(); isFirebaseListenersBound = true; }
-            if (isJoined) joinRoom(true);
-            updateAdminUI();
-          })
-          .catch((err) => {
-            console.warn("Fast auth failed, fallback to local temporary UID.", err);
-            if (!myUid) {
-              myUid = "user_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
-              safeLS.set("nz_permanent_uid", myUid);
-            }
-            updateAdminUI();
-          });
-      }
-
-      // 認証の成立・切り替わりを常に最速で反映
-      auth.onAuthStateChanged((user) => {
-        if (user) {
-          myUid = user.uid;
-          safeLS.set("nz_permanent_uid", myUid);
-          if (!isFirebaseListenersBound) { setupFirebaseListeners(); isFirebaseListenersBound = true; }
-          updateAdminUI();
+    if (auth && !isLocalFile) {
+      // バックグラウンド匿名認証を開始
+      auth.signInAnonymously().catch(err => {
+        console.warn("Background auth failed:", err);
+        // 認証失敗時は即座にローカル環境としてリスナーをバインド
+        if (!isFirebaseListenersBound) {
+          setupFirebaseListeners();
+          isFirebaseListenersBound = true;
         }
+        if (isJoined) joinRoom(true);
       });
 
-      if (!isConnectedBound && db) {
-        try {
-          db.ref(".info/serverTimeOffset").on("value", snap => { serverTimeOffset = snap.val() || 0; isOffsetLoaded = true; });
-          db.ref(".info/connected").on("value", snap => {
-            if (snap.val() === true && isJoined && myUid && myName.trim()) {
-              db.ref(`presence/official/${myUid}`).set({
-                n: myName,
-                p: myTrip,
-                c: curColor,
-                t: firebase.database.ServerValue.TIMESTAMP,
-                p_t: firebase.database.ServerValue.TIMESTAMP
-              }).catch(()=>{});
+      // ログイン状態の変化を監視し、ログイン完了後にリスナーをバインド
+      auth.onAuthStateChanged(user => {
+        if (user) {
+          if (!isFirebaseListenersBound) {
+            setupFirebaseListeners();
+            isFirebaseListenersBound = true;
+          }
+          if (isJoined) joinRoom(true);
+        } else {
+          // 未ログイン状態でも念のため2秒後にバインドを試みる
+          setTimeout(() => {
+            if (!isFirebaseListenersBound) {
+              setupFirebaseListeners();
+              isFirebaseListenersBound = true;
+              if (isJoined) joinRoom(true);
             }
-          });
-          isConnectedBound = true;
-        } catch (e) { console.warn("Fail serverTimeOffset", e); }
-      }
+          }, 2000);
+        }
+      });
     } else {
-      if (!myUid) {
-        myUid = "user_" + Math.random().toString(36).slice(2, 10) + "_" + Date.now();
-        safeLS.set("nz_permanent_uid", myUid);
+      // ローカル/認証なし環境の場合は即座にリスナーをバインド
+      if (!isFirebaseListenersBound) {
+        setupFirebaseListeners();
+        isFirebaseListenersBound = true;
       }
+      if (isJoined) joinRoom(true);
     }
 
-    // 開いた瞬間に、匿名認証の成立を待つことなくUI描画状態に遷移
+    updateAdminUI();
+
+    if (!isConnectedBound && db) {
+      try {
+        db.ref(".info/serverTimeOffset").on("value", snap => { serverTimeOffset = snap.val() || 0; isOffsetLoaded = true; });
+        db.ref(".info/connected").on("value", snap => {
+          if (snap.val() === true && isJoined && myUid && myName.trim()) {
+            db.ref(`presence/official/${myUid}`).set({
+              n: myName,
+              p: myTrip,
+              c: curColor,
+              t: firebase.database.ServerValue.TIMESTAMP,
+              p_t: firebase.database.ServerValue.TIMESTAMP
+            }).catch(()=>{});
+          }
+        });
+        isConnectedBound = true;
+      } catch (e) { console.warn("Fail serverTimeOffset", e); }
+    }
+
     switchUIMode(isJoined ? "joined" : "guest");
     if (D.tl) D.tl.style.opacity = "1";
   };
@@ -1392,7 +1469,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (D.ni) {
-      D.ni.addEventListener("input", async () => { safeLS.set("nz_ni", D.ni.value.trim()); await syncProfileValues(); });
+      D.ni.addEventListener("input", async () => { safeLS.set("nz_ni", D.ni.value); await syncProfileValues(); });
       D.ni.addEventListener("keydown", handleJoinKey);
     }
     if (D.tripi) {
@@ -1461,10 +1538,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       overlay.addEventListener("click", (e) => { if (e.target === overlay && D.imgViewMod) D.imgViewMod.classList.remove("show"); });
     }
 
-    initAppProcess = true;
     initAuthProcess();
 
-    // セーフティロック解除タイマー（ローカル環境や通信の遅延等で接続中から動かない場合、1.5秒で強制復元します）
+    // セーフティロック解除タイマー
     setTimeout(() => {
       const joinBtn = $("joinBtn");
       if (joinBtn && joinBtn.textContent === "接続中...") {
@@ -1476,7 +1552,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }, 1500);
   }
 
-  let initAppProcess = false;
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initApp); else initApp();
 })();
 </script>
