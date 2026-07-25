@@ -12,18 +12,17 @@
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
 <link rel="preconnect" href="https://img.cdn.nimg.jp" crossorigin>
 
-<!-- Firebase SDK v8 -->
+<!-- Firebase SDK v8 (Authは除外) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{--bg:#090d16;--sf:#151c2c;--s2:#0b101c;--bd:#27314f;--tx:#f1f5f9;--mu:#94a3b8;--m2:#4e5e78;--in:#4f46e5;--i2:#3b32c0;--em:#10b981;--e2:#059669;--ro:#f43f5e;--usr-color:#94a3b8;--safe:env(safe-area-inset-bottom,0px);--app-viewport-height:100dvh}
 html,body{height:100dvh;width:100%;overflow:hidden;background:#05070a;color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
 input,textarea,select{font-family:inherit;font-size:16px!important}
-button,.chip,.btn,.jump-btn,.bsd,.bclrm,.battach,.open-player-btn,.modal-bottom-close,.del-btn-inline{cursor:pointer;font-family:inherit;border:none;background:none;transition:transform .08s ease,opacity .08s ease}
-button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:active,.battach:active,.open-player-btn:active,.modal-bottom-close:active,.del-btn-inline:active{transform:scale(.93)!important;opacity:.75!important}
+button,.chip,.btn,.jump-btn,.bsd,.bclrm,.battach,.open-player-btn,.modal-bottom-close{cursor:pointer;font-family:inherit;border:none;background:none;transition:transform .08s ease,opacity .08s ease}
+button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:active,.battach:active,.open-player-btn:active,.modal-bottom-close:active{transform:scale(.93)!important;opacity:.75!important}
 #app{height:var(--app-viewport-height,100dvh);display:flex;position:fixed;inset:0;flex-direction:column;z-index:50;background:#05070a}
 #cp{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;background:#0d1117;position:relative;max-width:900px;width:100%;margin:0 auto;border-left:1px solid var(--bd);border-right:1px solid var(--bd)}
 #hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:8px 12px;flex-shrink:0}
@@ -91,7 +90,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .clrc2.sel{border-color:var(--tx)!important;transform:scale(1.25)}
 #joinBtn{background:linear-gradient(135deg,var(--in),#6366f1)!important;color:#fff!important;font-weight:900!important}
 #copyTripBtn{background:#0ea5e9!important;color:#fff!important;font-weight:800!important}
-.del-btn-inline{font-size:10px;color:var(--ro);background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);border-radius:4px;padding:2px 6px;margin-left:8px;font-weight:bold}
 .inline-img{max-width:140px;max-height:140px;width:auto;height:auto;border-radius:8px;margin-top:6px;border:1px solid var(--bd);display:block}
 </style>
 </head>
@@ -108,7 +106,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           </div>
         </div>
         <div class="hbs">
-          <button id="adminClearBtn" class="bq" style="display: none; background: rgba(244,63,94,0.1); border-color: rgba(244,63,94,0.3); color: #fda4af; font-weight: bold; padding: 6px 14px; height: 38px; border-radius: 6px; font-size: 12px;" title="システムログや過去ログを含む全消去">⚠️ 全消去</button>
           <button class="bclr" id="clrBtn" title="色設定" style="display:none;"><span class="bclr-dot" id="clrDot"></span> 色設定</button>
           <button class="bx" id="exBtn" style="display: none;" title="退室">退室</button>
         </div>
@@ -241,14 +238,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     appId: "1:154725381397:web:8742ccd957e20cee8ce51c"
   };
 
-  let db = null, auth = null;
-  const isLocalFile = typeof window !== 'undefined' && window.location.protocol === "file:";
+  let db = null;
 
   if (typeof firebase !== 'undefined') {
     try {
       if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
       if (typeof firebase.database === 'function') db = firebase.database();
-      if (typeof firebase.auth === 'function') auth = firebase.auth();
     } catch (e) {
       console.error("Firebase SDK init error:", e);
     }
@@ -259,7 +254,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   const $ = id => document.getElementById(id);
   let D = {};
 
-  // 仮UIDをローカルストレージで管理（無ければその場で新規生成・永続化）
+  // 仮UIDをローカルストレージで管理
   let myUid = safeLS.get("nz_permanent_uid") || ""; 
   if (!myUid) {
     myUid = "usr_" + Math.random().toString(36).slice(2, 12) + "_" + Date.now();
@@ -291,7 +286,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let savedOldScrollHeight = 0;
   let savedOldScrollTop = 0;
 
-  let isJoinFormExpanded = false; // デフォルトで折りたたみの状態にする
+  let isJoinFormExpanded = false; 
   let scale = 1, panX = 0, panY = 0;
   let lastPanX = 0, lastPanY = 0, isPanning = false;
   let initialDistance = 0;
@@ -323,7 +318,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   };
 
   const escapeHtml = str => typeof str !== "string" ? "" : str.replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t] || t));
-  const isAdmin = () => myUid === "J64MocsPo0QD7hSwZpQgEeDdO6X2";
 
   const fDT = (ts) => {
     if (!ts || typeof ts !== "number") return "--:--:--";
@@ -332,8 +326,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     const pad = n => String(n).padStart(2, "0");
     return `${d.getMonth() + 1}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   };
-
-  const updateAdminUI = () => { if (D.adminClearBtn) D.adminClearBtn.style.display = isAdmin() ? "block" : "none"; };
 
   window.SYSTEM_SALT = window.SYSTEM_SALT || "nz_chat_salt_default_key";
 
@@ -406,7 +398,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       D.clrBtn.style.display = "none";
       const kb = $("kbKeepOpenContainer");
       if (kb) kb.style.display = "none";
-      isJoinFormExpanded = false; // ゲスト時のアコーディオン初期状態は折りたたむ
+      isJoinFormExpanded = false; 
       const jc = $("joinFormContent"), ja = $("joinFormArrow");
       if (jc) jc.style.display = "none";
       if (ja) ja.style.transform = "rotate(0deg)";
@@ -450,7 +442,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       if (myUid) await db.ref(`presence/official/${myUid}`).remove().catch(()=>{});
       renderPresence(currentPresenceMap);
       switchUIMode("guest");
-      updateAdminUI();
       return;
     }
     const cleanTrip = myTrip || "", cleanUid = myUid, cleanColor = curColor;
@@ -474,7 +465,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     safeLS.remove("nz_last_post_time");
     renderPresence(currentPresenceMap);
     switchUIMode("guest");
-    updateAdminUI();
 
     if (cleanUid) await db.ref(`presence/official/${cleanUid}`).remove().catch(()=>{});
     await db.ref(`chat/official`).push({ u: cleanUid || "sys_exit", pnd: tempId, n: cleanName, p: cleanTrip, c: cleanColor, m: logText, t: exitTimeMillis }).catch(()=>{});
@@ -503,15 +493,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
   }
 
-  function fallbackToLocalUid() {
-    if (!isFirebaseListenersBound) {
-      setupFirebaseListeners();
-      isFirebaseListenersBound = true;
-    }
-    if (isJoined) joinRoom(true);
-    updateAdminUI();
-  }
-
   function showLocalSystemMessage(text) {
     const tempId = "err_sys_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
     const tempObj = { id: tempId, u: "system", n: "システムエラー", p: "", c: "#f43f5e", m: "[SYS]::" + text, t: getTrueTime() };
@@ -527,12 +508,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (!D.ni || !D.tripi) return;
     if (!db) {
       if (!isReconnect) {
-        alert("Firebaseデータベースへの接続が確立されていません。ネットワーク接続やFirebaseのConfig設定を確認してください。");
+        alert("Firebaseデータベースへの接続が確立されていません。");
       }
       return;
     }
 
-    // もしリスナーが未バインドなら、このタイミングでバインドを強制実行
     if (!isFirebaseListenersBound) {
       setupFirebaseListeners();
       isFirebaseListenersBound = true;
@@ -561,11 +541,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }).catch(err => {
       console.warn("Presence registration failed:", err);
       if (err.message && err.message.includes("permission_denied")) {
-        showLocalSystemMessage("【セキュリティエラー】入室情報の登録に失敗しました（データベースへの書込権限がありません）。");
+        showLocalSystemMessage("【セキュリティエラー】入室情報の登録に失敗しました。");
       }
     });
 
-    updateAdminUI();
     startAutoExitChecker();
 
     const cleanName = (myName || "").trim();
@@ -766,13 +745,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
   }
 
-  const deleteMessage = async (mid) => {
-    if (!db) return;
-    if (confirm("この発言を完全に削除しますか？\n（復元できません）")) {
-      await db.ref(`chat/official/${mid}`).remove().catch(err => alert("削除に失敗しました: " + err.message));
-    }
-  };
-
   function cMsg(m, isNewIncoming = false) {
     const el = document.createElement("div");
     el.className = "mw" + (isNewIncoming ? " new-msg-anim" : "");
@@ -785,37 +757,23 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     const isSys = m.sys === true || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
     if (isSys) {
       let display = m.m.startsWith("[SYS]::") ? m.m.substring(7) : m.m;
-      // 管理者（isAdmin()）のみ削除可能に変更
-      const canDel = isAdmin();
-      const delHtml = canDel ? `<button class="del-btn-inline" data-mid="${m.id}">削除</button>` : "";
-      el.innerHTML = `<div class="sys-msg">${escapeHtml(display)}<span class="sys-ts">[${fDT(msgTime)}]${delHtml}</span></div>`;
-      if (canDel) {
-        const btn = el.querySelector(".del-btn-inline");
-        if (btn) btn.onclick = () => deleteMessage(m.id);
-      }
+      el.innerHTML = `<div class="sys-msg">${escapeHtml(display)}<span class="sys-ts">[${fDT(msgTime)}]</span></div>`;
       renderedMwNodes.set(m.id, el);
       return el;
     }
 
     const name = m.n || "名無し", trip = m.p || "", color = m.c || "#94a3b8";
-    // 管理者（isAdmin()）のみ削除可能に変更
-    const canDel = isAdmin();
-    const delHtml = canDel ? `<button class="del-btn-inline" data-mid="${m.id}">削除</button>` : "";
 
     el.innerHTML = `
       <div class="mm" style="color: ${color}">
         <span class="mm-name">${escapeHtml(name)}</span>
         <span class="mm-trip" style="display: ${trip ? 'inline' : 'none'}">${escapeHtml(trip)}</span>
-        <span class="ts">${fDT(msgTime)}${delHtml}</span>
+        <span class="ts">${fDT(msgTime)}</span>
       </div>
       <div class="mb" style="border-left: 2px solid ${color}; padding-left: 8px;"></div>
     `;
 
     const mb = el.querySelector(".mb");
-    if (canDel) {
-      const btn = el.querySelector(".del-btn-inline");
-      if (btn) btn.onclick = () => deleteMessage(m.id);
-    }
 
     if (m.m && m.m.startsWith("IMG::")) {
       const base64 = m.m.substring(5);
@@ -1259,51 +1217,17 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
   }
 
-  const initAuthProcess = () => {
+  const initDirectDatabaseProcess = () => {
     loadCachedPresence();
     syncProfileValues();
 
-    if (auth && !isLocalFile) {
-      // バックグラウンド匿名認証を開始
-      auth.signInAnonymously().catch(err => {
-        console.warn("Background auth failed:", err);
-        // 認証失敗時は即座にローカル環境としてリスナーをバインド
-        if (!isFirebaseListenersBound) {
-          setupFirebaseListeners();
-          isFirebaseListenersBound = true;
-        }
-        if (isJoined) joinRoom(true);
-      });
-
-      // ログイン状態の変化を監視し、ログイン完了後にリスナーをバインド
-      auth.onAuthStateChanged(user => {
-        if (user) {
-          if (!isFirebaseListenersBound) {
-            setupFirebaseListeners();
-            isFirebaseListenersBound = true;
-          }
-          if (isJoined) joinRoom(true);
-        } else {
-          // 未ログイン状態でも念のため2秒後にバインドを試みる
-          setTimeout(() => {
-            if (!isFirebaseListenersBound) {
-              setupFirebaseListeners();
-              isFirebaseListenersBound = true;
-              if (isJoined) joinRoom(true);
-            }
-          }, 2000);
-        }
-      });
-    } else {
-      // ローカル/認証なし環境の場合は即座にリスナーをバインド
+    if (db) {
       if (!isFirebaseListenersBound) {
         setupFirebaseListeners();
         isFirebaseListenersBound = true;
       }
       if (isJoined) joinRoom(true);
     }
-
-    updateAdminUI();
 
     if (!isConnectedBound && db) {
       try {
@@ -1329,11 +1253,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   function initApp() {
     D = {
-      adminClearBtn: $("adminClearBtn"),
       ni: $("ni"),
       tripi: $("tripi"),
       tripPrevText: $("tripPrevText"),
       copyTripBtn: $("copyTripBtn"),
+      joinBtn: $("joinBtn"), // 要素の取得定義を追加
+      sdBtn: $("sdBtn"),     // 要素の取得定義を追加
       ib: $("ib"),
       joinForm: $("joinForm"),
       exBtn: $("exBtn"),
@@ -1382,25 +1307,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     if (D.playerCloseBtn) D.playerCloseBtn.onclick = closePlayer;
     if (D.exBtn) D.exBtn.onclick = () => { if (isJoined && confirm("退室して参加前の覗き見画面に戻りますか？")) doExit(); };
-
-    if (D.adminClearBtn) {
-      D.adminClearBtn.onclick = async () => {
-        if (!isAdmin() || !confirm("⚠️ チャット履歴を完全に全消去しますか？\n本当に実行しますか？")) return;
-        displayedMsgIds.clear(); if (D.tli) D.tli.innerHTML = ""; renderedMwNodes.clear();
-        const tempId = "pnd_sys_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6), clearText = "[SYS]::管理者によってチャット履歴が全消去されました";
-        const tempObj = { id: tempId, u: myUid, n: "管理者", p: "", c: "#f43f5e", m: clearText, t: getTrueTime() };
-        pendingMsgs.set(tempId, tempObj); displayedMsgIds.add(tempId);
-        insertMessageInOrder(cMsg(tempObj, true)); isAutoScroll = true; scBottom(true);
-        if (db) {
-          await db.ref(`chat/official`).set(null).catch(err => alert("全消去エラー: " + err.message));
-          await db.ref(`chat/official`).push({ u: myUid, pnd: tempId, n: "管理者", p: "", c: "#f43f5e", m: clearText, t: firebase.database.ServerValue.TIMESTAMP }).catch(err => {
-            alert("全消去後ログ作成に失敗: " + err.message);
-            const el = renderedMwNodes.get(tempId); if (el) el.remove();
-            renderedMwNodes.delete(tempId); pendingMsgs.delete(tempId); displayedMsgIds.delete(tempId);
-          });
-        }
-      };
-    }
 
     if (D.sdBtn) { D.sdBtn.onclick = () => sendMsg(); preventFocusLoss(D.sdBtn); }
     if (D.clrMsgBtn) {
@@ -1538,18 +1444,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       overlay.addEventListener("click", (e) => { if (e.target === overlay && D.imgViewMod) D.imgViewMod.classList.remove("show"); });
     }
 
-    initAuthProcess();
-
-    // セーフティロック解除タイマー
-    setTimeout(() => {
-      const joinBtn = $("joinBtn");
-      if (joinBtn && joinBtn.textContent === "接続中...") {
-        console.warn("Connection locked. Force activating UI states.");
-        validateNameField();
-        switchUIMode(isJoined ? "joined" : "guest");
-        if (D.tl) D.tl.style.opacity = "1";
-      }
-    }, 1500);
+    initDirectDatabaseProcess();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initApp); else initApp();
