@@ -69,7 +69,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .jump-btn{width:56px;height:34px;border-radius:8px;background:var(--s2);border:1px solid var(--bd);color:var(--tx);font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center}
 .jump-btn:disabled{opacity:.3}
 .mi-container{position:relative;flex:1;display:flex;align-items:center;background:var(--bg);border:1px solid var(--bd);border-radius:22px;min-height:48px;padding:4px 44px 4px 44px;transition:border-color 0.15s ease,box-shadow 0.15s ease}
-.mi-container:focus-within{border-color:var(--in);box-shadow:0 0 0 3px rgba(79,70,229,0.25)}
+.mi-container:focus-within{border-color:var(--in);box-shadow:0 0 0 3px rgba(79, 70, 229, 0.25)}
 .battach{position:absolute;left:6px;width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--mu);background:rgba(255,255,255,0.03);transition:all 0.12s ease}
 .battach:hover{color:var(--tx);background:rgba(255,255,255,0.1)}
 .battach svg{width:20px;height:18px}
@@ -100,8 +100,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .btn{padding:10px 8px;border-radius:8px;font-size:13.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
 #imgViewMod{background:rgba(0,0,0,.96);backdrop-filter:blur(10px);flex-direction:column}
 #imgViewMod.show{display:flex!important}
-#zoomViewport{width:100%;height:calc(100dvh - 100px);position:absolute;top:0;left:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
-#imgViewSrc{max-width:95%;max-height:95%;object-fit:contain;border-radius:0 !important}
+#zoomViewport{width:100%;height:calc(100dvh - 100px);position:absolute;top:0;left:0;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:grab}
+#zoomViewport:active{cursor:grabbing}
+#imgViewSrc{max-width:95%;max-height:95%;object-fit:contain;border-radius:0 !important;user-select:none;-webkit-user-drag:none}
 .modal-bottom-close-container{width:100%;display:flex;justify-content:center;position:absolute;bottom:0;left:0;padding:16px 0 calc(16px + var(--safe))}
 .modal-bottom-close{padding:12px 24px;background:var(--ro);color:#fff;border-radius:24px;font-weight:bold;font-size:14px}
 .clrpick-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
@@ -198,7 +199,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- 发言用输入バー -->
+    <!-- 発言用入力バー -->
     <div id="ib">
       <div id="ibToolbar">
         <input type="file" id="fileInput" accept="image/jpeg, image/png, image/gif, image/webp" style="display:none;">
@@ -459,6 +460,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
 
+  // 自身の無活動放置を検知して退室
   function checkActivityTimeout() {
     if (!isJoined) return;
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
@@ -516,11 +518,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   function stopAutoExitTimer() { if (autoExitTimer) { clearInterval(autoExitTimer); autoExitTimer = null; } }
 
+  // 他人による放置ユーザーのクリーンアップ代行処理
   function triggerOtherExit(targetId, targetUser, calculatedTimeoutTime) {
     if (targetUser.exiting || !db) return;
     targetUser.exiting = true;
+    
     db.ref(`presence/official/${targetId}`).transaction(c => {
-      if (!c || c.exiting) return null;
+      if (!c || c.exiting) return null; // 存在しない、またはすでに別の誰かがクリーンアップ実行中ならキャンセル
       c.exiting = true;
       return c;
     }, (err, committed, snap) => {
@@ -529,8 +533,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         const u = snap.val(), display = (u.n || "").trim();
         if (!display) { db.ref(`presence/official/${targetId}`).remove().catch(()=>{}); return; }
         const encLog = "[SYS]::" + `${display} ${u.p || ""}`.trim() + " が退室しました (自動退室)";
-        db.ref(`chat/official`).push({ u: targetId, n: display, p: u.p || "", c: u.c || "#94a3b8", m: encLog, t: calculatedTimeoutTime }).catch(()=>{});
-        db.ref(`presence/official/${targetId}`).remove().catch(()=>{});
+        
+        // プレゼンス削除とログ送信を連動して実行
+        db.ref(`presence/official/${targetId}`).remove().then(() => {
+          db.ref(`chat/official`).push({ u: targetId, n: display, p: u.p || "", c: u.c || "#94a3b8", m: encLog, t: calculatedTimeoutTime }).catch(()=>{});
+        }).catch(() => {
+          targetUser.exiting = false;
+        });
       } else {
         targetUser.exiting = false;
       }
@@ -575,6 +584,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     const opt = { ...currentPresenceMap };
     opt[myUid || "temp_uid"] = { id: myUid || "temp_uid", n: myName, p: myTrip, c: curColor, t: nowTime, p_t: nowTime };
     renderPresence(opt);
+
+    // ★「回線が切れても30分間は生存・入室リストに残す」という方針のため、接続切断時の自動削除（onDisconnect().remove()）は完全に廃止します。
 
     db.ref(`presence/official/${myUid}`).set({
       n: myName,
@@ -625,7 +636,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     D.mi.value = "";
     D.mi.style.height = "auto";
     updateClrMsgBtnVisibility(); // 送信成功時にクリアボタンを非表示化
-    if (!keepKbOpen) D.mi.blur(); else D.mi.focus();
+    
+    // 【非同期バグ対策】非同期書き込みに移行する前に、同期的にフォーカスを維持することでモバイルキーボードの閉じを防ぐ
+    if (keepKbOpen) D.mi.focus(); else D.mi.blur();
 
     const nowTime = getTrueTime();
     updateLastPostTime(nowTime);
@@ -970,7 +983,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     updateJumpBtns();
   };
 
-  // プレイヤー生成および自動再生・ローディング高速化の改良
+  // プレイヤー生成および自動再生・ローディング高速化
   function openFloatingPlayer(url, type) {
     if (!D.fixedPlayer || !D.playerContent) return;
     D.fixedPlayer.style.display = "flex";
@@ -1006,14 +1019,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       const ytId = getYoutubeId(url);
       if (ytId) {
         let origin = window.location.protocol.startsWith("http") ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
-        // autoplay=1(自動再生)を指定。playsinline=1でスマートフォン環境でもインライン再生を強制。コントロールを極限まで軽量化
         iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=0&controls=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1${origin}`;
         D.playerContent.appendChild(iframe);
       }
     } else if (type === "niconico") {
       const nicoId = getNicoId(url);
       if (nicoId) {
-        // autoplay=1による自動即時再生
         iframe.src = `https://embed.nicovideo.jp/watch/${nicoId}?jsapi=0&autoplay=1&mute=0`;
         D.playerContent.appendChild(iframe);
       }
@@ -1108,12 +1119,19 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     checkActivityTimeout(); 
     if (db && isJoined && myUid) { 
       startAutoExitChecker(); 
-      db.ref(`presence/official/${myUid}`).update({ t: firebase.database.ServerValue.TIMESTAMP, p_t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
+      // ★ p_t（最終活動/発言時刻）は更新せず、現在の接続生存状態（t）のみ更新するようにします
+      db.ref(`presence/official/${myUid}`).update({ t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
     } 
   };
 
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") boostSync(); });
-  window.addEventListener("focus", boostSync); window.addEventListener("pageshow", boostSync);
+  document.addEventListener("visibilitychange", () => { 
+    if (document.visibilityState === "visible") {
+      boostSync(); 
+      checkActivityTimeout(); // バックグラウンド復帰時の即時放置チェック
+    }
+  });
+  window.addEventListener("focus", () => { boostSync(); checkActivityTimeout(); }); 
+  window.addEventListener("pageshow", () => { boostSync(); checkActivityTimeout(); });
 
   const adjustViewport = () => {
     const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
@@ -1121,7 +1139,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   };
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => { adjustViewport(); scBottom(true); });
-    window.visualViewport.addEventListener('scroll', () => { if (D.mi && document.activeElement === D.mi) window.scrollTo(0, 0); });
+    window.visualViewport.addEventListener('scroll', () => { 
+      if (D.mi && document.activeElement === D.mi) {
+        window.scrollTo(0, 0); // iOS等での不要な全体スクロール（バウンス）を完全に抑制
+      }
+    });
   }
   window.addEventListener('resize', adjustViewport);
 
@@ -1270,7 +1292,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           let ut = (u.t && typeof u.t === "object") ? nowTrue : u.t;
           if (!ut || typeof ut !== "number") continue;
           let pt = u.p_t || ut;
-          if (isOffsetLoaded && id !== myUid && (nowTrue - pt >= 1800000)) { triggerOtherExit(id, u, pt + 1800000); continue; }
+          
+          // 30分（1800000ミリ秒）無活動のユーザーをクリーンアップ
+          if (isOffsetLoaded && id !== myUid && (nowTrue - pt >= 1800000)) { 
+            triggerOtherExit(id, u, pt + 1800000); 
+            continue; 
+          }
           members[id] = { id, ...u, t: ut, p_t: pt };
         }
       }
@@ -1390,7 +1417,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       D.jumpDownBtn.onclick = () => { isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); if (D.tl) D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" }); };
     }
 
+    // 日本語入力変換中（IME）の誤送信を100%防ぐバグ対策フラグ
+    let isComposing = false;
+
     if (D.mi) {
+      D.mi.addEventListener("compositionstart", () => { isComposing = true; });
+      D.mi.addEventListener("compositionend", () => { isComposing = false; });
       D.mi.addEventListener("focus", () => { isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); scBottom(true); });
       D.mi.addEventListener("input", () => {
         D.mi.style.height = "auto";
@@ -1398,7 +1430,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         scBottom(true);
         updateClrMsgBtnVisibility(); // 入力時にクリアボタンの表示・非表示を切り替え
       });
-      D.mi.addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { if (e.isComposing) return; e.preventDefault(); sendMsg(); } });
+      D.mi.addEventListener("keydown", e => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          if (isComposing) return; // 変換確定Enterは完全に送信をブロック
+          e.preventDefault(); 
+          sendMsg();
+        }
+      });
     }
 
     if (D.fileInput) {
@@ -1491,8 +1529,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     if (D.imgViewCloseBtn) D.imgViewCloseBtn.onclick = () => { if (D.imgViewMod) D.imgViewMod.classList.remove("show"); };
 
+    // PCとスマートフォン両方に対応した滑らかなピンチズーム・ドラッグパン操作
     const overlay = $("zoomViewport");
+    let isMouseDown = false, startX, startY;
+
     if (overlay) {
+      // スマホ（マルチタッチ対応）
       overlay.addEventListener('touchstart', (e) => {
         if (e.target === D.imgViewCloseBtn) return;
         if (e.touches.length === 2) { isPanning = false; initialDistance = getDistance(e.touches[0], e.touches[1]); }
@@ -1510,6 +1552,25 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         }
       }, { passive: true });
 
+      // PCマウスドラッグパン対応
+      overlay.addEventListener('mousedown', (e) => {
+        if (e.target === D.imgViewCloseBtn || scale <= 1) return;
+        isMouseDown = true;
+        startX = e.clientX - panX;
+        startY = e.clientY - panY;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isMouseDown) return;
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        clampPan();
+        updateTransform();
+      });
+
+      window.addEventListener('mouseup', () => { isMouseDown = false; });
+
+      // PCホイールズーム対応
       overlay.addEventListener('wheel', (e) => {
         e.preventDefault(); scale = Math.max(1, Math.min(5, scale * (e.deltaY > 0 ? 0.9 : 1.1))); clampPan(); updateTransform();
       }, { passive: false });
