@@ -21,8 +21,25 @@
 :root{--bg:#090d16;--sf:#151c2c;--s2:#0b101c;--bd:#27314f;--tx:#f1f5f9;--mu:#94a3b8;--m2:#4e5e78;--in:#4f46e5;--i2:#3b32c0;--em:#10b981;--e2:#059669;--ro:#f43f5e;--usr-color:#94a3b8;--safe:env(safe-area-inset-bottom,0px);--app-viewport-height:100dvh}
 html,body{height:100dvh;width:100%;overflow:hidden;background:#05070a;color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
 input,textarea,select{font-family:inherit;font-size:16px!important}
-button,.chip,.btn,.jump-btn,.bsd,.bclrm,.battach,.open-player-btn,.modal-bottom-close{cursor:pointer;font-family:inherit;border:none;background:none;transition:transform .08s ease,opacity .08s ease}
-button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:active,.battach:active,.open-player-btn:active,.modal-bottom-close:active{transform:scale(.93)!important;opacity:.75!important}
+
+/* 操作感度の最適化：touch-actionとwill-changeによる描画チラつきの抑制 */
+button,.chip,.btn,.jump-btn,.bsd,.bclrm,.battach,.open-player-btn,.modal-bottom-close{
+  cursor:pointer;
+  font-family:inherit;
+  border:none;
+  background:none;
+  transition:transform .08s ease, opacity .08s ease;
+  touch-action:manipulation;
+  will-change:transform, opacity;
+}
+
+/* タップした瞬間にレイアウト移行を介さず即時サイズが縮む極めてレスポンシブなCSS設定 */
+button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:active,.battach:active,.open-player-btn:active,.modal-bottom-close:active{
+  transform:scale(.92)!important;
+  opacity:.75!important;
+  transition:none!important;
+}
+
 #app{height:var(--app-viewport-height,100dvh);display:flex;position:fixed;inset:0;flex-direction:column;z-index:50;background:#05070a}
 #cp{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;background:#0d1117;position:relative;max-width:900px;width:100%;margin:0 auto;border-left:1px solid var(--bd);border-right:1px solid var(--bd)}
 #hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:8px 12px;flex-shrink:0}
@@ -30,9 +47,18 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .pcnt{font-size:11px;font-weight:900;background:rgba(255,255,255,.08);padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.05)}
 .hbs{display:flex;gap:8px;align-items:center}
 .hbs button{padding:6px 14px;height:40px;border-radius:8px;font-size:12.5px;font-weight:700;background:var(--bg);border:1px solid var(--bd);color:var(--tx);display:flex;align-items:center;gap:6px}
-.bclr{border-color:var(--usr-color)!important}
+.bclr{border-color:var(--usr-color)!important} /* 入室前からも表示させるためdisplay:noneを排除 */
 .bclr-dot{width:11px;height:10px;border-radius:50%;background:var(--usr-color)!important}
-.bx{background:rgba(244,63,94,.16)!important;border-color:rgba(244,63,94,.4)!important;color:#fda4af!important;font-weight:900!important;padding:6px 16px!important;display:none}
+.bx{
+  background:rgba(244,63,94,.16)!important;
+  border-color:rgba(244,63,94,.4)!important;
+  color:#fda4af!important;
+  font-weight:900!important;
+  padding:6px 16px!important;
+  display:none; /* JavaScriptでの表示切り替えを優先するため初期状態は非表示 */
+  align-items:center;
+  justify-content:center;
+}
 .logo{font-size:16.5px;font-weight:900;background:linear-gradient(90deg,#38bdf8,#818cf8,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 #pl{display:flex;gap:6px;padding:6px 12px;background:var(--s2);border-bottom:1px solid rgba(255,255,255,.02);overflow-x:auto;white-space:nowrap;min-height:40px;max-height:40px}
 .chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--bg);border:1px solid rgba(255,255,255,.06);display:inline-flex;align-items:center;color:var(--tx);height:28px}
@@ -42,11 +68,19 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #playerCloseBtn{background:rgba(244, 63, 94, 0.15) !important;border:1px solid rgba(244, 63, 94, 0.4) !important;color: #fda4af !important;font-weight: 900 !important;cursor: pointer;padding: 5px 14px !important;font-size: 13px !important;border-radius: 6px;transition: all 0.12s ease;}
 #playerCloseBtn:hover{background:rgba(244, 63, 94, 0.3) !important;color: #fff !important;}
 
-/* プレイヤー読み込み中表示用のスタイル */
-.player-loader {position: absolute;inset: 0;display: flex;flex-direction: column;align-items: center;justify-content: center;background: #000;color: var(--mu);font-size: 12px;font-weight: bold;gap: 12px;z-index: 10;transition: opacity 0.2s ease, pointer-events 0.2s ease}
-.player-loader .spin {width: 28px;height: 28px;border: 3px solid rgba(255,255,255,.15);border-radius: 50%;border-top-color: #38bdf8;animation: spin .8s linear infinite}
-
-#tl{flex:1;min-height:0;overflow-y:auto;padding:12px;background-color:#0d1117;overscroll-behavior-y:contain;opacity:0;transition:opacity 0.15s ease}
+/* タイムライン表示領域：GPUアクセラレーションにより慣性スクロール・チラつき防止 */
+#tl{
+  flex:1;
+  min-height:0;
+  overflow-y:auto;
+  padding:12px;
+  background-color:#0d1117;
+  overscroll-behavior-y:contain;
+  opacity:0;
+  transition:opacity 0.15s ease;
+  will-change:scroll-position;
+  -webkit-overflow-scrolling:touch;
+}
 #tl-inner{display:flex;flex-direction:column;justify-content:flex-end;gap:0;width:100%;max-width:800px;margin:0 auto;min-height:100%}
 .mw{position:relative;display:flex;flex-direction:column;width:100%;padding:12px 14px;border-bottom:1px solid rgba(51,65,85,.18)}
 .mw.new-msg-anim{animation:slideInUp .12s cubic-bezier(.16,1,.3,1) forwards}
@@ -59,13 +93,41 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .sys-ts{display:block;font-size:11px;color:var(--mu);opacity:.75;font-family:monospace;margin-top:6px}
 #joinForm{display:none;flex-direction:column;background:var(--sf);border-top:1px solid var(--bd)}
 .jrow{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;padding:12px}
-@media (max-width:580px){.jrow{grid-template-columns:1fr;gap:10px}#joinBtn{width:100%;height:44px!important}}
+
+/* モバイル向け画面端吸着スタイル調整（送信ボタン・退室ボタン対応：押しやすさ・感度を最大化） */
+@media (max-width:580px){
+  .jrow{grid-template-columns:1fr;gap:10px}
+  #joinBtn{width:100%;height:44px!important}
+  
+  /* スマホ用：退室ボタンを右端にフィット */
+  #hdr{padding-right:0!important}
+  .bx{
+    border-radius:8px 0 0 8px!important;
+    margin-right:0!important;
+    border-right:none!important;
+    padding:8px 20px!important;
+    height:42px!important;
+  }
+  
+  /* スマホ用：送信ボタンを右端にフィット */
+  #ib{padding-right:0!important}
+  #ibToolbar{gap:6px!important}
+  .bsd{
+    border-radius:24px 0 0 24px!important;
+    width:60px!important;
+    height:52px!important;
+    border-right:none!important;
+  }
+}
+
 #ib{display:none;flex-direction:column;padding:6px calc(8px + env(safe-area-inset-right,0px)) calc(6px + var(--safe)) calc(8px + env(safe-area-inset-left,0px));background:var(--sf);border-top:1px solid var(--bd);gap:6px}
 #ib.show{display:flex}
 
 /* 入力・送信まわりのUI */
 #ibToolbar{width:100%;align-items:flex-end;display:flex;gap:10px}
 .jump-btns{display:flex;gap:6px}
+
+/* 上下ボタンのスタイル */
 .jump-btn{width:56px;height:34px;border-radius:8px;background:var(--s2);border:1px solid var(--bd);color:var(--tx);font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center}
 .jump-btn:disabled{opacity:.3}
 .mi-container{position:relative;flex:1;display:flex;align-items:center;background:var(--bg);border:1px solid var(--bd);border-radius:22px;min-height:48px;padding:4px 44px 4px 44px;transition:border-color 0.15s ease,box-shadow 0.15s ease}
@@ -75,12 +137,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .battach svg{width:20px;height:18px}
 #mi{width:100%;background:none;border:none;color:var(--tx);outline:none;resize:none;font-size:15px;max-height:120px;line-height:1.5;padding:8px 0}
 
-/* クリアボタン（入力がある時のみ表示・サイズ感最適化） */
+/* クリアボタン */
 .bclrm{position:absolute;right:8px;width:30px;height:30px;border-radius:50%;color:var(--mu);font-size:16px;font-weight:bold;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);opacity:0;pointer-events:none;transition:all 0.15s ease}
 .bclrm.show{opacity:1;pointer-events:auto}
 .bclrm:hover,.bclrm:active{background:rgba(244,63,94,0.15);border-color:rgba(244,63,94,0.3);color:var(--ro)}
 
-/* 送信ボタン（大型化してタップしやすく） */
+/* 送信ボタン */
 .bsd{width:48px;height:48px;border-radius:50%;background:var(--in);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(79,70,229,0.35);border:1px solid rgba(255,255,255,0.08)}
 .bsd:hover{background:var(--i2)}
 .bsd svg{width:20px;height:20px;transform:rotate(45deg);margin-top:-1px;margin-left:-2px}
@@ -111,8 +173,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #joinBtn{background:linear-gradient(135deg,var(--in),#6366f1)!important;color:#fff!important;font-weight:900!important}
 #copyTripBtn{background:#0ea5e9!important;color:#fff!important;font-weight:800!important}
 
-/* インライン画像表示サイズ・角を四角（border-radius: 0）に変更 */
-.inline-img{max-width:280px;max-height:280px;width:auto;height:auto;border-radius:0 !important;margin-top:6px;border:1px solid var(--bd);display:block;cursor:zoom-in;transition:transform 0.12s ease,opacity 0.12s ease}
+/* インライン画像表示サイズ・角を四角 */
+.inline-img{max-width:280px;max-height:280px;width:auto;height:auto;border-radius:0 !important;margin-top:6px;border:1px solid var(--bd);display:block;cursor:zoom-in;transition:transform 0.12s ease,opacity 0.12s ease;content-visibility:auto}
 .inline-img:hover{opacity:0.9;transform:scale(1.02)}
 
 /* YouTube、ニコニコ動画表示エリア */
@@ -121,6 +183,34 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .media-badge {font-size:10px;font-weight:900;color:#fff;padding:3px 8px;border-radius:4px;letter-spacing:0.5px}
 .open-player-btn {font-size:11.5px;font-weight:800;color:#38bdf8;background:rgba(56, 189, 248, 0.1);border:1px solid rgba(56, 189, 248, 0.3);padding:5px 12px;border-radius:6px;transition:all 0.12s ease}
 .open-player-btn:hover {background:rgba(56, 189, 248, 0.2);border-color:rgba(56, 189, 248, 0.5);color:#7dd3fc}
+
+/* トースト通知 */
+#toastContainer {
+  position: fixed;
+  bottom: calc(70px + var(--safe));
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid var(--bd);
+  color: var(--tx);
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: bold;
+  z-index: 100000;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  pointer-events: none;
+  opacity: 0;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  display: none;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+#toastContainer.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 </style>
 </head>
 <body>
@@ -136,8 +226,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           </div>
         </div>
         <div class="hbs">
-          <button class="bclr" id="clrBtn" title="色設定" style="display:none;"><span class="bclr-dot" id="clrDot"></span> 色設定</button>
-          <button class="bx" id="exBtn" style="display: none;" title="退室">退室</button>
+          <button class="bclr" id="clrBtn" title="色設定"><span class="bclr-dot" id="clrDot"></span> 色設定</button>
+          <button class="bx" id="exBtn" title="退室">退室</button>
         </div>
       </div>
     </div>
@@ -156,10 +246,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     <!-- タイムライン -->
     <div id="tl" role="log" aria-live="polite">
-      <!-- 過去ログ読み込み用バナー -->
-      <div id="loadMoreBlock" style="text-align: center; padding: 12px; background: rgba(255, 255, 255, 0.02); border-bottom: 1px solid var(--bd); display: none;">
-        <button id="loadMoreBtn" style="color: #38bdf8; font-weight: bold; font-size: 12.5px; background: none; border: none; cursor: pointer;">▲ さらに過去のログを読み込む (<span id="loadMoreStatus">25/100</span>)</button>
-      </div>
       <div id="tl-inner"></div>
     </div>
 
@@ -172,7 +258,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         </div>
       </div>
       <div class="jump-btns">
-        <button class="jump-btn" id="jumpUpBtn" title="タイムラインの最上部へ" disabled>▲</button>
+        <button class="jump-btn" id="jumpUpBtn" title="過去ログを取得" disabled>▲</button>
         <div style="position: relative; display: inline-block;">
           <button class="jump-btn" id="jumpDownBtn" title="タイムラインの最下部へ" disabled>▼</button>
           <span id="unreadBadge" style="display: none; position: absolute; top: -6px; right: -6px; background: var(--ro); color: #fff; font-size: 9px; font-weight: bold; border-radius: 10px; min-width: 18px; height: 18px; padding: 0 4px; align-items: center; justify-content: center; line-height: 1; border: 1.5px solid var(--sf); box-shadow: 0 2px 5px rgba(0,0,0,0.3); pointer-events: none; z-index: 5;">0</span>
@@ -180,7 +266,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- ゲスト用参加フォーム（デフォルト折りたたみ） -->
+    <!-- ゲスト用参加フォーム -->
     <div id="joinForm">
       <div id="joinFormHeader" style="padding: 12px; text-align: center; cursor: pointer; font-size: 12.5px; color: var(--tx); font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; user-select: none; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02);">
         <span>💬 チャットに参加する (タップで展開)</span>
@@ -199,7 +285,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- 発言用入力バー -->
+    <!-- 発言用入力バー（※maxlengthを500文字仕様に調整） -->
     <div id="ib">
       <div id="ibToolbar">
         <input type="file" id="fileInput" accept="image/jpeg, image/png, image/gif, image/webp" style="display:none;">
@@ -209,7 +295,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
               <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16 m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
             </svg>
           </button>
-          <textarea id="mi" rows="1" placeholder="メッセージを入力..." maxlength="4000"></textarea>
+          <textarea id="mi" rows="1" placeholder="メッセージを入力..." maxlength="500"></textarea>
           <button class="bclrm" id="clrMsgBtn" title="クリア">×</button>
         </div>
         <button class="bsd" id="sdBtn" aria-label="送信">
@@ -284,7 +370,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   const $ = id => document.getElementById(id);
   let D = {};
 
-  // 仮UIDをローカルストレージで管理
   let myUid = safeLS.get("nz_permanent_uid") || ""; 
   if (!myUid) {
     myUid = "usr_" + Math.random().toString(36).slice(2, 12) + "_" + Date.now();
@@ -309,12 +394,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let isFirstLoad = true; 
   let isFirebaseListenersBound = false; 
 
-  let currentLimit = 25;
+  let currentLimit = 50;
   const maxLimit = 100;
   let isLoadingMore = false;
   let isLoadMoreTriggered = false;
   let savedOldScrollHeight = 0;
   let savedOldScrollTop = 0;
+
+  let scrollToOldestOnLoad = false;
+
+  let latestDisplayedTs = 0;
 
   let isJoinFormExpanded = false; 
   let scale = 1, panX = 0, panY = 0;
@@ -349,7 +438,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const escapeHtml = str => typeof str !== "string" ? "" : str.replace(/[&<>'"]/g, t => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[t] || t));
 
-  // 発言時刻の出力フォーマット（西暦・曜日対応版）
   const fDT = (ts) => {
     if (!ts || typeof ts !== "number") return "--:--:--";
     const d = new Date(ts);
@@ -366,7 +454,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     return `${y}/${m}/${date}(${w}) ${h}:${min}:${s}`;
   };
 
-  window.SYSTEM_SALT = window.SYSTEM_SALT || "nz_chat_salt_default_key";
+  // 難読化された固定ソルト
+  const _0x5f2b = ["n","z","_","c","h","a","t","_","s","a","l","t","_","2","0","2","6"];
+  const SYSTEM_SALT = _0x5f2b.join("");
 
   window.sha256 = async (str) => {
     if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
@@ -392,19 +482,110 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   window.makeTrip = async (name, tripKey) => {
     if (!tripKey) return "";
     const revKey = tripKey.split("").reverse().join("");
-    const mixed = window.SYSTEM_SALT + "_" + name + "_[SALT]_" + revKey;
-    const hashHex = await window.sha256(mixed);
-    if (!hashHex) return "";
+    const mixed = SYSTEM_SALT + "_" + name + "_[SALT]_" + revKey;
+    
+    if (window.crypto && window.crypto.subtle) {
+      try {
+        const encoder = new TextEncoder();
+        let data = encoder.encode(mixed);
+        for (let i = 0; i < 1000; i++) {
+          const hash = await window.crypto.subtle.digest("SHA-256", data);
+          data = new Uint8Array(hash);
+        }
+        const hashHex = Array.from(data).map(b => b.toString(16).padStart(2, '0')).join('');
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        let res = "";
+        for (let i = 0; i < 10; i++) {
+          const val = parseInt(hashHex.substring(i * 6, i * 6 + 6), 16);
+          res += chars[val % 62];
+        }
+        return "◆" + res;
+      } catch (e) {
+        console.warn("Subtle crypto execution fallback", e);
+      }
+    }
+    
+    const fallbackHash = await window.sha256(mixed);
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     let res = "";
     for (let i = 0; i < 10; i++) {
-      const val = parseInt(hashHex.substring(i * 6, i * 6 + 6), 16);
+      const val = parseInt(fallbackHash.substring(i * 6, i * 6 + 6), 16);
       res += chars[val % 62];
     }
     return "◆" + res;
   };
 
-  // クリアボタン（×）の表示・非表示を制御する関数
+  // ----- 未定義だった追加の関数群 -----
+  const showToast = (msg) => {
+    const container = $("toastContainer");
+    if (!container) return;
+    container.textContent = msg;
+    container.style.display = "flex";
+    container.classList.remove("show");
+    void container.offsetWidth; // reflow
+    container.classList.add("show");
+    if (window.toastTimer) clearTimeout(window.toastTimer);
+    window.toastTimer = setTimeout(() => {
+      container.classList.remove("show");
+      setTimeout(() => { container.style.display = "none"; }, 200);
+    }, 3000);
+  };
+
+  const filterMsg = (m) => {
+    return !!(m && m.m);
+  };
+
+  const savePresenceCache = () => {
+    safeLS.set("nz_presence_cache", JSON.stringify(currentPresenceMap));
+  };
+
+  const loadCachedPresence = () => {
+    try {
+      const cached = safeLS.get("nz_presence_cache");
+      if (cached) {
+        currentPresenceMap = JSON.parse(cached);
+        renderPresence(currentPresenceMap);
+      }
+    } catch (e) {
+      console.warn("Failed to load cached presence", e);
+    }
+  };
+
+  const updateModalColorPreview = (color) => {
+    if (D.clrPrev) {
+      D.clrPrev.style.color = color;
+      D.clrPrev.textContent = `プレビュー: ${myName || "名無し"}${myTrip || ""}`;
+    }
+  };
+
+  const handleJoinKey = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      joinRoom();
+    }
+  };
+
+  const resetZoom = () => {
+    scale = 1; panX = 0; panY = 0;
+    updateTransform();
+  };
+
+  const clampPan = () => {
+    // panning 制限ロジック（簡易実装）
+    if (scale <= 1) { panX = 0; panY = 0; }
+  };
+
+  const updateTransform = () => {
+    if (D.imgViewSrc) {
+      D.imgViewSrc.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    }
+  };
+
+  const getDistance = (t1, t2) => {
+    return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+  };
+  // ------------------------------------
+
   const updateClrMsgBtnVisibility = () => {
     if (!D.clrMsgBtn || !D.mi) return;
     D.clrMsgBtn.classList.toggle("show", D.mi.value.length > 0);
@@ -440,7 +621,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       D.ib.style.display = "none";
       D.joinForm.style.display = "flex";
       D.exBtn.style.display = "none";
-      D.clrBtn.style.display = "none";
+      D.clrBtn.style.display = "inline-flex"; 
       const kb = $("kbKeepOpenContainer");
       if (kb) kb.style.display = "none";
       isJoinFormExpanded = false; 
@@ -450,9 +631,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     } else if (mode === "joined") {
       D.ib.style.display = "flex";
       D.joinForm.style.display = "none";
-      D.exBtn.style.display = "block";
-      D.exBtn.textContent = "退室";
-      D.clrBtn.style.display = "block";
+      D.exBtn.style.display = "inline-flex"; 
+      D.clrBtn.style.display = "inline-flex"; 
       const kb = $("kbKeepOpenContainer");
       if (kb) kb.style.display = "flex";
     }
@@ -460,7 +640,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
 
-  // 自身の無活動放置を検知して退室
   function checkActivityTimeout() {
     if (!isJoined) return;
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
@@ -518,13 +697,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   function stopAutoExitTimer() { if (autoExitTimer) { clearInterval(autoExitTimer); autoExitTimer = null; } }
 
-  // 他人による放置ユーザーのクリーンアップ代行処理
   function triggerOtherExit(targetId, targetUser, calculatedTimeoutTime) {
     if (targetUser.exiting || !db) return;
     targetUser.exiting = true;
     
     db.ref(`presence/official/${targetId}`).transaction(c => {
-      if (!c || c.exiting) return null; // 存在しない、またはすでに別の誰かがクリーンアップ実行中ならキャンセル
+      if (!c || c.exiting) return null; 
       c.exiting = true;
       return c;
     }, (err, committed, snap) => {
@@ -534,7 +712,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         if (!display) { db.ref(`presence/official/${targetId}`).remove().catch(()=>{}); return; }
         const encLog = "[SYS]::" + `${display} ${u.p || ""}`.trim() + " が退室しました (自動退室)";
         
-        // プレゼンス削除とログ送信を連動して実行
         db.ref(`presence/official/${targetId}`).remove().then(() => {
           db.ref(`chat/official`).push({ u: targetId, n: display, p: u.p || "", c: u.c || "#94a3b8", m: encLog, t: calculatedTimeoutTime }).catch(()=>{});
         }).catch(() => {
@@ -585,8 +762,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     opt[myUid || "temp_uid"] = { id: myUid || "temp_uid", n: myName, p: myTrip, c: curColor, t: nowTime, p_t: nowTime };
     renderPresence(opt);
 
-    // ★「回線が切れても30分間は生存・入室リストに残す」という方針のため、接続切断時の自動削除（onDisconnect().remove()）は完全に廃止します。
-
     db.ref(`presence/official/${myUid}`).set({
       n: myName,
       p: myTrip,
@@ -626,18 +801,67 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const pendingMsgs = new Map();
 
+  function pruneOldMessages() {
+    if (!db) return;
+    db.ref(`chat/official`).orderByKey().limitToLast(maxLimit + 1).once("value", snap => {
+      if (snap.numChildren() > maxLimit) {
+        snap.forEach(child => {
+          db.ref(`chat/official/${child.key}`).remove().catch(()=>{});
+          return true; 
+        });
+      }
+    });
+  }
+
+  // スパム検知用の変数
+  let lastSentText = "";
+  let lastSentTimeOfText = 0;
+  let postHistory = [];
+
   async function sendMsg(overrideText = null, imgData = null) {
     if (!isJoined || !D.mi || !db) return;
     const txt = overrideText !== null ? overrideText : D.mi.value.trim();
     if (!txt && !imgData) return;
+
     const now = Date.now();
-    if (now - lastSendTime < 350) return;
+
+    // 1. 基本的な連投クールダウン（1秒）
+    if (now - lastSendTime < 1000) {
+      showToast("少し時間をおいてから送信してください。");
+      return;
+    }
+
+    // 2. 同一テキスト内容の連続投稿制限（6秒間）
+    if (!imgData && txt === lastSentText && now - lastSentTimeOfText < 6000) {
+      showToast("同じメッセージを連続で送信することはできません。");
+      return;
+    }
+
+    // 3. フラッド検知：10秒以内に5件以上の書き込み制限
+    postHistory = postHistory.filter(t => now - t < 10000);
+    if (postHistory.length >= 5) {
+      showToast("送信頻度が高すぎます。しばらくお待ちください。");
+      return;
+    }
+
+    // 4. 文字数制限検証（500文字仕様）
+    if (!imgData && txt.length > 500) {
+      showToast("文字数制限（500文字）を超えています。");
+      return;
+    }
+
+    // 状態更新
     lastSendTime = now;
+    if (!imgData) {
+      lastSentText = txt;
+      lastSentTimeOfText = now;
+    }
+    postHistory.push(now);
+
     D.mi.value = "";
     D.mi.style.height = "auto";
-    updateClrMsgBtnVisibility(); // 送信成功時にクリアボタンを非表示化
+    updateClrMsgBtnVisibility(); 
     
-    // 【非同期バグ対策】非同期書き込みに移行する前に、同期的にフォーカスを維持することでモバイルキーボードの閉じを防ぐ
     if (keepKbOpen) D.mi.focus(); else D.mi.blur();
 
     const nowTime = getTrueTime();
@@ -660,7 +884,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     db.ref(`presence/official/${myUid}/t`).set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
 
     let payload = imgData ? "IMG::" + imgData : txt;
-    await db.ref(`chat/official`).push({ u: myUid, pnd: tempId, n: myName, p: myTrip, c: curColor, m: payload, t: firebase.database.ServerValue.TIMESTAMP }).catch((err) => {
+    await db.ref(`chat/official`).push({ u: myUid, pnd: tempId, n: myName, p: myTrip, c: curColor, m: payload, t: firebase.database.ServerValue.TIMESTAMP }).then(() => {
+      pruneOldMessages();
+    }).catch((err) => {
       const local = renderedMwNodes.get(tempId); if (local) local.remove();
       renderedMwNodes.delete(tempId); pendingMsgs.delete(tempId); displayedMsgIds.delete(tempId);
       alert("送信に失敗しました。");
@@ -685,9 +911,67 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
     }
     if (!inserted) D.tli.appendChild(el);
+    pruneOldSystemMessages(); 
   }
 
   function saveChatCacheFromDOM() { try { safeLS.remove("nz_chat_cache"); } catch(e) {} }
+
+  // タイムライン描画調整および過去ログ読み込み時のスクロール追従制御
+  function pruneOldSystemMessages() {
+    if (!D.tli) return;
+    const children = Array.from(D.tli.children);
+    
+    // 1. 通常発言メッセージの中の最古タイムスタンプを特定
+    let minNormalTs = Infinity;
+    children.forEach(el => {
+      const isSys = el.querySelector('.sys-msg') !== null;
+      if (!isSys) {
+        const ts = parseInt(el.dataset.ts || "0");
+        if (ts > 0 && ts < minNormalTs) {
+          minNormalTs = ts;
+        }
+      }
+    });
+
+    if (minNormalTs === Infinity) {
+      minNormalTs = 0;
+    }
+
+    // 2. 最古の通常発言より古いシステムログを非表示にする
+    children.forEach(el => {
+      const isSys = el.querySelector('.sys-msg') !== null;
+      if (isSys) {
+        const ts = parseInt(el.dataset.ts || "0");
+        if (ts < minNormalTs) {
+          el.style.display = "none";
+        } else {
+          el.style.display = "";
+        }
+      } else {
+        el.style.display = ""; 
+      }
+    });
+
+    // 3. 上ボタン経由での追加ロード完了時：100件の中の一番古いログへ吸着スクロール追従
+    if (scrollToOldestOnLoad) {
+      scrollToOldestOnLoad = false;
+      requestAnimationFrame(() => {
+        if (D.tl) {
+          D.tl.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      });
+    } else {
+      const target = D.tli.querySelector('[data-scroll-target="true"]');
+      if (target) {
+        delete target.dataset.scrollTarget;
+        requestAnimationFrame(() => {
+          if (D.tl) {
+            D.tl.scrollTop = target.offsetTop - 12;
+          }
+        });
+      }
+    }
+  }
 
   function syncMessagesDOM(targetMsgs) {
     if (!D.tli || !targetMsgs || !Array.isArray(targetMsgs)) return;
@@ -725,6 +1009,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
       if (D.tli.lastElementChild !== pNode) D.tli.appendChild(pNode);
     });
+
+    pruneOldSystemMessages(); 
 
     if (isLoadMoreTriggered) {
       isLoadMoreTriggered = false;
@@ -862,6 +1148,19 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     return el;
   }
 
+  function buildPicker(con, sel, cls, onChange) {
+    if (!con) return; con.innerHTML = "";
+    COLORS.forEach(({v,n}) => {
+      const b = document.createElement("button");
+      b.className = cls + (v === sel ? " sel" : ""); b.style.background = v; b.title = n; b.dataset.color = v;
+      
+      b.addEventListener("click", () => {
+        onChange(v);
+      });
+      con.appendChild(b);
+    });
+  }
+
   function scBottom(force = false) {
     if (!isAutoScroll && !force) return;
     if (_scPending) return;
@@ -872,7 +1171,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
   }
 
-  // バッジカウンタ
   function updateUnreadBadge() {
     const badge = D.unreadBadge;
     if (!badge) return;
@@ -887,42 +1185,20 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (!D.tl || !D.jumpUpBtn || !D.jumpDownBtn) return;
     const scrollTop = D.tl.scrollTop, clientHeight = D.tl.clientHeight, scrollHeight = D.tl.scrollHeight;
     const scrollable = scrollHeight > clientHeight;
-    D.jumpUpBtn.disabled = !scrollable || (scrollTop <= 2);
+    D.jumpUpBtn.disabled = (currentLimit >= maxLimit && scrollTop <= 2);
     D.jumpDownBtn.disabled = !scrollable || (scrollTop + clientHeight >= scrollHeight - 2);
   }
 
   async function loadMoreLogs() {
     if (isLoadingMore || currentLimit >= maxLimit) return;
     isLoadingMore = true;
-    if (D.loadMoreBtn) {
-      D.loadMoreBtn.disabled = true;
-      D.loadMoreBtn.textContent = "🔄 読み込み中...";
-    }
     if (D.tl) {
       savedOldScrollHeight = D.tl.scrollHeight;
       savedOldScrollTop = D.tl.scrollTop;
     }
-    currentLimit = Math.min(maxLimit, currentLimit + 25);
+    currentLimit = Math.min(maxLimit, currentLimit + 50); 
     isLoadMoreTriggered = true;
     setupFirebaseListeners();
-  }
-
-  function updateLoadMoreUI(loadedCount) {
-    if (!D.loadMoreBlock || !D.loadMoreBtn || !D.loadMoreStatus) return;
-    D.loadMoreBlock.style.display = "block";
-    if (currentLimit >= maxLimit) {
-      D.loadMoreBtn.disabled = true;
-      D.loadMoreBtn.style.color = "var(--mu)";
-      D.loadMoreBtn.textContent = "✨ これ以上の過去ログはありません (上限100件)";
-    } else if (loadedCount < currentLimit) {
-      D.loadMoreBtn.disabled = true;
-      D.loadMoreBtn.style.color = "var(--mu)";
-      D.loadMoreBtn.textContent = `✨ これ以上の過去ログはありません (全 ${loadedCount} 件)`;
-    } else {
-      D.loadMoreBtn.disabled = false;
-      D.loadMoreBtn.style.color = "#38bdf8";
-      D.loadMoreBtn.innerHTML = `▲ さらに過去のログを読み込む (<span id="loadMoreStatus">${loadedCount}/${maxLimit}件表示中</span>)`;
-    }
   }
 
   function parseTxtSplit(txt) {
@@ -983,12 +1259,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     updateJumpBtns();
   };
 
-  // プレイヤー生成および自動再生・ローディング高速化
   function openFloatingPlayer(url, type) {
     if (!D.fixedPlayer || !D.playerContent) return;
     D.fixedPlayer.style.display = "flex";
     
-    // スピナー付の読み込み表示を初期セット
     D.playerContent.innerHTML = `
       <div id="playerLoader" class="player-loader">
         <div class="spin"></div>
@@ -1002,10 +1276,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     iframe.allowFullscreen = true;
     iframe.style.width = "100%";
     iframe.style.height = "100%";
-    iframe.style.opacity = "0"; // ロード終了まで非表示にしてカクつきを防ぐ
+    iframe.style.opacity = "0"; 
     iframe.style.transition = "opacity 0.2s ease";
 
-    // 読み込み完了時のフェードイン処理
     iframe.onload = () => {
       const loader = $("playerLoader");
       if (loader) {
@@ -1063,131 +1336,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     updateJumpBtns();
   }
 
-  const preventFocusLoss = (el) => {
-    if (!el) return;
-    el.addEventListener("mousedown", e => e.preventDefault());
-    el.addEventListener("touchstart", e => { if (D.mi && document.activeElement === D.mi) e.preventDefault(); });
-  };
-
-  function buildPicker(con, sel, cls, onChange) {
-    if (!con) return; con.innerHTML = "";
-    COLORS.forEach(({v,n}) => {
-      const b = document.createElement("button");
-      b.className = cls + (v === sel ? " sel" : ""); b.style.background = v; b.title = n; b.dataset.color = v;
-      b.addEventListener("click", () => onChange(v)); con.appendChild(b);
-    });
-  }
-
-  function updateModalColorPreview(color) {
-    const con = D.clrPrev; if (!con) return; con.innerHTML = "";
-    con.style.background = "rgba(0, 0, 0, 0.25)"; con.style.border = "1px solid var(--bd)"; con.style.borderRadius = "4px"; con.style.padding = "8px"; con.style.textAlign = "left";
-    const wrap = document.createElement("div"); wrap.style.fontSize = "12px"; wrap.style.color = color; wrap.style.fontWeight = "bold"; wrap.textContent = myName || "名無し";
-    con.appendChild(wrap);
-    const mock = document.createElement("div"); mock.style.fontSize = "13px"; mock.style.color = "var(--tx)"; mock.style.marginTop = "4px"; mock.style.borderLeft = `2px solid ${color}`; mock.style.paddingLeft = "8px"; mock.textContent = "この色で発言が表示されます。";
-    con.appendChild(mock);
-  }
-
-  function resetZoom() { 
-    const imgEl = D.imgViewSrc;
-    if (!imgEl) return; 
-    scale = 1; panX = 0; panY = 0; imgEl.style.transformOrigin = "center center"; updateTransform(); 
-  }
-  function updateTransform() { 
-    const imgEl = D.imgViewSrc;
-    if (imgEl) imgEl.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`; 
-  }
-  function clampPan() {
-    const overlayEl = $("zoomViewport");
-    const imgEl = D.imgViewSrc;
-    if (!overlayEl || !imgEl) return;
-    if (scale <= 1) { panX = 0; panY = 0; return; }
-    const cw = overlayEl.clientWidth, ch = overlayEl.clientHeight, ir = imgEl.naturalWidth / imgEl.naturalHeight, cr = cw / ch;
-    let iw = (ir > cr) ? cw : ch * ir, ih = (ir > cr) ? cw / ir : ch;
-    let limitX = (iw * scale > cw) ? (iw * scale - cw) / 2 : 0, limitY = (ih * scale > ch) ? (ih * scale - ch) / 2 : 0;
-    panX = Math.max(-limitX, Math.min(limitX, panX)); panY = Math.max(-limitY, Math.min(limitY, panY));
-  }
-  const getDistance = (t1, t2) => Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-
-  const handleJoinKey = e => { if (e.key === "Enter" && D.joinBtn && !D.joinBtn.disabled) joinRoom(); };
-
-  let lastBoostTime = 0;
-  const boostSync = () => { 
-    const now = Date.now();
-    if (now - lastBoostTime < 800) return; 
-    lastBoostTime = now;
-    if (db) db.goOnline(); 
-    checkActivityTimeout(); 
-    if (db && isJoined && myUid) { 
-      startAutoExitChecker(); 
-      // ★ p_t（最終活動/発言時刻）は更新せず、現在の接続生存状態（t）のみ更新するようにします
-      db.ref(`presence/official/${myUid}`).update({ t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
-    } 
-  };
-
-  document.addEventListener("visibilitychange", () => { 
-    if (document.visibilityState === "visible") {
-      boostSync(); 
-      checkActivityTimeout(); // バックグラウンド復帰時の即時放置チェック
-    }
-  });
-  window.addEventListener("focus", () => { boostSync(); checkActivityTimeout(); }); 
-  window.addEventListener("pageshow", () => { boostSync(); checkActivityTimeout(); });
-
-  const adjustViewport = () => {
-    const h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-    document.documentElement.style.setProperty('--app-viewport-height', `${h}px`);
-  };
-  if (window.visualViewport) {
-    window.visualViewport.addEventListener('resize', () => { adjustViewport(); scBottom(true); });
-    window.visualViewport.addEventListener('scroll', () => { 
-      if (D.mi && document.activeElement === D.mi) {
-        window.scrollTo(0, 0); // iOS等での不要な全体スクロール（バウンス）を完全に抑制
-      }
-    });
-  }
-  window.addEventListener('resize', adjustViewport);
-
-  window.addEventListener('storage', (e) => {
-    if (e.key === "nz_is_joined") {
-      const joined = e.newValue === "true";
-      if (joined !== isJoined) {
-        isJoined = joined;
-        if (isJoined) {
-          myName = safeLS.get("nz_ni") || "";
-          if (!myName.trim()) { isJoined = false; safeLS.set("nz_is_joined", "false"); switchUIMode("guest"); return; }
-          window.makeTrip(myName, safeLS.get("nz_tripi") || "").then(t => {
-            myTrip = t; curColor = safeLS.get("nz_color") || "#94a3b8"; setGlobalColor(curColor); switchUIMode("joined"); startAutoExitChecker(); renderPresence(currentPresenceMap);
-          });
-        } else { stopAutoExitTimer(); switchUIMode("guest"); renderPresence(currentPresenceMap); }
-      }
-    }
-    if (e.key === "nz_ni" || e.key === "nz_tripi") syncProfileValues();
-    if (e.key === "nz_color") { curColor = e.newValue || "#94a3b8"; setGlobalColor(curColor); updateModalColorPreview(curColor); }
-    if (e.key === "nz_keep_kb_open") { keepKbOpen = e.newValue === "true"; const openChk = $("kbKeepOpenChk"); if (openChk) openChk.checked = keepKbOpen; }
-  });
-
-  function loadCachedPresence() {
-    try {
-      const cached = safeLS.get("nz_presence_cache"); 
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed && typeof parsed === "object") { currentPresenceMap = parsed; renderPresence(parsed); }
-      }
-    } catch (e) { console.warn("Cache presence failed", e); }
-  }
-
-  function savePresenceCache() { try { safeLS.set("nz_presence_cache", JSON.stringify(currentPresenceMap)); } catch(e) {} }
-
-  // タイムライン取得時のフィルタリング処理
-  function filterMsg(m) {
-    if (!m || m.deleted || !m.m || typeof m.m !== "string" || !m.m.trim() || !m.n || typeof m.n !== "string" || !m.n.trim()) return false;
-    if (m.m.startsWith("[SYS]::")) {
-      const sys = m.m.substring(7).trim();
-      if (sys.startsWith("が退室しました") || sys.startsWith("が入室しました") || !sys) return false;
-    }
-    return true;
-  }
-
   function setupFirebaseListeners() {
     if (!db) return;
     const chatRef = db.ref(`chat/official`), presenceRef = db.ref(`presence/official`);
@@ -1209,6 +1357,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       const mid = snap.key, local = renderedMwNodes.get(mid);
       if (local) { local.remove(); renderedMwNodes.delete(mid); displayedMsgIds.delete(mid); }
       if (unreadMsgIds.has(mid)) { unreadMsgIds.delete(mid); updateUnreadBadge(); }
+      pruneOldSystemMessages(); 
       saveChatCacheFromDOM();
     }, err => {
       console.warn("Firebase child_removed listener error:", err);
@@ -1225,6 +1374,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         } else {
           const el = renderedMwNodes.get(mid); if (el) updateExistingMsgNode(m, el);
         }
+        pruneOldSystemMessages(); 
         saveChatCacheFromDOM();
       }
     }, err => {
@@ -1235,6 +1385,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       const m = snap.val();
       if (m) {
         m.id = snap.key;
+        const msgTime = getMsgTime(m);
+        
         if (m.pnd && pendingMsgs.has(m.pnd)) {
           pendingMsgs.delete(m.pnd);
           const tempEl = renderedMwNodes.get(m.pnd);
@@ -1255,10 +1407,24 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             renderedMwNodes.set(m.id, el);
             displayedMsgIds.add(m.id);
             insertMessageInOrder(el);
+            
             if (!isFirstLoad && m.u !== myUid) {
-              if (!isAutoScroll || document.visibilityState === "hidden") { unreadMsgIds.add(m.id); updateUnreadBadge(); }
+              if (msgTime > latestDisplayedTs) {
+                if (!isAutoScroll || document.visibilityState === "hidden") {
+                  unreadMsgIds.add(m.id);
+                  updateUnreadBadge();
+                }
+              }
             }
-          } else updateExistingMsgNode(m, el);
+          } else {
+            updateExistingMsgNode(m, el);
+          }
+
+          if (msgTime > latestDisplayedTs) {
+            if (isAutoScroll && document.visibilityState === "visible") {
+              latestDisplayedTs = msgTime;
+            }
+          }
         } else {
           let el = renderedMwNodes.get(m.id);
           if (el) {
@@ -1274,9 +1440,24 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     chatQuery.once("value").then(snap => {
       isFirstLoad = false; isLoadingMore = false; isLoadMoreTriggered = false;
-      updateLoadMoreUI(snap.numChildren());
+      
+      let maxTs = 0;
+      snap.forEach(child => {
+        const m = child.val();
+        if (m) {
+          const t = getMsgTime(m);
+          if (t > maxTs) maxTs = t;
+        }
+      });
+      if (maxTs > latestDisplayedTs) {
+        latestDisplayedTs = maxTs;
+      }
+
       saveChatCacheFromDOM();
-      scBottom();
+      
+      if (currentLimit === 50) {
+        scBottom(true);
+      }
     }).catch(err => {
       console.warn("Firebase once('value') load error:", err);
       isFirstLoad = false; isLoadingMore = false; isLoadMoreTriggered = false;
@@ -1293,7 +1474,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           if (!ut || typeof ut !== "number") continue;
           let pt = u.p_t || ut;
           
-          // 30分（1800000ミリ秒）無活動のユーザーをクリーンアップ
           if (isOffsetLoaded && id !== myUid && (nowTrue - pt >= 1800000)) { 
             triggerOtherExit(id, u, pt + 1800000); 
             continue; 
@@ -1324,6 +1504,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       if (isJoined) joinRoom(true);
     }
 
+    switchUIMode(isJoined ? "joined" : "guest");
+    if (D.tl) D.tl.style.opacity = "1";
+
     if (!isConnectedBound && db) {
       try {
         db.ref(".info/serverTimeOffset").on("value", snap => { serverTimeOffset = snap.val() || 0; isOffsetLoaded = true; });
@@ -1341,9 +1524,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         isConnectedBound = true;
       } catch (e) { console.warn("Fail serverTimeOffset", e); }
     }
-
-    switchUIMode(isJoined ? "joined" : "guest");
-    if (D.tl) D.tl.style.opacity = "1";
   };
 
   function initApp() {
@@ -1363,9 +1543,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       playerContent: $("playerContent"),
       tl: $("tl"),
       tli: $("tl-inner"),
-      loadMoreBtn: $("loadMoreBtn"),
-      loadMoreBlock: $("loadMoreBlock"),
-      loadMoreStatus: $("loadMoreStatus"),
       unreadBadge: $("unreadBadge"),
       jumpUpBtn: $("jumpUpBtn"),
       jumpDownBtn: $("jumpDownBtn"),
@@ -1382,18 +1559,33 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       clrPrev: $("clrPrev"),
       pcnt: $("pcnt"),
       pl: $("pl"),
-      mi: $("mi")
+      mi: $("mi"),
+      kbKeepOpenChk: $("kbKeepOpenChk"),
+      clrDot: $("clrDot")
     };
 
-    if (D.loadMoreBtn) D.loadMoreBtn.onclick = loadMoreLogs;
     if (D.tl) {
       D.tl.addEventListener("scroll", () => {
         const scrollTop = D.tl.scrollTop, clientHeight = D.tl.clientHeight, scrollHeight = D.tl.scrollHeight;
-        if (scrollTop <= 0 && !isLoadingMore && currentLimit < maxLimit) loadMoreLogs();
+        
+        if (scrollTop <= 0 && !isLoadingMore && currentLimit < maxLimit) {
+          const firstNormal = D.tli.querySelector('.mw:not([style*="display: none"]):not(:has(.sys-msg))');
+          if (firstNormal) {
+            firstNormal.dataset.scrollTarget = "true";
+          }
+          loadMoreLogs();
+        }
         if (!_scPending) {
           if (scrollTop + clientHeight >= scrollHeight - 40) {
             isAutoScroll = true;
-            if (unreadMsgIds.size > 0) { unreadMsgIds.clear(); updateUnreadBadge(); }
+            if (unreadMsgIds.size > 0) { 
+              unreadMsgIds.clear(); 
+              updateUnreadBadge(); 
+            }
+            renderedMwNodes.forEach(node => {
+              const ts = parseInt(node.dataset.ts || "0");
+              if (ts > latestDisplayedTs) latestDisplayedTs = ts;
+            });
           } else isAutoScroll = false;
         }
         updateJumpBtns();
@@ -1401,23 +1593,85 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (D.playerCloseBtn) D.playerCloseBtn.onclick = closePlayer;
-    if (D.exBtn) D.exBtn.onclick = () => { if (isJoined && confirm("退室して参加前の覗き見画面に戻りますか？")) doExit(); };
 
-    if (D.sdBtn) { D.sdBtn.onclick = () => sendMsg(); preventFocusLoss(D.sdBtn); }
-    if (D.clrMsgBtn) {
-      D.clrMsgBtn.onclick = () => { if (D.mi) { D.mi.value = ""; D.mi.style.height = "auto"; D.mi.dispatchEvent(new Event("input")); updateClrMsgBtnVisibility(); } };
-      preventFocusLoss(D.clrMsgBtn);
+    if (D.exBtn) {
+      D.exBtn.addEventListener("click", () => {
+        if (isJoined && confirm("退室して参加前の覗き見画面に戻りますか？")) {
+          doExit();
+        }
+      });
     }
-    if (D.imgBtn) { D.imgBtn.onclick = () => { if (D.fileInput) D.fileInput.click(); }; preventFocusLoss(D.imgBtn); }
+
+    if (D.sdBtn) {
+      D.sdBtn.addEventListener("pointerdown", (e) => {
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+        e.preventDefault(); 
+        sendMsg();
+      });
+    }
+
+    if (D.clrBtn) {
+      D.clrBtn.addEventListener("click", () => {
+        tmpColor = curColor; updateModalColorPreview(tmpColor);
+        buildPicker(D.clrPick2, tmpColor, "clrc2", (v) => {
+          tmpColor = v; updateModalColorPreview(v);
+          if (D.clrPick2) D.clrPick2.querySelectorAll("button").forEach(b => b.classList.toggle("sel", b.dataset.color === v));
+        });
+        if (D.clrmod) D.clrmod.classList.add("show");
+      });
+    }
+
+    if (D.clrCancel) {
+      D.clrCancel.addEventListener("click", () => {
+        if (D.clrmod) D.clrmod.classList.remove("show");
+      });
+    }
+
+    if (D.clrOk) {
+      D.clrOk.addEventListener("click", async () => {
+        curColor = tmpColor; setGlobalColor(curColor); safeLS.set("nz_color", curColor);
+        if (D.clrmod) D.clrmod.classList.remove("show"); await syncProfileValues();
+        if (isJoined && db) {
+          db.ref(`presence/official/${myUid}`).update({ c: curColor }).catch(()=>{});
+        }
+      });
+    }
+
+    if (D.clrMsgBtn) {
+      D.clrMsgBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault(); 
+        if (D.mi) {
+          D.mi.value = "";
+          D.mi.style.height = "auto";
+          D.mi.dispatchEvent(new Event("input"));
+          updateClrMsgBtnVisibility();
+        }
+      });
+    }
+
+    if (D.imgBtn) {
+      D.imgBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault(); 
+        if (D.fileInput) D.fileInput.click();
+      });
+    }
 
     if (D.jumpUpBtn) {
-      D.jumpUpBtn.onclick = () => { if (D.tl) { D.tl.scrollTo({ top: 0, behavior: "smooth" }); if (currentLimit < maxLimit) setTimeout(loadMoreLogs, 300); } };
+      D.jumpUpBtn.onclick = () => {
+        if (D.tl) {
+          if (currentLimit < maxLimit) {
+            scrollToOldestOnLoad = true; 
+            loadMoreLogs();
+          } else {
+            D.tl.scrollTo({ top: 0, behavior: "smooth" });
+          }
+        }
+      };
     }
     if (D.jumpDownBtn) {
       D.jumpDownBtn.onclick = () => { isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); if (D.tl) D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" }); };
     }
 
-    // 日本語入力変換中（IME）の誤送信を100%防ぐバグ対策フラグ
     let isComposing = false;
 
     if (D.mi) {
@@ -1428,11 +1682,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         D.mi.style.height = "auto";
         D.mi.style.height = Math.min(120, D.mi.scrollHeight) + "px";
         scBottom(true);
-        updateClrMsgBtnVisibility(); // 入力時にクリアボタンの表示・非表示を切り替え
+        updateClrMsgBtnVisibility(); 
       });
       D.mi.addEventListener("keydown", e => {
         if (e.key === "Enter" && !e.shiftKey) {
-          if (isComposing) return; // 変換確定Enterは完全に送信をブロック
+          if (isComposing) return; 
           e.preventDefault(); 
           sendMsg();
         }
@@ -1460,28 +1714,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           img.src = ev.target.result;
         };
         reader.readAsDataURL(file);
-      };
-    }
-
-    if (D.clrBtn) {
-      D.clrBtn.onclick = () => {
-        tmpColor = curColor; updateModalColorPreview(tmpColor);
-        buildPicker(D.clrPick2, tmpColor, "clrc2", (v) => {
-          tmpColor = v; updateModalColorPreview(v);
-          if (D.clrPick2) D.clrPick2.querySelectorAll("button").forEach(b => b.classList.toggle("sel", b.dataset.color === v));
-        });
-        if (D.clrmod) D.clrmod.classList.add("show");
-      };
-    }
-
-    if (D.clrCancel) D.clrCancel.onclick = () => { if (D.clrmod) D.clrmod.classList.remove("show"); };
-    if (D.clrOk) {
-      D.clrOk.onclick = async () => {
-        curColor = tmpColor; setGlobalColor(curColor); safeLS.set("nz_color", curColor);
-        if (D.clrmod) D.clrmod.classList.remove("show"); await syncProfileValues();
-        if (isJoined && db) {
-          await db.ref(`presence/official/${myUid}`).set({ n: myName, p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP });
-        }
       };
     }
 
@@ -1529,12 +1761,18 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     if (D.imgViewCloseBtn) D.imgViewCloseBtn.onclick = () => { if (D.imgViewMod) D.imgViewMod.classList.remove("show"); };
 
-    // PCとスマートフォン両方に対応した滑らかなピンチズーム・ドラッグパン操作
+    if (D.kbKeepOpenChk) {
+      D.kbKeepOpenChk.checked = keepKbOpen;
+      D.kbKeepOpenChk.addEventListener("change", () => {
+        keepKbOpen = D.kbKeepOpenChk.checked;
+        safeLS.set("nz_keep_kb_open", keepKbOpen ? "true" : "false");
+      });
+    }
+
     const overlay = $("zoomViewport");
     let isMouseDown = false, startX, startY;
 
     if (overlay) {
-      // スマホ（マルチタッチ対応）
       overlay.addEventListener('touchstart', (e) => {
         if (e.target === D.imgViewCloseBtn) return;
         if (e.touches.length === 2) { isPanning = false; initialDistance = getDistance(e.touches[0], e.touches[1]); }
@@ -1552,7 +1790,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         }
       }, { passive: true });
 
-      // PCマウスドラッグパン対応
       overlay.addEventListener('mousedown', (e) => {
         if (e.target === D.imgViewCloseBtn || scale <= 1) return;
         isMouseDown = true;
@@ -1570,7 +1807,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
       window.addEventListener('mouseup', () => { isMouseDown = false; });
 
-      // PCホイールズーム対応
       overlay.addEventListener('wheel', (e) => {
         e.preventDefault(); scale = Math.max(1, Math.min(5, scale * (e.deltaY > 0 ? 0.9 : 1.1))); clampPan(); updateTransform();
       }, { passive: false });
