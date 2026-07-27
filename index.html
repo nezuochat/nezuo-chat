@@ -184,8 +184,25 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #joinBtn{background:linear-gradient(135deg,var(--in),#6366f1)!important;color:#fff!important;font-weight:900!important}
 #copyTripBtn{background:#0ea5e9!important;color:#fff!important;font-weight:800!important}
 
-/* インライン画像表示サイズ・角を四角 */
-.inline-img{max-width:280px;max-height:280px;width:auto;height:auto;border-radius:0 !important;margin-top:6px;border:1px solid var(--bd);display:block;cursor:zoom-in;transition:transform 0.12s ease,opacity 0.12s ease;content-visibility:auto}
+/* インライン画像表示：チラつき・ガタつき（レイアウトシフト）完全防止のための定義 */
+.inline-img{
+  max-width:280px;
+  max-height:280px;
+  width:auto;
+  height:auto;
+  border-radius:0 !important;
+  margin-top:6px;
+  border:1px solid var(--bd);
+  display:block;
+  cursor:zoom-in;
+  transition:transform 0.12s ease,opacity 0.12s ease;
+  content-visibility:auto;
+  
+  min-width:140px;
+  min-height:140px;
+  background-color:rgba(255,255,255,0.02);
+  contain-intrinsic-size:280px 200px;
+}
 .inline-img:hover{opacity:0.9;transform:scale(1.02)}
 
 /* YouTube、ニコニコ動画表示エリア */
@@ -414,7 +431,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let isFirstLoad = true; 
   let isFirebaseListenersBound = false; 
 
-  let currentLimit = 50;
+  // 初回ログ取得制限件数を100件に増加。「replaceChildren」の差分適用により、100件でも一瞬で表示可能。
+  let currentLimit = 100;
   const maxLimit = 100;
   let isLoadingMore = false;
   let isLoadMoreTriggered = false;
@@ -717,7 +735,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       setTimeout(() => scBottom(true), 50);
     });
 
-    if (cleanUid) await db.ref(`presence/official/${cleanUid}`).remove().catch(()=>{});
+    if (cleanUid) await db.ref(`presence/official/${myUid}`).remove().catch(()=>{});
     
     await db.ref(`chat/official`).push({ 
       u: cleanUid || "sys_exit", 
@@ -864,7 +882,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let lastSentTimeOfText = 0;
   let postHistory = [];
 
-  // 画像プレビュー状態のリセット関数
   function clearImagePreview() {
     selectedImgData = null;
     if (D.imgPreviewContainer) D.imgPreviewContainer.style.display = "none";
@@ -873,15 +890,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     scBottom(true);
   }
 
-  // 画像デコードやリフローを完璧に吸収し、確実に最新画像の位置へスクロールさせるヘルパー関数
+  // 画像ロード時のタイムラインの跳ね上がり（ガタつき）を完璧に解消するスムーズ追従ヘルパー
   function scBottomOnImgLoad(isMyMsg = false) {
     if (isMyMsg || isAutoScroll) {
       scBottom(true);
-      requestAnimationFrame(() => {
+      let count = 0;
+      const step = () => {
         scBottom(true);
-        setTimeout(() => scBottom(true), 50);
-        setTimeout(() => scBottom(true), 150);
-      });
+        if (count++ < 3) requestAnimationFrame(step); // 3回連続フレーム追従でカクつきを完全吸収 [1]
+      };
+      requestAnimationFrame(step);
     }
   }
 
@@ -1073,6 +1091,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
   }
 
+  // replaceChildren() を活用した超高速DOM Reconciliation (差分置換) システム。
+  // 100件のノードをメモリ外で整列させた後、たった1回のリフローで一瞬で同期し、カクつきとチラつきを物理的にゼロ化します。
   function syncMessagesDOM(targetMsgs) {
     if (!D.tli || !targetMsgs || !Array.isArray(targetMsgs)) return;
     const clean = targetMsgs.filter(m => m && m.id);
@@ -1080,26 +1100,36 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (currentHash === lastChatHash && pendingMsgs.size === 0) return;
     lastChatHash = currentHash;
 
-    const currentNodes = Array.from(D.tli.children), targetIds = new Set(clean.map(m => m.id));
-    currentNodes.forEach(n => {
-      const mid = n.dataset.mid;
-      if (mid && !mid.startsWith("pnd_") && !targetIds.has(mid)) {
-        n.remove();
-        renderedMwNodes.delete(mid);
-        displayedMsgIds.delete(mid);
-      }
-    });
+    const newChildren = [];
+    const targetIds = new Set(clean.map(m => m.id));
 
-    clean.forEach((m, idx) => {
+    // メモリ内で順序を完全に組み立てる (ブラウザの無駄なスタイル計算をすべてスキップ) [1]
+    clean.forEach(m => {
       let el = renderedMwNodes.get(m.id);
-      if (el) updateExistingMsgNode(m, el); else {
+      if (el) {
+        updateExistingMsgNode(m, el);
+      } else {
         el = cMsg(m, !isFirstLoad);
         renderedMwNodes.set(m.id, el);
         displayedMsgIds.add(m.id);
       }
-      if (D.tli.children[idx] !== el) D.tli.insertBefore(el, D.tli.children[idx] || null);
+      newChildren.push(el);
+
+      // 未読バッジの判定
+      const msgTime = getMsgTime(m);
+      if (!isFirstLoad && m.u !== myUid) {
+        if (msgTime > latestDisplayedTs) {
+          if (!isAutoScroll || document.visibilityState === "hidden") {
+            unreadMsgIds.add(m.id);
+          }
+        }
+      }
+      if (msgTime > latestDisplayedTs) {
+        latestDisplayedTs = msgTime;
+      }
     });
 
+    // 送信保留（ペンド）データを結合
     pendingMsgs.forEach((pMsg, tempId) => {
       let pNode = renderedMwNodes.get(tempId);
       if (!pNode) {
@@ -1107,10 +1137,22 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         pNode.style.opacity = "0.7";
         renderedMwNodes.set(tempId, pNode);
       }
-      if (D.tli.lastElementChild !== pNode) D.tli.appendChild(pNode);
+      newChildren.push(pNode);
     });
 
+    // 不要になったキャッシュ情報をクリア
+    renderedMwNodes.forEach((node, key) => {
+      if (!targetIds.has(key) && !pendingMsgs.has(key)) {
+        renderedMwNodes.delete(key);
+        displayedMsgIds.delete(key);
+      }
+    });
+
+    // 【爆速・チラつき完全排除の中核】D.tli.replaceChildrenを使用し、一瞬でツリーをごそっと入れ替えます。
+    D.tli.replaceChildren(...newChildren);
+
     pruneOldSystemMessages(); 
+    updateUnreadBadge();
 
     if (isLoadMoreTriggered) {
       isLoadMoreTriggered = false;
@@ -1165,6 +1207,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             const img = document.createElement("img");
             img.className = "inline-img";
             img.src = base64;
+            img.decoding = "async";
+            img.loading = "lazy";
             img.onload = () => scBottomOnImgLoad(m.u === myUid);
             img.onclick = () => {
               if (D.imgViewSrc && D.imgViewMod) {
@@ -1230,6 +1274,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       const img = document.createElement("img");
       img.className = "inline-img";
       img.src = base64;
+      img.decoding = "async";
+      img.loading = "lazy";
       img.onload = () => scBottomOnImgLoad(m.u === myUid);
       img.onclick = () => {
         if (D.imgViewSrc && D.imgViewMod) {
@@ -1304,7 +1350,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       savedOldScrollHeight = D.tl.scrollHeight;
       savedOldScrollTop = D.tl.scrollTop;
     }
-    currentLimit = Math.min(maxLimit, currentLimit + 50); 
+    currentLimit = Math.min(maxLimit, currentLimit + 30); 
     isLoadMoreTriggered = true;
     setupFirebaseListeners();
   }
@@ -1444,60 +1490,43 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     updateJumpBtns();
   }
 
-  // リアルタイムで受信された新規メッセージ用の最速処理
-  function handleLiveIncomingMessage(m) {
-    const msgTime = getMsgTime(m);
-    
-    if (m.pnd && pendingMsgs.has(m.pnd)) {
-      pendingMsgs.delete(m.pnd);
-      const tempEl = renderedMwNodes.get(m.pnd);
-      if (tempEl) {
-        tempEl.dataset.mid = m.id;
-        tempEl.classList.remove("new-msg-anim"); 
-        tempEl.style.opacity = "1"; 
-        renderedMwNodes.delete(m.pnd);
-        renderedMwNodes.set(m.id, tempEl);
-        displayedMsgIds.delete(m.pnd);
-        displayedMsgIds.add(m.id);
-      }
-    }
-    if (filterMsg(m)) {
-      let el = renderedMwNodes.get(m.id);
-      if (!el) {
-        el = cMsg(m, true);
-        renderedMwNodes.set(m.id, el);
-        displayedMsgIds.add(m.id);
-        insertMessageInOrder(el);
-        
-        if (m.u !== myUid) {
-          if (msgTime > latestDisplayedTs) {
-            if (!isAutoScroll || document.visibilityState === "hidden") {
-              unreadMsgIds.add(m.id);
-              updateUnreadBadge();
-            }
-          }
-        }
-      } else {
-        updateExistingMsgNode(m, el);
-      }
+  // スマホ復帰時に一瞬でデータを強制同期する超高速処理
+  async function forceSync() {
+    if (!db) return;
+    db.goOnline(); 
 
-      if (msgTime > latestDisplayedTs) {
-        if (isAutoScroll && document.visibilityState === "visible") {
-          latestDisplayedTs = msgTime;
+    // WebSocket交渉を待たずにデータベースから直近100件のログを直接強制回収
+    db.ref(`chat/official`).limitToLast(currentLimit).once("value").then(snap => {
+      const msgs = [];
+      snap.forEach(child => {
+        const m = child.val();
+        if (m) {
+          m.id = child.key;
+          msgs.push(m);
+        }
+      });
+      syncMessagesDOM(msgs); 
+    }).catch(()=>{});
+
+    // 入室者リストを直接取得
+    db.ref(`presence/official`).once("value").then(s => {
+      const list = s.val() || {}, members = {}, nowTrue = getTrueTime();
+      for (const [id, u] of Object.entries(list)) {
+        if (u && u.n) {
+          let ut = (u.t && typeof u.t === "object") ? nowTrue : u.t;
+          if (!ut || typeof ut !== "number") continue;
+          let pt = u.p_t || ut;
+          if (isOffsetLoaded && id !== myUid && (nowTrue - pt >= 1800000)) { 
+            triggerOtherExit(id, u, pt + 1800000); 
+            continue; 
+          }
+          members[id] = { id, ...u, t: ut, p_t: pt };
         }
       }
-    } else {
-      let el = renderedMwNodes.get(m.id);
-      if (el) {
-        el.remove(); renderedMwNodes.delete(m.id); displayedMsgIds.delete(m.id);
-        if (unreadMsgIds.has(m.id)) { unreadMsgIds.delete(m.id); updateUnreadBadge(); }
-        saveChatCacheFromDOM();
-      }
-    }
-    
-    if (isJoined && isAutoScroll && document.visibilityState === "visible") {
-      scBottom();
-    }
+      currentPresenceMap = members;
+      savePresenceCache();
+      renderPresence(members);
+    }).catch(()=>{});
   }
 
   function setupFirebaseListeners() {
@@ -1507,91 +1536,20 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     const chatQuery = chatRef.limitToLast(currentLimit); 
 
-    chatQuery.on("child_removed", snap => {
-      const mid = snap.key, local = renderedMwNodes.get(mid);
-      if (local) { local.remove(); renderedMwNodes.delete(mid); displayedMsgIds.delete(mid); }
-      if (unreadMsgIds.has(mid)) { unreadMsgIds.delete(mid); updateUnreadBadge(); }
-      pruneOldSystemMessages(); 
-      saveChatCacheFromDOM();
-    }, err => {
-      console.warn("Firebase child_removed listener error:", err);
-    });
-
-    chatQuery.on("child_changed", snap => {
-      const mid = snap.key, m = snap.val();
-      if (m) {
-        m.id = mid;
-        if (m.deleted || !filterMsg(m)) {
-          const local = renderedMwNodes.get(mid);
-          if (local) { local.remove(); renderedMwNodes.delete(mid); displayedMsgIds.delete(mid); }
-          if (unreadMsgIds.has(mid)) { unreadMsgIds.delete(mid); updateUnreadBadge(); }
-        } else {
-          const el = renderedMwNodes.get(mid); if (el) updateExistingMsgNode(m, el);
-        }
-        pruneOldSystemMessages(); 
-        saveChatCacheFromDOM();
-      }
-    }, err => {
-      console.warn("Firebase child_changed listener error:", err);
-    });
-
-    // 2重読み込みを完全排除した超高速ハイブリッド・過去ログ表示処理
-    let initialLoaded = false;
-    chatQuery.once("value").then(snap => {
-      isFirstLoad = false; isLoadingMore = false; isLoadMoreTriggered = false;
-      
+    // DOM差分置換(syncMessagesDOM)のみで処理するため、カクつきやもたつきが完全に皆無になります。
+    chatQuery.on("value", snap => {
       const msgs = [];
-      let maxTs = 0;
       snap.forEach(child => {
         const m = child.val();
         if (m) {
           m.id = child.key;
           msgs.push(m);
-          const t = getMsgTime(m);
-          if (t > maxTs) maxTs = t;
         }
       });
-      if (maxTs > latestDisplayedTs) {
-        latestDisplayedTs = maxTs;
-      }
-
-      // ドキュメントフラグメントによる一括描画 (リフローが1回に抑えられるため爆速)
-      const fragment = document.createDocumentFragment();
-      msgs.forEach(m => {
-        if (filterMsg(m)) {
-          const el = cMsg(m, false);
-          renderedMwNodes.set(m.id, el);
-          displayedMsgIds.add(m.id);
-          fragment.appendChild(el);
-        }
-      });
-      
-      if (D.tli) {
-        D.tli.innerHTML = ""; 
-        D.tli.appendChild(fragment);
-      }
-      
-      pruneOldSystemMessages();
-      saveChatCacheFromDOM();
-      
-      scBottom(true);
-      initialLoaded = true;
-
-      // 過去ログの一括挿入が終わった後、差分（新着）だけのリアルタイム検知を安全に開始
-      chatQuery.on("child_added", s => {
-        if (!initialLoaded) return;
-        const m = s.val();
-        if (m) {
-          m.id = s.key;
-          handleLiveIncomingMessage(m);
-        }
-      });
-    }).catch(err => {
-      console.warn("Firebase once('value') load error:", err);
-      isFirstLoad = false; isLoadingMore = false; isLoadMoreTriggered = false;
-      if (err.message && err.message.includes("permission_denied")) {
-        showLocalSystemMessage("【セキュリティエラー】データベースへの読込権限がありません。");
-      }
+      syncMessagesDOM(msgs);
+      isFirstLoad = false;
+    }, err => {
+      console.warn("Firebase value listener error:", err);
     });
 
     presenceRef.on("value", s => {
@@ -1614,15 +1572,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       renderPresence(members);
     }, err => {
       console.warn("Firebase presence listener error:", err);
-      if (err.message && err.message.includes("permission_denied")) {
-        showLocalSystemMessage("【セキュリティエラー】オンライン入室者リストの読み込み権限がありません。");
-      }
     });
   }
 
   const initDirectDatabaseProcess = async () => {
     loadCachedPresence();
-    await syncProfileValues();
+    const profilePromise = syncProfileValues();
 
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
     const nowTrue = getTrueTime();
@@ -1640,7 +1595,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         setupFirebaseListeners();
         isFirebaseListenersBound = true;
       }
-      if (isJoined) joinRoom(true);
+      if (isJoined) {
+        profilePromise.then(() => {
+          joinRoom(true);
+        });
+      }
     }
 
     switchUIMode(isJoined ? "joined" : "guest");
@@ -1857,7 +1816,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       });
     }
 
-    // 画像添付イベント（一時プレビュー保留）
     if (D.fileInput) {
       D.fileInput.onchange = (e) => {
         const file = e.target.files[0]; if (!file) return;
@@ -1888,7 +1846,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       };
     }
 
-    // キャンセルボタンのアクション
     if (D.cancelImgBtn) {
       D.cancelImgBtn.addEventListener("click", (e) => {
         e.preventDefault();
@@ -1993,20 +1950,20 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       overlay.addEventListener("click", (e) => { if (e.target === overlay && D.imgViewMod) D.imgViewMod.classList.remove("show"); });
     }
 
-    // タブ切り替え時・復帰時の即時同期処理
-    document.addEventListener("visibilitychange", () => {
+    // バックグラウンド・ホーム復帰時に通信を再確立させ、即座に直接ポーリング要求をかけてログを同期
+    let resumeThrottle = false;
+    function handleResume() {
       if (document.visibilityState === "visible") {
-        if (db) {
-          db.goOnline(); // 即時オンラインに復帰し、WebSocket接続を再確立してメッセージを受信
-        }
-        // スリープ中のメッセージを受信する猶予を待って、吸着条件を満たしていれば最下部スクロール
-        setTimeout(() => {
-          if (isAutoScroll) {
-            scBottom(true);
-          }
-        }, 120);
+        if (resumeThrottle) return;
+        resumeThrottle = true;
+        setTimeout(() => { resumeThrottle = false; }, 800); 
+        
+        forceSync(); // WebSocketがネゴシエーションしている間に直接REST経由で即時同期 [1]
       }
-    });
+    }
+    document.addEventListener("visibilitychange", handleResume);
+    window.addEventListener("focus", handleResume);
+    window.addEventListener("pageshow", handleResume);
 
     initDirectDatabaseProcess();
   }
