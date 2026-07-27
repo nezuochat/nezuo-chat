@@ -82,7 +82,18 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   -webkit-overflow-scrolling:touch;
 }
 #tl-inner{display:flex;flex-direction:column;justify-content:flex-end;gap:0;width:100%;max-width:800px;margin:0 auto;min-height:100%}
-.mw{position:relative;display:flex;flex-direction:column;width:100%;padding:12px 14px;border-bottom:1px solid rgba(51,65,85,.18)}
+
+/* 爆速化のためのCSS最適化：画面外の要素の描画コストを完全スキップ */
+.mw{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  padding:12px 14px;
+  border-bottom:1px solid rgba(51,65,85,.18);
+  contain-intrinsic-size: 80px;
+  content-visibility: auto;
+}
 .mw.new-msg-anim{animation:slideInUp .12s cubic-bezier(.16,1,.3,1) forwards}
 .mm{display:flex;align-items:center;gap:6px;font-size:12.5px;margin-bottom:6px;width:100%;overflow:hidden;white-space:nowrap}
 .mm-name{font-weight:bold;overflow:hidden;text-overflow:ellipsis}
@@ -222,7 +233,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span class="logo">NEZUO CHAT</span>
-            <span class="pcnt" id="pcnt">--人</span>
+            <span class="pcnt" id="pcnt">0人</span>
           </div>
         </div>
         <div class="hbs">
@@ -285,8 +296,17 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- 発言用入力バー（※maxlengthを500文字仕様に調整） -->
+    <!-- 発言用入力バー -->
     <div id="ib">
+      <!-- 一時画像プレビュー表示エリア -->
+      <div id="imgPreviewContainer" style="display: none; align-items: center; gap: 10px; background: rgba(255,255,255,0.02); border: 1px solid var(--bd); padding: 8px 12px; border-radius: 12px; margin-bottom: 6px;">
+        <div style="position: relative; width: 64px; height: 64px; flex-shrink: 0;">
+          <img id="imgPreviewThumb" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px; border: 1px solid rgba(255,255,255,0.1);" src="" alt="添付画像">
+          <button id="cancelImgBtn" style="position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: var(--ro); color: #fff; font-size: 11px; font-weight: bold; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 5px rgba(0,0,0,0.4);" title="画像を削除">×</button>
+        </div>
+        <span style="font-size: 12px; color: var(--mu); font-weight: bold; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">画像がセットされました (送信ボタンで投稿)</span>
+      </div>
+
       <div id="ibToolbar">
         <input type="file" id="fileInput" accept="image/jpeg, image/png, image/gif, image/webp" style="display:none;">
         <div class="mi-container">
@@ -413,6 +433,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let currentPresenceMap = {}; 
   let isConnectedBound = false;
 
+  let selectedImgData = null;
+
   const UR = /(https?:\/\/[^\s\n<>"]+)/gi;
 
   const COLORS = [
@@ -454,7 +476,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     return `${y}/${m}/${date}(${w}) ${h}:${min}:${s}`;
   };
 
-  // 難読化された固定ソルト
   const _0x5f2b = ["n","z","_","c","h","a","t","_","s","a","l","t","_","2","0","2","6"];
   const SYSTEM_SALT = _0x5f2b.join("");
 
@@ -515,14 +536,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     return "◆" + res;
   };
 
-  // ----- 未定義だった追加の関数群 -----
   const showToast = (msg) => {
     const container = $("toastContainer");
     if (!container) return;
     container.textContent = msg;
     container.style.display = "flex";
     container.classList.remove("show");
-    void container.offsetWidth; // reflow
+    void container.offsetWidth; 
     container.classList.add("show");
     if (window.toastTimer) clearTimeout(window.toastTimer);
     window.toastTimer = setTimeout(() => {
@@ -571,7 +591,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   };
 
   const clampPan = () => {
-    // panning 制限ロジック（簡易実装）
     if (scale <= 1) { panX = 0; panY = 0; }
   };
 
@@ -584,23 +603,21 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   const getDistance = (t1, t2) => {
     return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
   };
-  // ------------------------------------
 
   const updateClrMsgBtnVisibility = () => {
     if (!D.clrMsgBtn || !D.mi) return;
     D.clrMsgBtn.classList.toggle("show", D.mi.value.length > 0);
   };
 
-  const syncProfileValues = () => {
+  const syncProfileValues = async () => {
     const niVal = safeLS.get("nz_ni") || "", tripiVal = safeLS.get("nz_tripi") || "";
     if (D.ni && D.ni.value !== niVal) D.ni.value = niVal;
     if (D.tripi && D.tripi.value !== tripiVal) D.tripi.value = tripiVal;
     
     const trimmedNi = niVal.trim();
     if (tripiVal) {
-      window.makeTrip(trimmedNi || "名無し", tripiVal).then(tLobby => {
-        if (D.tripPrevText) D.tripPrevText.textContent = `トリッププレビュー: ${trimmedNi || "名無し"} ${tLobby}`;
-      });
+      const tLobby = await window.makeTrip(trimmedNi || "名無し", tripiVal);
+      if (D.tripPrevText) D.tripPrevText.textContent = `トリッププレビュー: ${trimmedNi || "名無し"} ${tLobby}`;
     } else {
       if (D.tripPrevText) D.tripPrevText.textContent = `トリッププレビュー: ${trimmedNi || "名無し"}`;
     }
@@ -681,8 +698,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     const tempEl = cMsg(tempObj, true);
     insertMessageInOrder(tempEl);
+    
     isAutoScroll = true;
-    scBottom(true);
+    unreadMsgIds.clear();
+    updateUnreadBadge();
 
     isJoined = false;
     stopAutoExitTimer();
@@ -691,8 +710,28 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     renderPresence(currentPresenceMap);
     switchUIMode("guest");
 
+    clearImagePreview();
+
+    requestAnimationFrame(() => {
+      scBottom(true);
+      setTimeout(() => scBottom(true), 50);
+    });
+
     if (cleanUid) await db.ref(`presence/official/${cleanUid}`).remove().catch(()=>{});
-    await db.ref(`chat/official`).push({ u: cleanUid || "sys_exit", pnd: tempId, n: cleanName, p: cleanTrip, c: cleanColor, m: logText, t: exitTimeMillis }).catch(()=>{});
+    
+    await db.ref(`chat/official`).push({ 
+      u: cleanUid || "sys_exit", 
+      pnd: tempId, 
+      n: cleanName, 
+      p: cleanTrip, 
+      c: cleanColor, 
+      m: logText, 
+      t: exitTimeMillis 
+    }).then(() => {
+      requestAnimationFrame(() => {
+        scBottom(true);
+      });
+    }).catch(()=>{});
   }
 
   function stopAutoExitTimer() { if (autoExitTimer) { clearInterval(autoExitTimer); autoExitTimer = null; } }
@@ -702,7 +741,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     targetUser.exiting = true;
     
     db.ref(`presence/official/${targetId}`).transaction(c => {
-      if (!c || c.exiting) return null; 
+      if (!c) return null; 
+      if (c.exiting) return undefined; 
       c.exiting = true;
       return c;
     }, (err, committed, snap) => {
@@ -713,7 +753,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         const encLog = "[SYS]::" + `${display} ${u.p || ""}`.trim() + " が退室しました (自動退室)";
         
         db.ref(`presence/official/${targetId}`).remove().then(() => {
-          db.ref(`chat/official`).push({ u: targetId, n: display, p: u.p || "", c: u.c || "#94a3b8", m: encLog, t: calculatedTimeoutTime }).catch(()=>{});
+          db.ref(`chat/official`).push({ 
+            u: targetId, 
+            n: display, 
+            p: u.p || "", 
+            c: u.c || "#94a3b8", 
+            m: encLog, 
+            t: calculatedTimeoutTime 
+          }).catch(()=>{});
         }).catch(() => {
           targetUser.exiting = false;
         });
@@ -813,46 +860,64 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
   }
 
-  // スパム検知用の変数
   let lastSentText = "";
   let lastSentTimeOfText = 0;
   let postHistory = [];
 
-  async function sendMsg(overrideText = null, imgData = null) {
+  // 画像プレビュー状態のリセット関数
+  function clearImagePreview() {
+    selectedImgData = null;
+    if (D.imgPreviewContainer) D.imgPreviewContainer.style.display = "none";
+    if (D.imgPreviewThumb) D.imgPreviewThumb.src = "";
+    if (D.fileInput) D.fileInput.value = "";
+    scBottom(true);
+  }
+
+  // 画像デコードやリフローを完璧に吸収し、確実に最新画像の位置へスクロールさせるヘルパー関数
+  function scBottomOnImgLoad(isMyMsg = false) {
+    if (isMyMsg || isAutoScroll) {
+      scBottom(true);
+      requestAnimationFrame(() => {
+        scBottom(true);
+        setTimeout(() => scBottom(true), 50);
+        setTimeout(() => scBottom(true), 150);
+      });
+    }
+  }
+
+  async function sendMsg() {
     if (!isJoined || !D.mi || !db) return;
-    const txt = overrideText !== null ? overrideText : D.mi.value.trim();
+    const txt = D.mi.value.trim();
+    const imgData = selectedImgData; 
     if (!txt && !imgData) return;
 
     const now = Date.now();
 
-    // 1. 基本的な連投クールダウン（1秒）
-    if (now - lastSendTime < 1000) {
+    const cooldown = imgData ? 200 : 300;
+    if (now - lastSendTime < cooldown) {
       showToast("少し時間をおいてから送信してください。");
       return;
     }
 
-    // 2. 同一テキスト内容の連続投稿制限（6秒間）
-    if (!imgData && txt === lastSentText && now - lastSentTimeOfText < 6000) {
+    if (!imgData && txt === lastSentText && now - lastSentTimeOfText < 3000) {
       showToast("同じメッセージを連続で送信することはできません。");
       return;
     }
 
-    // 3. フラッド検知：10秒以内に5件以上の書き込み制限
     postHistory = postHistory.filter(t => now - t < 10000);
-    if (postHistory.length >= 5) {
+    const floodLimit = imgData ? 20 : 12;
+    if (postHistory.length >= floodLimit) {
       showToast("送信頻度が高すぎます。しばらくお待ちください。");
       return;
     }
 
-    // 4. 文字数制限検証（500文字仕様）
-    if (!imgData && txt.length > 500) {
+    if (txt.length > 500) {
       showToast("文字数制限（500文字）を超えています。");
       return;
     }
 
-    // 状態更新
     lastSendTime = now;
-    if (!imgData) {
+    if (txt && !imgData) {
       lastSentText = txt;
       lastSentTimeOfText = now;
     }
@@ -861,39 +926,81 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     D.mi.value = "";
     D.mi.style.height = "auto";
     updateClrMsgBtnVisibility(); 
-    
     if (keepKbOpen) D.mi.focus(); else D.mi.blur();
 
     const nowTime = getTrueTime();
     updateLastPostTime(nowTime);
 
-    const tempId = "pnd_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-    const tempObj = { id: tempId, u: myUid, n: myName, p: myTrip, c: curColor, m: imgData ? "IMG::" + imgData : txt, t: nowTime };
-    pendingMsgs.set(tempId, tempObj);
-    displayedMsgIds.add(tempId);
+    // 【一時プレビュー保留方式の実装】
+    // メッセージと画像が両方ある場合は「テキスト ➔ 画像」の順で安全に別送(連投)します。
 
-    const tempEl = cMsg(tempObj, true);
-    tempEl.style.opacity = "0.7";
-    insertMessageInOrder(tempEl);
+    if (txt) {
+      const tempIdTxt = "pnd_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+      const tempObjTxt = { id: tempIdTxt, u: myUid, n: myName, p: myTrip, c: curColor, m: txt, t: nowTime };
+      pendingMsgs.set(tempIdTxt, tempObjTxt);
+      displayedMsgIds.add(tempIdTxt);
+
+      const tempElTxt = cMsg(tempObjTxt, true);
+      tempElTxt.style.opacity = "0.7";
+      insertMessageInOrder(tempElTxt);
+
+      db.ref(`chat/official`).push({ 
+        u: myUid, 
+        pnd: tempIdTxt, 
+        n: myName, 
+        p: myTrip, 
+        c: curColor, 
+        m: txt, 
+        t: firebase.database.ServerValue.TIMESTAMP 
+      }).catch(err => {
+        const local = renderedMwNodes.get(tempIdTxt); if (local) local.remove();
+        renderedMwNodes.delete(tempIdTxt); pendingMsgs.delete(tempIdTxt); displayedMsgIds.delete(tempIdTxt);
+      });
+    }
+
+    if (imgData) {
+      const imgTime = nowTime + 1;
+      const tempIdImg = "pnd_img_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+      const tempObjImg = { id: tempIdImg, u: myUid, n: myName, p: myTrip, c: curColor, m: "IMG::" + imgData, t: imgTime };
+      pendingMsgs.set(tempIdImg, tempObjImg);
+      displayedMsgIds.add(tempIdImg);
+
+      const tempElImg = cMsg(tempObjImg, true);
+      tempElImg.style.opacity = "0.7";
+      insertMessageInOrder(tempElImg);
+
+      db.ref(`chat/official`).push({ 
+        u: myUid, 
+        pnd: tempIdImg, 
+        n: myName, 
+        p: myTrip, 
+        c: curColor, 
+        m: "IMG::" + imgData, 
+        t: firebase.database.ServerValue.TIMESTAMP 
+      }).then(() => {
+        pruneOldMessages();
+      }).catch(err => {
+        const local = renderedMwNodes.get(tempIdImg); if (local) local.remove();
+        renderedMwNodes.delete(tempIdImg); pendingMsgs.delete(tempIdImg); displayedMsgIds.delete(tempIdImg);
+      });
+
+      clearImagePreview();
+    }
+
     isAutoScroll = true;
     unreadMsgIds.clear();
     updateUnreadBadge();
     scBottom(true);
 
+    requestAnimationFrame(() => {
+      scBottom(true);
+      setTimeout(() => scBottom(true), 50);
+      setTimeout(() => scBottom(true), 150);
+      setTimeout(() => scBottom(true), 300);
+    });
+
     db.ref(`presence/official/${myUid}/p_t`).set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
     db.ref(`presence/official/${myUid}/t`).set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
-
-    let payload = imgData ? "IMG::" + imgData : txt;
-    await db.ref(`chat/official`).push({ u: myUid, pnd: tempId, n: myName, p: myTrip, c: curColor, m: payload, t: firebase.database.ServerValue.TIMESTAMP }).then(() => {
-      pruneOldMessages();
-    }).catch((err) => {
-      const local = renderedMwNodes.get(tempId); if (local) local.remove();
-      renderedMwNodes.delete(tempId); pendingMsgs.delete(tempId); displayedMsgIds.delete(tempId);
-      alert("送信に失敗しました。");
-      if (err.message && err.message.includes("permission_denied")) {
-        showLocalSystemMessage("【セキュリティエラー】メッセージの送信が拒否されました。");
-      }
-    });
   }
 
   const renderedMwNodes = new Map();
@@ -916,12 +1023,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   function saveChatCacheFromDOM() { try { safeLS.remove("nz_chat_cache"); } catch(e) {} }
 
-  // タイムライン描画調整および過去ログ読み込み時のスクロール追従制御
   function pruneOldSystemMessages() {
     if (!D.tli) return;
     const children = Array.from(D.tli.children);
     
-    // 1. 通常発言メッセージの中の最古タイムスタンプを特定
     let minNormalTs = Infinity;
     children.forEach(el => {
       const isSys = el.querySelector('.sys-msg') !== null;
@@ -937,7 +1042,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       minNormalTs = 0;
     }
 
-    // 2. 最古の通常発言より古いシステムログを非表示にする
     children.forEach(el => {
       const isSys = el.querySelector('.sys-msg') !== null;
       if (isSys) {
@@ -952,7 +1056,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
     });
 
-    // 3. 上ボタン経由での追加ロード完了時：100件の中の一番古いログへ吸着スクロール追従
     if (scrollToOldestOnLoad) {
       scrollToOldestOnLoad = false;
       requestAnimationFrame(() => {
@@ -1065,7 +1168,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             const img = document.createElement("img");
             img.className = "inline-img";
             img.src = base64;
-            img.onload = () => scBottom();
+            img.onload = () => scBottomOnImgLoad(m.u === myUid);
             img.onclick = () => {
               if (D.imgViewSrc && D.imgViewMod) {
                 D.imgViewSrc.src = base64;
@@ -1098,6 +1201,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     el.dataset.rawMsg = m.m;
     el.dataset.uid = m.u || "";
 
+    if (isNewIncoming) {
+      el.addEventListener("animationend", () => {
+        el.classList.remove("new-msg-anim");
+      }, { once: true });
+    }
+
     const isSys = m.sys === true || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
     if (isSys) {
       let display = m.m.startsWith("[SYS]::") ? m.m.substring(7) : m.m;
@@ -1124,7 +1233,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       const img = document.createElement("img");
       img.className = "inline-img";
       img.src = base64;
-      img.onload = () => scBottom();
+      img.onload = () => scBottomOnImgLoad(m.u === myUid);
       img.onclick = () => {
         if (D.imgViewSrc && D.imgViewMod) {
           D.imgViewSrc.src = base64;
@@ -1178,7 +1287,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (count > 0) {
       badge.textContent = count > 99 ? "99+" : count;
       badge.style.display = "inline-flex";
-    } else badge.style.display = "none";
+    } else {
+      badge.style.display = "none";
+    }
   }
 
   function updateJumpBtns() {
@@ -1314,7 +1425,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     populatePresenceList(Object.values(clean).filter(m => m && m.n));
   }
 
-  let lastPresenceHash = "";
+  let lastPresenceHash = null;
   function populatePresenceList(membersList) {
     if (!D.pl) return;
     const sorted = [...membersList].filter(m => m.n && m.n.trim() !== "").sort((a, b) => a.id.localeCompare(b.id));
@@ -1433,6 +1544,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             saveChatCacheFromDOM();
           }
         }
+        
+        if (isJoined && isAutoScroll && document.visibilityState === "visible") {
+          scBottom();
+        }
       }
     }, err => {
       console.warn("Firebase child_added listener error:", err);
@@ -1455,9 +1570,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
       saveChatCacheFromDOM();
       
-      if (currentLimit === 50) {
-        scBottom(true);
-      }
+      scBottom(true);
     }).catch(err => {
       console.warn("Firebase once('value') load error:", err);
       isFirstLoad = false; isLoadingMore = false; isLoadMoreTriggered = false;
@@ -1492,9 +1605,20 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
   }
 
-  const initDirectDatabaseProcess = () => {
+  const initDirectDatabaseProcess = async () => {
     loadCachedPresence();
-    syncProfileValues();
+    await syncProfileValues();
+
+    const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
+    const nowTrue = getTrueTime();
+    if (isJoined && lastPost && (nowTrue - lastPost >= 30 * 60 * 1000)) {
+      isJoined = false;
+      safeLS.remove("nz_is_joined");
+      safeLS.remove("nz_last_post_time");
+      if (db && myUid) {
+        db.ref(`presence/official/${myUid}`).remove().catch(()=>{});
+      }
+    }
 
     if (db) {
       if (!isFirebaseListenersBound) {
@@ -1509,16 +1633,27 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     if (!isConnectedBound && db) {
       try {
-        db.ref(".info/serverTimeOffset").on("value", snap => { serverTimeOffset = snap.val() || 0; isOffsetLoaded = true; });
+        db.ref(".info/serverTimeOffset").on("value", snap => { 
+          serverTimeOffset = snap.val() || 0; 
+          isOffsetLoaded = true;
+          
+          const refreshedNowTrue = getTrueTime();
+          const refreshedLastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
+          if (isJoined && refreshedLastPost && (refreshedNowTrue - refreshedLastPost >= 30 * 60 * 1000)) {
+            doExit(true);
+          }
+        });
         db.ref(".info/connected").on("value", snap => {
-          if (snap.val() === true && isJoined && myUid && myName.trim()) {
-            db.ref(`presence/official/${myUid}`).set({
-              n: myName,
-              p: myTrip,
-              c: curColor,
-              t: firebase.database.ServerValue.TIMESTAMP,
-              p_t: firebase.database.ServerValue.TIMESTAMP
-            }).catch(()=>{});
+          if (snap.val() === true) {
+            if (isJoined && myUid && myName.trim()) {
+              db.ref(`presence/official/${myUid}`).set({
+                n: myName,
+                p: myTrip,
+                c: curColor,
+                t: firebase.database.ServerValue.TIMESTAMP,
+                p_t: firebase.database.ServerValue.TIMESTAMP
+              }).catch(()=>{});
+            }
           }
         });
         isConnectedBound = true;
@@ -1561,35 +1696,43 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       pl: $("pl"),
       mi: $("mi"),
       kbKeepOpenChk: $("kbKeepOpenChk"),
-      clrDot: $("clrDot")
+      clrDot: $("clrDot"),
+      // プレビュー領域関連のバインド
+      imgPreviewContainer: $("imgPreviewContainer"),
+      imgPreviewThumb: $("imgPreviewThumb"),
+      cancelImgBtn: $("cancelImgBtn")
     };
 
     if (D.tl) {
+      let isScrolling = false;
       D.tl.addEventListener("scroll", () => {
-        const scrollTop = D.tl.scrollTop, clientHeight = D.tl.clientHeight, scrollHeight = D.tl.scrollHeight;
-        
-        if (scrollTop <= 0 && !isLoadingMore && currentLimit < maxLimit) {
-          const firstNormal = D.tli.querySelector('.mw:not([style*="display: none"]):not(:has(.sys-msg))');
-          if (firstNormal) {
-            firstNormal.dataset.scrollTarget = "true";
-          }
-          loadMoreLogs();
-        }
-        if (!_scPending) {
-          if (scrollTop + clientHeight >= scrollHeight - 40) {
-            isAutoScroll = true;
-            if (unreadMsgIds.size > 0) { 
-              unreadMsgIds.clear(); 
-              updateUnreadBadge(); 
+        if (isScrolling) return;
+        isScrolling = true;
+        requestAnimationFrame(() => {
+          const scrollTop = D.tl.scrollTop, clientHeight = D.tl.clientHeight, scrollHeight = D.tl.scrollHeight;
+          
+          if (scrollTop <= 0 && !isLoadingMore && currentLimit < maxLimit) {
+            const firstNormal = D.tli.querySelector('.mw:not([style*="display: none"]):not(:has(.sys-msg))');
+            if (firstNormal) {
+              firstNormal.dataset.scrollTarget = "true";
             }
-            renderedMwNodes.forEach(node => {
-              const ts = parseInt(node.dataset.ts || "0");
-              if (ts > latestDisplayedTs) latestDisplayedTs = ts;
-            });
-          } else isAutoScroll = false;
-        }
-        updateJumpBtns();
-      });
+            loadMoreLogs();
+          }
+          if (!_scPending) {
+            if (scrollTop + clientHeight >= scrollHeight - 30) {
+              isAutoScroll = true;
+              if (unreadMsgIds.size > 0) { 
+                unreadMsgIds.clear(); 
+                updateUnreadBadge(); 
+              }
+            } else {
+              isAutoScroll = false;
+            }
+          }
+          updateJumpBtns();
+          isScrolling = false;
+        });
+      }, { passive: true });
     }
 
     if (D.playerCloseBtn) D.playerCloseBtn.onclick = closePlayer;
@@ -1677,7 +1820,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (D.mi) {
       D.mi.addEventListener("compositionstart", () => { isComposing = true; });
       D.mi.addEventListener("compositionend", () => { isComposing = false; });
-      D.mi.addEventListener("focus", () => { isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); scBottom(true); });
+      D.mi.addEventListener("focus", () => { 
+        isAutoScroll = true; 
+        unreadMsgIds.clear(); 
+        updateUnreadBadge(); 
+        scBottom(true); 
+        setTimeout(() => { scBottom(true); }, 150);
+        setTimeout(() => { scBottom(true); }, 350);
+      });
       D.mi.addEventListener("input", () => {
         D.mi.style.height = "auto";
         D.mi.style.height = Math.min(120, D.mi.scrollHeight) + "px";
@@ -1693,6 +1843,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       });
     }
 
+    // 画像添付イベント（一時プレビュー保留）
     if (D.fileInput) {
       D.fileInput.onchange = (e) => {
         const file = e.target.files[0]; if (!file) return;
@@ -1707,14 +1858,29 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             if (w > maxDim || h > maxDim) { if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; } else { w = Math.round((w * maxDim) / h); h = maxDim; } }
             cvs.width = w; cvs.height = h;
             if (cvs.getContext("2d")) cvs.getContext("2d").drawImage(img, 0, 0, w, h);
-            await sendMsg(null, cvs.toDataURL("image/jpeg", 0.4));
+            
+            // 一度プレビューエリアにBase64データを展開し表示保留
+            selectedImgData = cvs.toDataURL("image/jpeg", 0.4);
+            if (D.imgPreviewThumb) D.imgPreviewThumb.src = selectedImgData;
+            if (D.imgPreviewContainer) D.imgPreviewContainer.style.display = "flex";
+            
             spin.remove(); if (svg) svg.style.display = "";
-            if (D.imgBtn) D.imgBtn.disabled = false; if (D.fileInput) D.fileInput.value = "";
+            if (D.imgBtn) D.imgBtn.disabled = false;
+            
+            scBottom(true);
           };
           img.src = ev.target.result;
         };
         reader.readAsDataURL(file);
       };
+    }
+
+    // キャンセルボタンのアクション
+    if (D.cancelImgBtn) {
+      D.cancelImgBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        clearImagePreview();
+      });
     }
 
     if (D.ni) {
@@ -1813,6 +1979,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
       overlay.addEventListener("click", (e) => { if (e.target === overlay && D.imgViewMod) D.imgViewMod.classList.remove("show"); });
     }
+
+    document.addEventListener("visibilitychange", () => {
+    });
 
     initDirectDatabaseProcess();
   }
