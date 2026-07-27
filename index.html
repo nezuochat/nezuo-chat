@@ -931,9 +931,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     const nowTime = getTrueTime();
     updateLastPostTime(nowTime);
 
-    // 【一時プレビュー保留方式の実装】
-    // メッセージと画像が両方ある場合は「テキスト ➔ 画像」の順で安全に別送(連投)します。
-
     if (txt) {
       const tempIdTxt = "pnd_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
       const tempObjTxt = { id: tempIdTxt, u: myUid, n: myName, p: myTrip, c: curColor, m: txt, t: nowTime };
@@ -1447,22 +1444,68 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     updateJumpBtns();
   }
 
+  // リアルタイムで受信された新規メッセージ用の最速処理
+  function handleLiveIncomingMessage(m) {
+    const msgTime = getMsgTime(m);
+    
+    if (m.pnd && pendingMsgs.has(m.pnd)) {
+      pendingMsgs.delete(m.pnd);
+      const tempEl = renderedMwNodes.get(m.pnd);
+      if (tempEl) {
+        tempEl.dataset.mid = m.id;
+        tempEl.classList.remove("new-msg-anim"); 
+        tempEl.style.opacity = "1"; 
+        renderedMwNodes.delete(m.pnd);
+        renderedMwNodes.set(m.id, tempEl);
+        displayedMsgIds.delete(m.pnd);
+        displayedMsgIds.add(m.id);
+      }
+    }
+    if (filterMsg(m)) {
+      let el = renderedMwNodes.get(m.id);
+      if (!el) {
+        el = cMsg(m, true);
+        renderedMwNodes.set(m.id, el);
+        displayedMsgIds.add(m.id);
+        insertMessageInOrder(el);
+        
+        if (m.u !== myUid) {
+          if (msgTime > latestDisplayedTs) {
+            if (!isAutoScroll || document.visibilityState === "hidden") {
+              unreadMsgIds.add(m.id);
+              updateUnreadBadge();
+            }
+          }
+        }
+      } else {
+        updateExistingMsgNode(m, el);
+      }
+
+      if (msgTime > latestDisplayedTs) {
+        if (isAutoScroll && document.visibilityState === "visible") {
+          latestDisplayedTs = msgTime;
+        }
+      }
+    } else {
+      let el = renderedMwNodes.get(m.id);
+      if (el) {
+        el.remove(); renderedMwNodes.delete(m.id); displayedMsgIds.delete(m.id);
+        if (unreadMsgIds.has(m.id)) { unreadMsgIds.delete(m.id); updateUnreadBadge(); }
+        saveChatCacheFromDOM();
+      }
+    }
+    
+    if (isJoined && isAutoScroll && document.visibilityState === "visible") {
+      scBottom();
+    }
+  }
+
   function setupFirebaseListeners() {
     if (!db) return;
     const chatRef = db.ref(`chat/official`), presenceRef = db.ref(`presence/official`);
     chatRef.off(); presenceRef.off();
 
     const chatQuery = chatRef.limitToLast(currentLimit); 
-    chatQuery.on("value", snap => {
-      if (!snap.exists()) {
-        displayedMsgIds.clear(); if (D.tli) D.tli.innerHTML = ""; renderedMwNodes.clear(); unreadMsgIds.clear(); updateUnreadBadge(); saveChatCacheFromDOM(); 
-      }
-    }, err => {
-      console.warn("Firebase value listener error:", err);
-      if (err.message && err.message.includes("permission_denied")) {
-        showLocalSystemMessage("【セキュリティエラー】データベースへのアクセス権限が拒否されました。");
-      }
-    });
 
     chatQuery.on("child_removed", snap => {
       const mid = snap.key, local = renderedMwNodes.get(mid);
@@ -1492,74 +1535,18 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       console.warn("Firebase child_changed listener error:", err);
     });
 
-    chatQuery.on("child_added", snap => {
-      const m = snap.val();
-      if (m) {
-        m.id = snap.key;
-        const msgTime = getMsgTime(m);
-        
-        if (m.pnd && pendingMsgs.has(m.pnd)) {
-          pendingMsgs.delete(m.pnd);
-          const tempEl = renderedMwNodes.get(m.pnd);
-          if (tempEl) {
-            tempEl.dataset.mid = m.id;
-            tempEl.classList.remove("new-msg-anim"); 
-            tempEl.style.opacity = "1"; 
-            renderedMwNodes.delete(m.pnd);
-            renderedMwNodes.set(m.id, tempEl);
-            displayedMsgIds.delete(m.pnd);
-            displayedMsgIds.add(m.id);
-          }
-        }
-        if (filterMsg(m)) {
-          let el = renderedMwNodes.get(m.id);
-          if (!el) {
-            el = cMsg(m, !isFirstLoad);
-            renderedMwNodes.set(m.id, el);
-            displayedMsgIds.add(m.id);
-            insertMessageInOrder(el);
-            
-            if (!isFirstLoad && m.u !== myUid) {
-              if (msgTime > latestDisplayedTs) {
-                if (!isAutoScroll || document.visibilityState === "hidden") {
-                  unreadMsgIds.add(m.id);
-                  updateUnreadBadge();
-                }
-              }
-            }
-          } else {
-            updateExistingMsgNode(m, el);
-          }
-
-          if (msgTime > latestDisplayedTs) {
-            if (isAutoScroll && document.visibilityState === "visible") {
-              latestDisplayedTs = msgTime;
-            }
-          }
-        } else {
-          let el = renderedMwNodes.get(m.id);
-          if (el) {
-            el.remove(); renderedMwNodes.delete(m.id); displayedMsgIds.delete(m.id);
-            if (unreadMsgIds.has(m.id)) { unreadMsgIds.delete(m.id); updateUnreadBadge(); }
-            saveChatCacheFromDOM();
-          }
-        }
-        
-        if (isJoined && isAutoScroll && document.visibilityState === "visible") {
-          scBottom();
-        }
-      }
-    }, err => {
-      console.warn("Firebase child_added listener error:", err);
-    });
-
+    // 2重読み込みを完全排除した超高速ハイブリッド・過去ログ表示処理
+    let initialLoaded = false;
     chatQuery.once("value").then(snap => {
       isFirstLoad = false; isLoadingMore = false; isLoadMoreTriggered = false;
       
+      const msgs = [];
       let maxTs = 0;
       snap.forEach(child => {
         const m = child.val();
         if (m) {
+          m.id = child.key;
+          msgs.push(m);
           const t = getMsgTime(m);
           if (t > maxTs) maxTs = t;
         }
@@ -1568,9 +1555,37 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         latestDisplayedTs = maxTs;
       }
 
+      // ドキュメントフラグメントによる一括描画 (リフローが1回に抑えられるため爆速)
+      const fragment = document.createDocumentFragment();
+      msgs.forEach(m => {
+        if (filterMsg(m)) {
+          const el = cMsg(m, false);
+          renderedMwNodes.set(m.id, el);
+          displayedMsgIds.add(m.id);
+          fragment.appendChild(el);
+        }
+      });
+      
+      if (D.tli) {
+        D.tli.innerHTML = ""; 
+        D.tli.appendChild(fragment);
+      }
+      
+      pruneOldSystemMessages();
       saveChatCacheFromDOM();
       
       scBottom(true);
+      initialLoaded = true;
+
+      // 過去ログの一括挿入が終わった後、差分（新着）だけのリアルタイム検知を安全に開始
+      chatQuery.on("child_added", s => {
+        if (!initialLoaded) return;
+        const m = s.val();
+        if (m) {
+          m.id = s.key;
+          handleLiveIncomingMessage(m);
+        }
+      });
     }).catch(err => {
       console.warn("Firebase once('value') load error:", err);
       isFirstLoad = false; isLoadingMore = false; isLoadMoreTriggered = false;
@@ -1697,7 +1712,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       mi: $("mi"),
       kbKeepOpenChk: $("kbKeepOpenChk"),
       clrDot: $("clrDot"),
-      // プレビュー領域関連のバインド
       imgPreviewContainer: $("imgPreviewContainer"),
       imgPreviewThumb: $("imgPreviewThumb"),
       cancelImgBtn: $("cancelImgBtn")
@@ -1739,7 +1753,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     if (D.exBtn) {
       D.exBtn.addEventListener("click", () => {
-        if (isJoined && confirm("退室して参加前の覗き見画面に戻りますか？")) {
+        if (isJoined && confirm("退室して参加前の画面に戻りますか？")) {
           doExit();
         }
       });
@@ -1859,7 +1873,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             cvs.width = w; cvs.height = h;
             if (cvs.getContext("2d")) cvs.getContext("2d").drawImage(img, 0, 0, w, h);
             
-            // 一度プレビューエリアにBase64データを展開し表示保留
             selectedImgData = cvs.toDataURL("image/jpeg", 0.4);
             if (D.imgPreviewThumb) D.imgPreviewThumb.src = selectedImgData;
             if (D.imgPreviewContainer) D.imgPreviewContainer.style.display = "flex";
@@ -1980,7 +1993,19 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       overlay.addEventListener("click", (e) => { if (e.target === overlay && D.imgViewMod) D.imgViewMod.classList.remove("show"); });
     }
 
+    // タブ切り替え時・復帰時の即時同期処理
     document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        if (db) {
+          db.goOnline(); // 即時オンラインに復帰し、WebSocket接続を再確立してメッセージを受信
+        }
+        // スリープ中のメッセージを受信する猶予を待って、吸着条件を満たしていれば最下部スクロール
+        setTimeout(() => {
+          if (isAutoScroll) {
+            scBottom(true);
+          }
+        }, 120);
+      }
     });
 
     initDirectDatabaseProcess();
