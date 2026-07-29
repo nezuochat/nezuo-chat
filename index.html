@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
 <link rel="preconnect" href="https://img.cdn.nimg.jp" crossorigin>
 
-<!-- Firebase SDK v8 (Auth除外) -->
+<!-- Firebase SDK v8 (Authは除外) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -62,7 +62,20 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 #fixedPlayer{display:none;flex-direction:column;background:var(--s2);border-bottom:1px solid var(--bd);width:100%}
 #playerHeader{background:var(--sf);padding:10px 14px;font-size:13px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bd)}
-#playerContent{width:100%;max-width:480px;background:#000;display:flex;justify-content:center;align-items:center;position:relative;margin:0 auto;border-radius:4px;overflow:hidden;transition: aspect-ratio 0.15s ease, height 0.15s ease;}
+
+#playerContent{
+  width:100%;
+  max-width:480px;
+  background:#000;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  position:relative;
+  margin:0 auto;
+  border-radius:4px;
+  overflow:hidden;
+  transition: aspect-ratio 0.12s ease, height 0.12s ease, width 0.12s ease;
+}
 #playerCloseBtn{background:rgba(244, 63, 94, 0.15) !important;border:1px solid rgba(244, 63, 94, 0.4) !important;color: #fda4af !important;font-weight: 900 !important;cursor: pointer;padding: 5px 14px !important;font-size: 13px !important;border-radius: 6px;transition: all 0.12s ease;}
 
 .player-loader {
@@ -105,6 +118,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .mm-name{font-weight:bold;overflow:hidden;text-overflow:ellipsis}
 .mm-trip{font-size:11px;margin-left:2px;overflow:hidden;text-overflow:ellipsis}
 .ts{color:var(--mu);opacity:.6;font-size:10px;margin-left:auto;font-family:monospace}
+
+/* 【標準コピー復元】本文とリンクの長押しによるブラウザ標準コピー・共有ポップアップを完全に許可 [1] */
+.mb, .mb a {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -webkit-touch-callout: default !important;
+}
+
 .mb{align-self:start;font-size:15px;line-height:1.6;max-width:100%;word-break:break-all;white-space:pre-wrap;color:var(--tx);padding-right:65px}
 .sys-msg{position:relative;text-align:center;font-size:12px;font-weight:bold;color:var(--mu);margin:10px 0;background:rgba(255,255,255,.02);padding:10px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.04);word-break:break-all;line-height:1.5}
 .sys-ts{display:block;font-size:11px;color:var(--mu);opacity:.75;font-family:monospace;margin-top:6px}
@@ -382,7 +403,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let isAutoScroll = true; 
   const unreadMsgIds = new Set(); 
   let _scPending = false; 
-  let autoExitTimer = null; 
+  let autoExitTimeoutId = null; // 【仕様最適化】監視ループタイマーを完全に廃止し、シングルショットタイマーに変更 [1]
   let serverTimeOffset = 0; 
   let isOffsetLoaded = false;
   const displayedMsgIds = new Set();
@@ -394,7 +415,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   let isPresenceInitialized = false;
 
-  // 上限100件に完全固定
   const maxLimit = 100;
   let currentLimit = 100;
 
@@ -418,6 +438,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const renderedMwNodes = new Map();
   let lastChatHash = "";
+  let lastMsgsCache = []; // 送信時の一時表示用の最新データキャッシュ
 
   const setGlobalColor = c => document.documentElement.style.setProperty("--usr-color", c);
   setGlobalColor(curColor);
@@ -632,20 +653,22 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
 
-  function checkActivityTimeout() {
-    if (!isJoined || !isOffsetLoaded) return;
-    const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
-    if (lastPost && (getTrueTime() - lastPost >= 30 * 60 * 1000)) {
-      stopAutoExitTimer();
+  // 【仕様最適化・省電力化】ループ監視を完全に廃止し、30分後に「1回だけ」ピンポイントで起動するシングルショット・タイマー方式に完全移行 [1]
+  function startAutoExitChecker() {
+    stopAutoExitTimer(); // 既存のタイマーを確実にクリア
+    if (!isJoined) return;
+    
+    // 30分（1,800,000ms）後に一度だけ自動退室を実行 [1]
+    autoExitTimeoutId = setTimeout(() => {
       doExit(true);
-    }
+    }, 1800000);
   }
 
-  function startAutoExitChecker() {
-    if (autoExitTimer) clearInterval(autoExitTimer);
-    if (!isJoined) return;
-    checkActivityTimeout();
-    autoExitTimer = setInterval(checkActivityTimeout, 10000);
+  function stopAutoExitTimer() {
+    if (autoExitTimeoutId) {
+      clearTimeout(autoExitTimeoutId);
+      autoExitTimeoutId = null;
+    }
   }
 
   async function doExit(isAuto = false) {
@@ -703,8 +726,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       t: exitTimeMillis 
     }).catch(()=>{});
   }
-
-  function stopAutoExitTimer() { if (autoExitTimer) { clearInterval(autoExitTimer); autoExitTimer = null; } }
 
   function triggerOtherExit(targetId, targetUser, calculatedTimeoutTime) {
     if (targetUser.exiting || !db) return;
@@ -818,25 +839,46 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const pendingMsgs = new Map();
 
+  // 【重複排除・時刻順の完全保証】syncMessagesDOMの再構築
   function syncMessagesDOM(targetMsgs) {
     if (!D.tli || !targetMsgs || !Array.isArray(targetMsgs)) return;
     
-    // 【通信・表示最適化】描画する前に最新100件に厳格制限
     let clean = targetMsgs.filter(m => m && m.id);
     if (clean.length > maxLimit) {
       clean = clean.slice(-maxLimit);
     }
 
-    const currentHash = clean.map(m => `${m.id}_${m.u}_${m.n}_${m.m}`).join("|");
-    if (currentHash === lastChatHash && pendingMsgs.size === 0) return;
+    // A. サーバーから戻ってきた本データに一時ID（pnd）があれば、該当する保留データを手元から完全消去 [1]
+    clean.forEach(m => {
+      if (m.pnd && pendingMsgs.has(m.pnd)) {
+        pendingMsgs.delete(m.pnd);
+        const node = renderedMwNodes.get(m.pnd);
+        if (node) node.remove();
+        renderedMwNodes.delete(m.pnd);
+      }
+    });
+
+    // B. 正式データと、未送信の保留データを一括マージ [1]
+    const allMsgs = [...clean];
+    pendingMsgs.forEach((pMsg) => {
+      if (!allMsgs.some(m => m.id === pMsg.id || (pMsg.pnd && m.pnd === pMsg.pnd))) {
+        allMsgs.push(pMsg);
+      }
+    });
+
+    // C. すべてのデータをタイムスタンプを基準にして古い順に完全ソート [1]
+    allMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
+
+    const currentHash = allMsgs.map(m => `${m.id || m.pnd}_${m.u}_${m.n}_${m.m}`).join("|");
+    if (currentHash === lastChatHash) return;
     lastChatHash = currentHash;
 
-    const targetIds = new Set(clean.map(m => m.id));
+    const targetIds = new Set(allMsgs.map(m => m.id || m.pnd));
     const currentNodes = Array.from(D.tli.children);
 
     currentNodes.forEach(n => {
       const mid = n.dataset.mid;
-      if (mid && !mid.startsWith("pnd_") && !targetIds.has(mid)) {
+      if (mid && !targetIds.has(mid)) {
         n.remove();
         renderedMwNodes.delete(mid);
         displayedMsgIds.delete(mid);
@@ -844,38 +886,36 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
 
     const finalElements = [];
-    clean.forEach(m => {
-      let el = renderedMwNodes.get(m.id);
+    allMsgs.forEach(m => {
+      const uniqueId = m.id || m.pnd;
+      let el = renderedMwNodes.get(uniqueId);
       if (el) {
         updateExistingMsgNode(m, el);
       } else {
         el = cMsg(m, !isFirstLoad);
-        renderedMwNodes.set(m.id, el);
-        displayedMsgIds.add(m.id);
+        renderedMwNodes.set(uniqueId, el);
+        displayedMsgIds.add(uniqueId);
       }
+      
+      if (m.pnd && !m.id) {
+        el.style.opacity = "0.6";
+      } else {
+        el.style.opacity = "1";
+      }
+
       finalElements.push(el);
 
       const msgTime = getMsgTime(m);
       if (!isFirstLoad && m.u !== myUid) {
         if (msgTime > latestDisplayedTs) {
           if (!isAutoScroll || document.visibilityState === "hidden") {
-            unreadMsgIds.add(m.id);
+            unreadMsgIds.add(uniqueId);
           }
         }
       }
       if (msgTime > latestDisplayedTs) {
         latestDisplayedTs = msgTime;
       }
-    });
-
-    pendingMsgs.forEach((pMsg, tempId) => {
-      let pNode = renderedMwNodes.get(tempId);
-      if (!pNode) {
-        pNode = cMsg(pMsg, true);
-        pNode.style.opacity = "0.7";
-        renderedMwNodes.set(tempId, pNode);
-      }
-      finalElements.push(pNode);
     });
 
     let needsRebuild = false;
@@ -915,7 +955,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (isSys !== (el.querySelector(".sys-msg") !== null)) {
       const newEl = cMsg(m, false);
       el.replaceWith(newEl);
-      renderedMwNodes.set(m.id, newEl);
+      renderedMwNodes.set(m.id || m.pnd, newEl);
       return;
     }
     if (isSys) {
@@ -962,7 +1002,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   function cMsg(m, isNewIncoming = false) {
     const el = document.createElement("div");
     el.className = "mw" + (isNewIncoming ? " new-msg-anim" : "");
-    el.dataset.mid = m.id;
+    el.dataset.mid = m.id || m.pnd;
     const msgTime = getMsgTime(m);
     el.dataset.ts = msgTime;
     el.dataset.rawMsg = m.m;
@@ -978,7 +1018,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (isSys) {
       let display = m.m.startsWith("[SYS]::") ? m.m.substring(7) : m.m;
       el.innerHTML = `<div class="sys-msg">${escapeHtml(display)}<span class="sys-ts">[${fDT(msgTime)}]</span></div>`;
-      renderedMwNodes.set(m.id, el);
+      renderedMwNodes.set(m.id || m.pnd, el);
       return el;
     }
 
@@ -1006,7 +1046,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
     }
 
-    renderedMwNodes.set(m.id, el);
+    renderedMwNodes.set(m.id || m.pnd, el);
     return el;
   }
 
@@ -1042,19 +1082,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       });
   };
 
-  const getTikTokId = (url) => {
-    const match = url.match(/video\/(\d+)/i);
-    return match ? match[1] : null;
-  };
-
-  const getInstagramId = (url) => {
-    const match = url.match(/instagram\.com\/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/i);
-    return match ? match[1] : null;
-  };
-
+  // 【仕様最適化・解析強化】主要3サイトのURL抽出パターンを最大化して再構築 [1]
   function getYoutubeId(url) {
     if (!url) return null;
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
     const match = url.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
   }
@@ -1065,14 +1096,20 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     return match ? match[0] : null;
   }
 
+  function getInstagramId(url) {
+    if (!url) return null;
+    const match = url.match(/instagram\.com\/(?:p|reel|tv)\/([a-zA-Z0-9_-]+)/i);
+    return match ? match[1] : null;
+  }
+
   function createMediaContainer(url) {
     const ytId = getYoutubeId(url), nicoId = getNicoId(url);
     const isImg = /\.(jpe?g|png|gif|webp)$/i.test(url);
     const isAudio = /\.(mp3|wav|ogg|m4a)$/i.test(url);
-    const tkId = getTikTokId(url);
+    const isTk = /tiktok\.com/i.test(url); // 【短縮対応】短縮リンクを検出するため判定を拡張 [1.1.4]
     const igId = getInstagramId(url);
 
-    if (!ytId && !nicoId && !isImg && !isAudio && !tkId && !igId) return null;
+    if (!ytId && !nicoId && !isImg && !isAudio && !isTk && !igId) return null;
 
     const container = document.createElement("div");
     container.className = "media-link-container";
@@ -1116,10 +1153,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       badge.textContent = "AUDIO";
       badge.style.background = "#10b981";
       playBtn.onclick = (e) => { e.preventDefault(); openFloatingPlayer(url, "audio"); };
-    } else if (tkId) {
+    } else if (isTk) {
       badge.textContent = "TikTok";
       badge.style.background = "#000000";
-      playBtn.onclick = (e) => { e.preventDefault(); openFloatingPlayer(url, "tiktok"); };
+      playBtn.onclick = (e) => { e.preventDefault(); openFloatingPlayer(url, "tiktok"); }; // 【短縮対応】URLをそのままプレイヤーへ渡す [1.1.4]
     } else if (igId) {
       badge.textContent = "Instagram";
       badge.style.background = "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)";
@@ -1161,6 +1198,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     D.playerContent.innerHTML = "";
     D.playerContent.style.aspectRatio = "";
     D.playerContent.style.height = "";
+    D.playerContent.style.width = "";
 
     if (type === "audio") {
       if (titleEl) titleEl.textContent = "🎵 インライン音楽プレイヤー";
@@ -1205,51 +1243,165 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         </div>
       `;
 
-      const iframe = document.createElement("iframe");
-      iframe.frameBorder = "0";
-      iframe.allow = "autoplay; encrypted-media; picture-in-picture";
-      iframe.allowFullscreen = true;
-      iframe.style.width = "100%";
-      iframe.style.height = "100%";
-      iframe.style.opacity = "0"; 
-      iframe.style.transition = "opacity 0.2s ease";
+      // A. 通常ビデオ・縦型YouTube Shortsの判定と処理 [1]
+      if (type !== "tiktok") {
+        const iframe = document.createElement("iframe");
+        iframe.frameBorder = "0";
+        iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+        iframe.allowFullscreen = true;
+        iframe.style.width = "100%";
+        iframe.style.height = "100%";
+        iframe.style.opacity = "0"; 
+        iframe.style.transition = "opacity 0.2s ease";
 
-      iframe.onload = () => {
-        const loader = $("playerLoader");
-        if (loader) {
-          loader.style.opacity = "0";
-          setTimeout(() => loader.remove(), 200);
+        iframe.onload = () => {
+          const loader = $("playerLoader");
+          if (loader) {
+            loader.style.opacity = "0";
+            setTimeout(() => loader.remove(), 200);
+          }
+          iframe.style.opacity = "1";
+        };
+
+        if (type === "youtube") {
+          const isShorts = url.includes("/shorts/"); // 【追加】YouTube Shortsの自動判別 [1]
+
+          if (isShorts) {
+            if (titleEl) titleEl.textContent = "📱 YouTube Shorts再生プレイヤー";
+            
+            // ベースサイズの定義
+            const baseW = 320, baseH = 568;
+
+            if (window.innerWidth <= 580) {
+              const scale = 260 / baseH; // 高さ260pxに合わせる縮小率 [1]
+              D.playerContent.style.height = "260px";
+              D.playerContent.style.width = `${baseW * scale}px`; // 146px
+              
+              iframe.style.width = `${baseW}px`;
+              iframe.style.height = `${baseH}px`;
+              iframe.style.transform = `scale(${scale})`;
+              iframe.style.transformOrigin = "top left";
+            } else {
+              D.playerContent.style.height = "calc(100dvh - 250px)";
+              D.playerContent.style.width = "auto";
+              D.playerContent.style.aspectRatio = "9/16";
+              iframe.style.transform = "none";
+            }
+          } else {
+            if (titleEl) titleEl.textContent = "📺 YouTube再生プレイヤー";
+            D.playerContent.style.aspectRatio = "16/9";
+            iframe.style.transform = "none";
+          }
+          
+          const ytId = getYoutubeId(url);
+          let origin = window.location.protocol.startsWith("http") ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
+          iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=0&controls=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1${origin}`;
+          D.playerContent.appendChild(iframe);
+        } else if (type === "niconico") {
+          if (titleEl) titleEl.textContent = "📺 ニコニコ動画再生プレイヤー";
+          D.playerContent.style.aspectRatio = "16/9";
+          const nicoId = getNicoId(url);
+          iframe.src = `https://embed.nicovideo.jp/watch/${nicoId}?jsapi=0&autoplay=1&mute=0`;
+          D.playerContent.appendChild(iframe);
+        } else if (type === "instagram") {
+          if (titleEl) titleEl.textContent = "📸 Instagram再生プレイヤー";
+          
+          // 【仕様修正】Instagram用ベースサイズと切り取り（クロップ）設定 [1]
+          const baseW = 328, baseH = 450;
+          const cropTop = 45;             // 上部ヘッダー（アカウント情報など）を切り取る [1]
+          const cropBottom = 145;         // 下部フッターを完全に切り取る [1]
+          const visibleH = baseH - cropTop - cropBottom; // クロップ後に見せる高さ (260px) [1]
+          
+          if (window.innerWidth <= 580) {
+            const scale = 260 / visibleH; // 高さ260pxに収める [1]
+            D.playerContent.style.height = "260px";
+            D.playerContent.style.width = `${baseW * scale}px`; // 約328pxにフィット [1]
+            
+            iframe.style.width = `${baseW}px`;
+            iframe.style.height = `${baseH}px`;
+            iframe.style.marginTop = `-${cropTop * scale}px`; // 上部ヘッダーをネガティブマージンでカット [1]
+            iframe.style.transform = `scale(${scale})`;
+            iframe.style.transformOrigin = "top left";
+          } else {
+            D.playerContent.style.height = "calc(100dvh - 250px)";
+            D.playerContent.style.width = "auto";
+            D.playerContent.style.aspectRatio = `${baseW}/${visibleH}`;
+            iframe.style.width = `${baseW}px`;
+            iframe.style.height = `${baseH}px`;
+            iframe.style.marginTop = `-${cropTop}px`;
+            iframe.style.transform = "none";
+          }
+          
+          const igId = getInstagramId(url);
+          iframe.src = `https://www.instagram.com/p/${igId}/embed`;
+          D.playerContent.appendChild(iframe);
         }
-        iframe.style.opacity = "1";
-      };
-
-      if (type === "youtube") {
-        if (titleEl) titleEl.textContent = "📺 YouTube再生プレイヤー";
-        D.playerContent.style.aspectRatio = "16/9";
-        const ytId = getYoutubeId(url);
-        let origin = window.location.protocol.startsWith("http") ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
-        iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=0&controls=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1${origin}`;
-        D.playerContent.appendChild(iframe);
-      } else if (type === "niconico") {
-        if (titleEl) titleEl.textContent = "📺 ニコニコ動画再生プレイヤー";
-        D.playerContent.style.aspectRatio = "16/9";
-        const nicoId = getNicoId(url);
-        iframe.src = `https://embed.nicovideo.jp/watch/${nicoId}?jsapi=0&autoplay=1&mute=0`;
-        D.playerContent.appendChild(iframe);
-      } else if (type === "tiktok") {
+      } else {
+        // B. 【TikTok短縮対応 ＆ クロップ・スケール最適化】 [1.1.4]
         if (titleEl) titleEl.textContent = "📱 TikTok再生プレイヤー";
-        D.playerContent.style.aspectRatio = "9/16";
-        D.playerContent.style.height = "calc(100dvh - 250px)";
-        const tkId = getTikTokId(url);
-        iframe.src = `https://www.tiktok.com/embed/v3/${tkId}`;
-        D.playerContent.appendChild(iframe);
-      } else if (type === "instagram") {
-        if (titleEl) titleEl.textContent = "📸 Instagram再生プレイヤー";
-        D.playerContent.style.aspectRatio = "9/11";
-        D.playerContent.style.height = "calc(100dvh - 250px)";
-        const igId = getInstagramId(url);
-        iframe.src = `https://www.instagram.com/p/${igId}/embed`;
-        D.playerContent.appendChild(iframe);
+        
+        const baseW = 325, baseH = 575; // TikTok公式推奨ベースサイズ
+        const cropTop = 55;             // 上部バナーを切り取るサイズ [1]
+        const cropBottom = 160;         // 下部アプリバナーや余白を完全に切り取るサイズ [1]
+        const visibleH = baseH - cropTop - cropBottom; // 動画自体の見せたい高さ (360px) [1]
+        
+        let scale = 1;
+        if (window.innerWidth <= 580) {
+          scale = 260 / visibleH; // 高さ260pxに縮小投影 [1]
+          D.playerContent.style.height = "260px";
+          D.playerContent.style.width = `${baseW * scale}px`; // 約234px [1]
+        } else {
+          D.playerContent.style.height = "calc(100dvh - 250px)";
+          D.playerContent.style.width = "auto";
+          D.playerContent.style.aspectRatio = `${baseW}/${visibleH}`;
+        }
+
+        fetch(`https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`)
+          .then(res => {
+            if (!res.ok) throw new Error();
+            return res.json();
+          })
+          .then(data => {
+            const loader = $("playerLoader");
+            if (loader) loader.remove();
+
+            const iframe = document.createElement("iframe");
+            iframe.frameBorder = "0";
+            
+            if (window.innerWidth <= 580) {
+              iframe.style.width = `${baseW}px`;
+              iframe.style.height = `${baseH}px`;
+              iframe.style.marginTop = `-${cropTop * scale}px`; // クロップのためにマイナスマージンを設定 [1]
+              iframe.style.transform = `scale(${scale})`;
+              iframe.style.transformOrigin = "top left";
+            } else {
+              iframe.style.width = `${baseW}px`;
+              iframe.style.height = `${baseH}px`;
+              iframe.style.marginTop = `-${cropTop}px`;
+              iframe.style.transform = "none";
+            }
+            
+            iframe.srcdoc = `
+              <html>
+                <head>
+                  <style>
+                    body { margin: 0; display: flex; justify-content: center; align-items: center; background: #000; overflow: hidden; }
+                    .tiktok-embed { margin: 0 !important; }
+                  </style>
+                </head>
+                <body>
+                  ${data.html}
+                </body>
+              </html>
+            `;
+            D.playerContent.appendChild(iframe);
+          })
+          .catch(() => {
+            const loader = $("playerLoader");
+            if (loader) {
+              loader.innerHTML = '<span style="font-size:12px; color:var(--ro);">動画の取得に失敗しました。</span>';
+            }
+          });
       }
     }
 
@@ -1332,7 +1484,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     updateJumpBtns();
   }
 
-  // 【通信・パケット大幅削減】無駄なREST fetch処理を完全に撤去し、WebSocketのアクティブ化のみを行う
   async function forceSync() {
     if (!db) return;
     db.goOnline();
@@ -1354,6 +1505,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           msgs.push(m);
         }
       });
+      lastMsgsCache = msgs; 
       syncMessagesDOM(msgs);
       isFirstLoad = false;
     }, err => {
@@ -1407,6 +1559,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
       if (isJoined) {
         joinRoom(true); 
+        
+        // 【仕様修正】起動復帰時に前回の最後の活動からの正確な「残り時間」を計算し、一発タイマー（setTimeout）を再セット [1]
+        const elapsed = nowTrue - lastPost;
+        const remaining = Math.max(1000, (30 * 60 * 1000) - elapsed);
+        stopAutoExitTimer();
+        autoExitTimeoutId = setTimeout(() => { doExit(true); }, remaining);
       }
     }
 
@@ -1583,7 +1741,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     updateLastPostTime(getTrueTime());
 
-    // 【仕様修正】メッセージ送信時にデータベース上の生存期限(p_t)を更新してタイマーを延長
+    // 【生存延長】メッセージ送信時に、30分タイマーを正確にリセット（再セット）する [1]
+    startAutoExitChecker();
+
     if (myUid) {
       db.ref(`presence/official/${myUid}`).update({
         p_t: firebase.database.ServerValue.TIMESTAMP
@@ -1592,7 +1752,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     const tempId = "pnd_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
     const tempObj = {
-      id: tempId,
+      pnd: tempId, 
       u: myUid,
       n: myName,
       p: myTrip,
@@ -1603,11 +1763,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     pendingMsgs.set(tempId, tempObj);
     
-    const tempEl = cMsg(tempObj, true);
-    insertMessageInOrder(tempEl);
-    scBottom(true);
+    syncMessagesDOM(lastMsgsCache);
 
     db.ref("chat/official").push({
+      pnd: tempId, 
       u: myUid,
       n: myName,
       p: myTrip,
@@ -1615,10 +1774,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       m: rawMsg,
       t: firebase.database.ServerValue.TIMESTAMP
     }).then(() => {
-      pendingMsgs.delete(tempId);
-      const node = renderedMwNodes.get(tempId);
-      if (node) node.remove();
-      renderedMwNodes.delete(tempId);
+      if (pendingMsgs.has(tempId)) {
+        pendingMsgs.delete(tempId);
+        const node = renderedMwNodes.get(tempId);
+        if (node) node.remove();
+        renderedMwNodes.delete(tempId);
+      }
     }).catch(err => {
       pendingMsgs.delete(tempId);
       const node = renderedMwNodes.get(tempId);
@@ -1707,7 +1868,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }, { passive: true });
     }
 
-    // 【環境最適化・タップ遅延排除】pointerdown への徹底移行
     if (D.playerCloseBtn) {
       D.playerCloseBtn.addEventListener("pointerdown", (e) => {
         e.preventDefault();
@@ -1926,18 +2086,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       overlay.addEventListener("dblclick", () => { resetZoom(); });
     }
 
-    // 【環境最適化・電池/通信の極限削減】画面非表示(スリープ)時にWebSocketを完全遮断し、復帰時に再接続
     function handleVisibilityChange() {
       if (document.visibilityState === "visible") {
         if (db) db.goOnline(); 
         forceSync(); 
       } else {
-        if (db) db.goOffline(); // 非表示中は自動オフライン（パケット・バッテリー消費ゼロ）
+        if (db) db.goOffline(); 
       }
     }
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // 【iOS/Androidキーボード表示崩れの完全対策】VisualViewportの監視
     if (window.visualViewport) {
       const resizeViewport = () => {
         const height = window.visualViewport.height;
