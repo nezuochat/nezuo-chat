@@ -46,17 +46,18 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .hbs button{padding:6px 14px;height:40px;border-radius:8px;font-size:12.5px;font-weight:700;background:var(--bg);border:1px solid var(--bd);color:var(--tx);display:flex;align-items:center;gap:6px}
 .bclr{border-color:var(--usr-color)!important}
 .bclr-dot{width:11px;height:10px;border-radius:50%;background:var(--usr-color)!important}
+
+/* 【チラつき防止】初期状態では絶対に非表示のままロックする */
 .bx{
   background:rgba(244,63,94,.16)!important;
   border-color:rgba(244,63,94,.4)!important;
   color:#fda4af!important;
   font-weight:900!important;
   padding:6px 16px!important;
-  display:none;
+  display:none !important;
   align-items:center;
   justify-content:center;
 }
-.logo{font-size:16.5px;font-weight:900;background:linear-gradient(90deg,#38bdf8,#818cf8,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 #pl{display:flex;gap:6px;padding:6px 12px;background:var(--s2);border-bottom:1px solid rgba(255,255,255,.02);overflow-x:auto;white-space:nowrap;min-height:40px;max-height:40px}
 .chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--bg);border:1px solid rgba(255,255,255,.06);display:inline-flex;align-items:center;color:var(--tx);height:28px}
 
@@ -403,7 +404,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let isAutoScroll = true; 
   const unreadMsgIds = new Set(); 
   let _scPending = false; 
-  let autoExitTimeoutId = null; // 【仕様最適化】監視ループタイマーを完全に廃止し、シングルショットタイマーに変更 [1]
+  let autoExitTimeoutId = null; // シングルショットタイマー用の管理変数 [1]
   let serverTimeOffset = 0; 
   let isOffsetLoaded = false;
   const displayedMsgIds = new Set();
@@ -633,7 +634,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (mode === "guest") {
       D.ib.style.display = "none";
       D.joinForm.style.display = "flex";
-      D.exBtn.style.display = "none";
+      D.exBtn.style.setProperty("display", "none", "important"); // 退室ボタンを非表示 [1]
       D.clrBtn.style.display = "inline-flex"; 
       const kb = $("kbKeepOpenContainer");
       if (kb) kb.style.display = "none";
@@ -644,7 +645,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     } else if (mode === "joined") {
       D.ib.style.display = "flex";
       D.joinForm.style.display = "none";
-      D.exBtn.style.display = "inline-flex"; 
+      D.exBtn.style.setProperty("display", "inline-flex", "important"); // 参加時のみ表示 [1]
       D.clrBtn.style.display = "inline-flex"; 
       const kb = $("kbKeepOpenContainer");
       if (kb) kb.style.display = "flex";
@@ -1247,6 +1248,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       if (type !== "tiktok") {
         const iframe = document.createElement("iframe");
         iframe.frameBorder = "0";
+        iframe.scrolling = "no"; // 【仕様最適化】スクロールバーの発生を強制的に排除
         iframe.allow = "autoplay; encrypted-media; picture-in-picture";
         iframe.allowFullscreen = true;
         iframe.style.width = "100%";
@@ -1273,9 +1275,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             const baseW = 320, baseH = 568;
 
             if (window.innerWidth <= 580) {
-              const scale = 260 / baseH; // 高さ260pxに合わせる縮小率 [1]
-              D.playerContent.style.height = "260px";
-              D.playerContent.style.width = `${baseW * scale}px`; // 146px
+              const scale = 288 / baseH; // 高さ288pxに合わせる縮小率 [1]
+              D.playerContent.style.height = "288px";
+              D.playerContent.style.width = `${baseW * scale}px`; // 162px [1]
               
               iframe.style.width = `${baseW}px`;
               iframe.style.height = `${baseH}px`;
@@ -1306,20 +1308,21 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         } else if (type === "instagram") {
           if (titleEl) titleEl.textContent = "📸 Instagram再生プレイヤー";
           
-          // 【仕様修正】Instagram用ベースサイズと切り取り（クロップ）設定 [1]
-          const baseW = 328, baseH = 450;
-          const cropTop = 45;             // 上部ヘッダー（アカウント情報など）を切り取る [1]
-          const cropBottom = 145;         // 下部フッターを完全に切り取る [1]
+          // 【仕様最適化・精密クロップ】上部ヘッダー(44px)のみをマイナスマージンで切り取り、中央のメディアを240x240の正方形内に100%見切れずに表示 [1]
+          const baseW = 328, baseH = 400;
+          const cropTop = 44;             // 上部アカウントヘッダーをカット [1]
+          const cropBottom = 96;          // 下部を適度にマスクして正方形エリア(260px)を切り出す [1]
           const visibleH = baseH - cropTop - cropBottom; // クロップ後に見せる高さ (260px) [1]
           
           if (window.innerWidth <= 580) {
-            const scale = 260 / visibleH; // 高さ260pxに収める [1]
-            D.playerContent.style.height = "260px";
-            D.playerContent.style.width = `${baseW * scale}px`; // 約328pxにフィット [1]
+            // スマホ時は幅240px×高さ240pxの正方形に画像・動画を完璧にフィットさせる [1]
+            const scale = 240 / visibleH; // 240 / 260 ≒ 0.923 [1]
+            D.playerContent.style.height = "240px";
+            D.playerContent.style.width = `${baseW * scale}px`; // 約302px。スライドボタン等もはみ出しなく完璧に表示 [1]
             
             iframe.style.width = `${baseW}px`;
             iframe.style.height = `${baseH}px`;
-            iframe.style.marginTop = `-${cropTop * scale}px`; // 上部ヘッダーをネガティブマージンでカット [1]
+            iframe.style.marginTop = `-${cropTop * scale}px`; // 上部のみを正確に切り落とし、下部は縮小に任せて見切れをゼロ化 [1]
             iframe.style.transform = `scale(${scale})`;
             iframe.style.transformOrigin = "top left";
           } else {
@@ -1333,11 +1336,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           }
           
           const igId = getInstagramId(url);
-          iframe.src = `https://www.instagram.com/p/${igId}/embed`;
+          // キャプションのない純粋な表示にするため、末尾の captioned/ は一切付与しない
+          iframe.src = `https://www.instagram.com/p/${igId}/embed/`;
           D.playerContent.appendChild(iframe);
         }
       } else {
-        // B. 【TikTok短縮対応 ＆ クロップ・スケール最適化】 [1.1.4]
+        // B. 【TikTok短縮対応 ＆ クロップ・スケール最適化】公式の動画再生専用プレーヤー(embed/v3)を利用して周囲のノイズを完全にカットするプロ設計 [1, 1.1.4]
         if (titleEl) titleEl.textContent = "📱 TikTok再生プレイヤー";
         
         const baseW = 325, baseH = 575; // TikTok公式推奨ベースサイズ
@@ -1347,9 +1351,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         
         let scale = 1;
         if (window.innerWidth <= 580) {
-          scale = 260 / visibleH; // 高さ260pxに縮小投影 [1]
-          D.playerContent.style.height = "260px";
-          D.playerContent.style.width = `${baseW * scale}px`; // 約234px [1]
+          scale = 288 / visibleH; // 高さ288pxに縮小投影 [1]
+          D.playerContent.style.height = "288px";
+          D.playerContent.style.width = `${baseW * scale}px`; // 約260px [1]
         } else {
           D.playerContent.style.height = "calc(100dvh - 250px)";
           D.playerContent.style.width = "auto";
@@ -1365,36 +1369,39 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             const loader = $("playerLoader");
             if (loader) loader.remove();
 
-            const iframe = document.createElement("iframe");
-            iframe.frameBorder = "0";
-            
-            if (window.innerWidth <= 580) {
-              iframe.style.width = `${baseW}px`;
-              iframe.style.height = `${baseH}px`;
-              iframe.style.marginTop = `-${cropTop * scale}px`; // クロップのためにマイナスマージンを設定 [1]
-              iframe.style.transform = `scale(${scale})`;
-              iframe.style.transformOrigin = "top left";
+            // oEmbed HTMLから純粋な動画ID（data-video-id）を抽出 [1.1.4]
+            const match = data.html.match(/data-video-id="(\d+)"/);
+            const videoId = match ? match[1] : null;
+
+            if (videoId) {
+              const iframe = document.createElement("iframe");
+              iframe.frameBorder = "0";
+              iframe.scrolling = "no"; // スクロールバーの出現を完全抑止
+              iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+              iframe.allowFullscreen = true;
+              
+              // アプリ誘導ボタンやカードを完全に排除した動画専用「embed/v3」を読み込む [1.1.4]
+              iframe.src = `https://www.tiktok.com/embed/v3/${videoId}`;
+              
+              if (window.innerWidth <= 580) {
+                // スマホ時はチャットを一切邪魔しない「幅162px×高さ288px(9:16)」に正確にフィットし、余計な空白を完璧に排除 [1]
+                D.playerContent.style.height = "288px";
+                D.playerContent.style.width = "162px";
+                iframe.style.width = "100%";
+                iframe.style.height = "100%";
+                iframe.style.transform = "none";
+              } else {
+                D.playerContent.style.height = "calc(100dvh - 250px)";
+                D.playerContent.style.width = "auto";
+                D.playerContent.style.aspectRatio = "9/16";
+                iframe.style.width = "100%";
+                iframe.style.height = "100%";
+                iframe.style.transform = "none";
+              }
+              D.playerContent.appendChild(iframe);
             } else {
-              iframe.style.width = `${baseW}px`;
-              iframe.style.height = `${baseH}px`;
-              iframe.style.marginTop = `-${cropTop}px`;
-              iframe.style.transform = "none";
+              throw new Error();
             }
-            
-            iframe.srcdoc = `
-              <html>
-                <head>
-                  <style>
-                    body { margin: 0; display: flex; justify-content: center; align-items: center; background: #000; overflow: hidden; }
-                    .tiktok-embed { margin: 0 !important; }
-                  </style>
-                </head>
-                <body>
-                  ${data.html}
-                </body>
-              </html>
-            `;
-            D.playerContent.appendChild(iframe);
           })
           .catch(() => {
             const loader = $("playerLoader");
@@ -2109,6 +2116,38 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         closePlayer();
+      }
+    });
+
+    // 【仕様最適化】Instagramのリアルタイムアスペクト比連動処理 [1]
+    window.addEventListener("message", (e) => {
+      if (e.origin.includes("instagram.com")) {
+        try {
+          const data = typeof e.data === "string" ? JSON.parse(e.data) : e.data;
+          if (data && data.type === "embedsize" && data.details && data.details.height) {
+            const h = data.details.height;
+            const cropTop = 44;
+            const visibleH = h - cropTop - 50; // 下部の余白を微調整 [1]
+            
+            const iframe = D.playerContent.querySelector("iframe");
+            if (iframe && iframe.src.includes("instagram.com")) {
+              if (window.innerWidth <= 580) {
+                const scale = 200 / visibleH; // 高さ200pxに自動収束 [1]
+                D.playerContent.style.height = "200px";
+                D.playerContent.style.width = `${328 * scale}px`;
+                iframe.style.height = `${h}px`;
+                iframe.style.marginTop = `-${cropTop * scale}px`;
+                iframe.style.transform = `scale(${scale})`;
+              } else {
+                D.playerContent.style.height = `${visibleH}px`;
+                D.playerContent.style.width = "328px";
+                iframe.style.height = `${h}px`;
+                iframe.style.marginTop = `-${cropTop}px`;
+                iframe.style.transform = "none";
+              }
+            }
+          }
+        } catch (err) {}
       }
     });
 
