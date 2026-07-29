@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
 <link rel="preconnect" href="https://img.cdn.nimg.jp" crossorigin>
 
-<!-- Firebase SDK v8 (Authは除外) -->
+<!-- Firebase SDK v8 (Auth除外) -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -22,8 +22,7 @@
 html,body{height:100dvh;width:100%;overflow:hidden;background:#05070a;color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
 input,textarea,select{font-family:inherit;font-size:16px!important}
 
-/* 操作感度の最適化：touch-actionとwill-changeによる描画チラつきの抑制 */
-button,.chip,.btn,.jump-btn,.bsd,.bclrm,.battach,.open-player-btn,.modal-bottom-close{
+button,.chip,.btn,.jump-btn,.bsd,.bclrm,.open-player-btn,.modal-bottom-close{
   cursor:pointer;
   font-family:inherit;
   border:none;
@@ -32,9 +31,7 @@ button,.chip,.btn,.jump-btn,.bsd,.bclrm,.battach,.open-player-btn,.modal-bottom-
   touch-action:manipulation;
   will-change:transform, opacity;
 }
-
-/* タップした瞬間にレイアウト移行を介さず即時サイズが縮む極めてレスポンシブなCSS設定 */
-button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:active,.battach:active,.open-player-btn:active,.modal-bottom-close:active{
+button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:active,.open-player-btn:active,.modal-bottom-close:active{
   transform:scale(.92)!important;
   opacity:.75!important;
   transition:none!important;
@@ -47,7 +44,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .pcnt{font-size:11px;font-weight:900;background:rgba(255,255,255,.08);padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.05)}
 .hbs{display:flex;gap:8px;align-items:center}
 .hbs button{padding:6px 14px;height:40px;border-radius:8px;font-size:12.5px;font-weight:700;background:var(--bg);border:1px solid var(--bd);color:var(--tx);display:flex;align-items:center;gap:6px}
-.bclr{border-color:var(--usr-color)!important} /* 入室前からも表示させるためdisplay:noneを排除 */
+.bclr{border-color:var(--usr-color)!important}
 .bclr-dot{width:11px;height:10px;border-radius:50%;background:var(--usr-color)!important}
 .bx{
   background:rgba(244,63,94,.16)!important;
@@ -55,34 +52,44 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   color:#fda4af!important;
   font-weight:900!important;
   padding:6px 16px!important;
-  display:none; /* JavaScriptでの表示切り替えを優先するため初期状態は非表示 */
+  display:none;
   align-items:center;
   justify-content:center;
 }
 .logo{font-size:16.5px;font-weight:900;background:linear-gradient(90deg,#38bdf8,#818cf8,#f472b6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 #pl{display:flex;gap:6px;padding:6px 12px;background:var(--s2);border-bottom:1px solid rgba(255,255,255,.02);overflow-x:auto;white-space:nowrap;min-height:40px;max-height:40px}
 .chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--bg);border:1px solid rgba(255,255,255,.06);display:inline-flex;align-items:center;color:var(--tx);height:28px}
+
 #fixedPlayer{display:none;flex-direction:column;background:var(--s2);border-bottom:1px solid var(--bd);width:100%}
 #playerHeader{background:var(--sf);padding:10px 14px;font-size:13px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bd)}
 #playerContent{width:100%;max-width:480px;background:#000;display:flex;justify-content:center;align-items:center;position:relative;margin:0 auto;border-radius:4px;overflow:hidden;transition: aspect-ratio 0.15s ease, height 0.15s ease;}
 #playerCloseBtn{background:rgba(244, 63, 94, 0.15) !important;border:1px solid rgba(244, 63, 94, 0.4) !important;color: #fda4af !important;font-weight: 900 !important;cursor: pointer;padding: 5px 14px !important;font-size: 13px !important;border-radius: 6px;transition: all 0.12s ease;}
-#playerCloseBtn:hover{background:rgba(244, 63, 94, 0.3) !important;color: #fff !important;}
 
-/* タイムライン表示領域：GPUアクセラレーションにより慣性スクロール・チラつき防止 */
+.player-loader {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: rgba(0,0,0,0.85);
+  z-index: 10;
+}
+
 #tl{
   flex:1;
   min-height:0;
   overflow-y:auto;
   padding:12px;
   background-color:#0d1117;
-  opacity:0; /* 初期ロードは透明にし、最新データ描画確定後にフェードイン [1] */
+  opacity:0;
   transition:opacity 0.15s ease;
   will-change:scroll-position;
   -webkit-overflow-scrolling:touch;
 }
 #tl-inner{display:flex;flex-direction:column;justify-content:flex-end;gap:0;width:100%;max-width:800px;margin:0 auto;min-height:100%}
 
-/* 爆速化のためのCSS最適化：画面外の要素の描画コストを完全スキップ */
 .mw{
   position:relative;
   display:flex;
@@ -93,7 +100,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   contain-intrinsic-size: 80px;
   content-visibility: auto;
 }
-.mw.new-msg-anim{animation:slideInUp .12s cubic-bezier(.16,1,.3,1) forwards}
+.mw.new-msg-anim{animation:slideInUp .06s ease-out forwards}
 .mm{display:flex;align-items:center;gap:6px;font-size:12.5px;margin-bottom:6px;width:100%;overflow:hidden;white-space:nowrap}
 .mm-name{font-weight:bold;overflow:hidden;text-overflow:ellipsis}
 .mm-trip{font-size:11px;margin-left:2px;overflow:hidden;text-overflow:ellipsis}
@@ -104,12 +111,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #joinForm{display:none;flex-direction:column;background:var(--sf);border-top:1px solid var(--bd)}
 .jrow{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:center;padding:12px}
 
-/* モバイル向け画面端吸着スタイル調整（送信ボタン・退室ボタン対応：押しやすさ・感度を最大化） */
 @media (max-width:580px){
   .jrow{grid-template-columns:1fr;gap:10px}
   #joinBtn{width:100%;height:44px!important}
-  
-  /* スマホ用：退室ボタンを右端にフィット */
   #hdr{padding-right:0!important}
   .bx{
     border-radius:8px 0 0 8px!important;
@@ -118,8 +122,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     padding:8px 20px!important;
     height:42px!important;
   }
-  
-  /* スマホ用：送信ボタンを右端にフィット */
   #ib{padding-right:0!important}
   #ibToolbar{gap:6px!important}
   .bsd{
@@ -132,26 +134,20 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 #ib{display:none;flex-direction:column;padding:6px calc(8px + env(safe-area-inset-right,0px)) calc(6px + var(--safe)) calc(8px + env(safe-area-inset-left,0px));background:var(--sf);border-top:1px solid var(--bd);gap:6px}
 #ib.show{display:flex}
-
-/* 入力・送信まわりのUI */
 #ibToolbar{width:100%;align-items:flex-end;display:flex;gap:10px}
 .jump-btns{display:flex;gap:6px}
 
-/* 上下ボタンのスタイル */
 .jump-btn{width:56px;height:34px;border-radius:8px;background:var(--s2);border:1px solid var(--bd);color:var(--tx);font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center}
 .jump-btn:disabled{opacity:.3}
 
-/* 画像送信ボタンを撤去したため、padding-leftを16pxに縮小し、スマホでの入力領域を最大限拡大 [1] */
 .mi-container{position:relative;flex:1;display:flex;align-items:center;background:var(--bg);border:1px solid var(--bd);border-radius:22px;min-height:48px;padding:4px 44px 4px 16px;transition:border-color 0.15s ease,box-shadow 0.15s ease}
 .mi-container:focus-within{border-color:var(--in);box-shadow:0 0 0 3px rgba(79, 70, 229, 0.25)}
 #mi{width:100%;background:none;border:none;color:var(--tx);outline:none;resize:none;font-size:15px;max-height:120px;line-height:1.5;padding:8px 0}
 
-/* クリアボタン */
 .bclrm{position:absolute;right:8px;width:30px;height:30px;border-radius:50%;color:var(--mu);font-size:16px;font-weight:bold;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);opacity:0;pointer-events:none;transition:all 0.15s ease}
 .bclrm.show{opacity:1;pointer-events:auto}
 .bclrm:hover,.bclrm:active{background:rgba(244,63,94,0.15);border-color:rgba(244,63,94,0.3);color:var(--ro)}
 
-/* 送信ボタン */
 .bsd{width:48px;height:48px;border-radius:50%;background:var(--in);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 4px 12px rgba(79,70,229,0.35);border:1px solid rgba(255,255,255,0.08)}
 .bsd:hover{background:var(--i2)}
 .bsd svg{width:20px;height:20px;transform:rotate(45deg);margin-top:-1px;margin-left:-2px}
@@ -182,35 +178,29 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #joinBtn{background:linear-gradient(135deg,var(--in),#6366f1)!important;color:#fff!important;font-weight:900!important}
 #copyTripBtn{background:#0ea5e9!important;color:#fff!important;font-weight:800!important}
 
-/* インライン画像表示：チラつき・ガタつき（レイアウトシフト）完全防止のための定義 */
 .inline-img{
   max-width:280px;
   max-height:280px;
-  width:auto;
+  width:100%;
   height:auto;
-  border-radius:0 !important;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius:4px;
   margin-top:6px;
   border:1px solid var(--bd);
   display:block;
   cursor:zoom-in;
   transition:transform 0.12s ease,opacity 0.12s ease;
   content-visibility:auto;
-  
-  min-width:140px;
-  min-height:140px;
   background-color:rgba(255,255,255,0.02);
-  contain-intrinsic-size:280px 200px;
 }
 .inline-img:hover{opacity:0.9;transform:scale(1.02)}
 
-/* YouTube、ニコニコ、TikTok、Instagram動画表示エリア */
 .media-link-container {margin-top:8px;background:rgba(11, 16, 28, 0.6);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;display:inline-flex;flex-direction:column;gap:6px;max-width:100%}
 .media-inline-row {display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .media-badge {font-size:10px;font-weight:900;color:#fff;padding:3px 8px;border-radius:4px;letter-spacing:0.5px}
 .open-player-btn {font-size:11.5px;font-weight:800;color:#38bdf8;background:rgba(56, 189, 248, 0.1);border:1px solid rgba(56, 189, 248, 0.3);padding:5px 12px;border-radius:6px;transition:all 0.12s ease}
-.open-player-btn:hover {background:rgba(56, 189, 248, 0.2);border-color:rgba(56, 189, 248, 0.5);color:#7dd3fc}
 
-/* トースト通知 */
 #toastContainer {
   position: fixed;
   bottom: calc(70px + var(--safe));
@@ -242,13 +232,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 <body>
 <div id="app">
   <div id="cp">
-    <!-- ヘッダー -->
     <div id="hdr">
       <div class="hr">
         <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span class="logo">NEZUO CHAT</span>
-            <!-- 初期状態の「0人」の表示によるチラつきを完璧に抑え、ロード完了まで透明化 [1] -->
             <span class="pcnt" id="pcnt" style="opacity: 0; transition: opacity 0.15s ease;">0人</span>
           </div>
         </div>
@@ -259,10 +247,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- 入室者リスト：チラつきを防ぐため一括ロード完了まで透明化 [1] -->
     <div id="pl" style="opacity: 0; transition: opacity 0.15s ease;"></div>
 
-    <!-- インライン再生プレイヤー（音声・動画・SNS統合） -->
     <div id="fixedPlayer">
       <div id="playerHeader">
         <span id="playerTitle">📺 インライン再生プレイヤー</span>
@@ -271,12 +257,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       <div id="playerContent"></div>
     </div>
 
-    <!-- タイムライン -->
     <div id="tl" role="log" aria-live="polite">
       <div id="tl-inner"></div>
     </div>
 
-    <!-- タイムライン操作バー -->
     <div id="ibTopBar" style="background: var(--sf); border-top: 1px solid var(--bd); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0;">
       <div style="display: flex; align-items: center; gap: 6px; height: 34px;">
         <div id="kbKeepOpenContainer" style="display: none; align-items: center; gap: 6px;">
@@ -285,7 +269,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         </div>
       </div>
       <div class="jump-btns">
-        <button class="jump-btn" id="jumpUpBtn" title="過去ログを取得" disabled>▲</button>
+        <button class="jump-btn" id="jumpUpBtn" title="最上部へ" disabled>▲</button>
         <div style="position: relative; display: inline-block;">
           <button class="jump-btn" id="jumpDownBtn" title="タイムラインの最下部へ" disabled>▼</button>
           <span id="unreadBadge" style="display: none; position: absolute; top: -6px; right: -6px; background: var(--ro); color: #fff; font-size: 9px; font-weight: bold; border-radius: 10px; min-width: 18px; height: 18px; padding: 0 4px; align-items: center; justify-content: center; line-height: 1; border: 1.5px solid var(--sf); box-shadow: 0 2px 5px rgba(0,0,0,0.3); pointer-events: none; z-index: 5;">0</span>
@@ -293,7 +277,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- ゲスト用参加フォーム -->
     <div id="joinForm">
       <div id="joinFormHeader" style="padding: 12px; text-align: center; cursor: pointer; font-size: 12.5px; color: var(--tx); font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; user-select: none; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02);">
         <span>💬 チャットに参加する (タップで展開)</span>
@@ -312,7 +295,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- 発言用入力バー（画像添付用UIは完全撤去し幅を拡大） [1] -->
     <div id="ib">
       <div id="ibToolbar">
         <div class="mi-container">
@@ -332,7 +314,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 <div id="toastContainer" style="display:none;"></div>
 
-<!-- 色設定モーダル -->
 <div id="clrmod" class="mod-overlay">
   <div class="clrmc gc" style="max-width:320px;">
     <h3 style="font-size:13px; color:var(--tx); border-bottom:1px solid var(--bd); padding-bottom:6px; font-weight:bold;">🎨 色設定</h3>
@@ -347,7 +328,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   </div>
 </div>
 
-<!-- 画像ズームモーダル -->
 <div id="imgViewMod" class="mod-overlay">
   <div id="zoomViewport">
     <img id="imgViewSrc" alt="拡大画像">
@@ -376,7 +356,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   };
 
   let db = null;
-
   if (typeof firebase !== 'undefined') {
     try {
       if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
@@ -384,8 +363,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     } catch (e) {
       console.error("Firebase SDK init error:", e);
     }
-  } else {
-    console.error("Firebase SDK missing.");
   }
 
   const $ = id => document.getElementById(id);
@@ -415,21 +392,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let isFirstLoad = true; 
   let isFirebaseListenersBound = false; 
 
-  // 入室者リストの段階的更新フリッカー（チラつき）を防ぐためのアトミック制御用フラグ [1]
   let isPresenceInitialized = false;
 
-  // 初回表示件数を100件に固定 [1]
-  let currentLimit = 100;
+  // 上限100件に完全固定
   const maxLimit = 100;
-  let isLoadingMore = false;
-  let isLoadMoreTriggered = false;
-  let savedOldScrollHeight = 0;
-  let savedOldScrollTop = 0;
-
-  let scrollToOldestOnLoad = false;
+  let currentLimit = 100;
 
   let latestDisplayedTs = 0;
-
   let isJoinFormExpanded = false; 
   let scale = 1, panX = 0, panY = 0;
   let lastPanX = 0, lastPanY = 0, isPanning = false;
@@ -437,8 +406,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   let currentPresenceMap = {}; 
   let isConnectedBound = false;
-
-  let selectedImgData = null;
 
   const UR = /(https?:\/\/[^\s\n<>"]+)/gi;
 
@@ -449,10 +416,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     {v:"#ef4444",n:"レッド1"},{v:"#db2777",n:"ローズ"},{v:"#f472b6",n:"ピンク"},{v:"#f9a8d4",n:"ライトピンク"},{v:"#fda4af",n:"パステルローズ"},{v:"#a855f7",n:"パープル"},{v:"#c084fc",n:"ライトパープル"},{v:"#c4b5fd",n:"パステルパープル"}
   ];
 
+  const renderedMwNodes = new Map();
+  let lastChatHash = "";
+
   const setGlobalColor = c => document.documentElement.style.setProperty("--usr-color", c);
   setGlobalColor(curColor);
 
-  const getTrueTime = () => Date.now() + serverTimeOffset;
+  const getTrueTime = () => {
+    const t = Date.now() + serverTimeOffset;
+    return isNaN(t) ? Date.now() : t;
+  };
 
   const getMsgTime = (m) => {
     if (m && m.t) {
@@ -491,7 +464,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         const hash = await window.crypto.subtle.digest("SHA-256", buf);
         return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
       } catch (e) {
-        console.warn("Fallback to simplified hash logic", e);
+        console.warn("Fallback to hash logic", e);
       }
     }
     let h1 = 0x811c9dc5, h2 = 0xcbf29ce4;
@@ -500,9 +473,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       h1 = Math.imul(h1 ^ str.charCodeAt(i), 0x01000193);
       h2 = Math.imul(h2 ^ str.charCodeAt(i), 0x01000193);
     }
-    const p1 = (h1 >>> 0).toString(16).padStart(8, '0');
-    const p2 = (h2 >>> 0).toString(16).padStart(8, '0');
-    return p1 + p2 + p1 + p2;
+    return (h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0');
   };
 
   window.makeTrip = async (name, tripKey) => {
@@ -527,7 +498,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         }
         return "◆" + res;
       } catch (e) {
-        console.warn("Subtle crypto execution fallback", e);
+        console.warn("Subtle crypto fallback", e);
       }
     }
     
@@ -556,22 +527,17 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }, 3000);
   };
 
-  const filterMsg = (m) => {
-    return !!(m && m.m);
-  };
-
   const savePresenceCache = () => {
     safeLS.set("nz_presence_cache", JSON.stringify(currentPresenceMap));
   };
 
-  // チラつき防止：ログ履歴のローカルストレージキャッシュ復元表示（0ミリ秒での即時ペイント） [1]
   const loadCachedChat = () => {
     try {
       const cached = safeLS.get("nz_chat_cache");
       if (cached) {
         const msgs = JSON.parse(cached);
         if (Array.isArray(msgs) && msgs.length > 0) {
-          syncMessagesDOM(msgs); // キャッシュされた全メッセージをマージンなしで瞬時ペイント [1]
+          syncMessagesDOM(msgs);
         }
       }
     } catch (e) {
@@ -611,10 +577,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (D.imgViewSrc) {
       D.imgViewSrc.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
     }
-  };
-
-  const getDistance = (t1, t2) => {
-    return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
   };
 
   const updateClrMsgBtnVisibility = () => {
@@ -671,7 +633,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
 
   function checkActivityTimeout() {
-    if (!isJoined || !isOffsetLoaded) return; // ズレ時刻の同期が終わるまでは自動退室判定をパスして誤動作を防止 [1]
+    if (!isJoined || !isOffsetLoaded) return;
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
     if (lastPost && (getTrueTime() - lastPost >= 30 * 60 * 1000)) {
       stopAutoExitTimer();
@@ -723,11 +685,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     renderPresence(currentPresenceMap);
     switchUIMode("guest");
 
-    clearImagePreview();
+    if (D.mi) D.mi.blur();
 
     requestAnimationFrame(() => {
       scBottom(true);
-      setTimeout(() => scBottom(true), 50);
     });
 
     if (cleanUid) await db.ref(`presence/official/${myUid}`).remove().catch(()=>{});
@@ -740,10 +701,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       c: curColor, 
       m: logText, 
       t: exitTimeMillis 
-    }).then(() => {
-      requestAnimationFrame(() => {
-        scBottom(true);
-      });
     }).catch(()=>{});
   }
 
@@ -861,211 +818,15 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const pendingMsgs = new Map();
 
-  function pruneOldMessages() {
-    if (!db) return;
-    db.ref(`chat/official`).orderByKey().limitToLast(maxLimit + 1).once("value", snap => {
-      if (snap.numChildren() > maxLimit) {
-        snap.forEach(child => {
-          db.ref(`chat/official/${child.key}`).remove().catch(()=>{});
-          return true; 
-        });
-      }
-    });
-  }
-
-  let lastSentText = "";
-  let lastSentTimeOfText = 0;
-  let postHistory = [];
-
-  function clearImagePreview() {
-    selectedImgData = null;
-    scBottom(true);
-  }
-
-  // 画像ロード時のタイムラインの跳ね上がり（ガタつき）を完璧に解消するスムーズ追従ヘルパー
-  function scBottomOnImgLoad(isMyMsg = false) {
-    if (isMyMsg || isAutoScroll) {
-      scBottom(true);
-      let count = 0;
-      const step = () => {
-        scBottom(true);
-        if (count++ < 3) requestAnimationFrame(step); // 3回連続フレーム追従でカクつきを完全吸収 [1]
-      };
-      requestAnimationFrame(step);
-    }
-  }
-
-  const saveChatCacheToLS = (cleanMsgs) => {
-    try {
-      safeLS.set("nz_chat_cache", JSON.stringify(cleanMsgs));
-    } catch (e) {}
-  };
-
-  async function sendMsg() {
-    if (!isJoined || !D.mi || !db) return;
-    const txt = D.mi.value.trim();
-    if (!txt) return;
-
-    const now = Date.now();
-
-    const cooldown = 300;
-    if (now - lastSendTime < cooldown) {
-      showToast("少し時間をおいてから送信してください。");
-      return;
-    }
-
-    if (txt === lastSentText && now - lastSentTimeOfText < 3000) {
-      showToast("同じメッセージを連続で送信することはできません。");
-      return;
-    }
-
-    postHistory = postHistory.filter(t => now - t < 10000);
-    const floodLimit = 12;
-    if (postHistory.length >= floodLimit) {
-      showToast("送信頻度が高すぎます。しばらくお待ちください。");
-      return;
-    }
-
-    if (txt.length > 500) {
-      showToast("文字数制限（500文字）を超えています。");
-      return;
-    }
-
-    lastSendTime = now;
-    lastSentText = txt;
-    lastSentTimeOfText = now;
-    postHistory.push(now);
-
-    D.mi.value = "";
-    D.mi.style.height = "auto";
-    updateClrMsgBtnVisibility(); 
-    if (keepKbOpen) D.mi.focus(); else D.mi.blur();
-
-    const nowTime = getTrueTime();
-    updateLastPostTime(nowTime);
-
-    // 【一時プレビュー保留方式の実装】
-    // メッセージと画像が両方ある場合は「テキスト ➔ 画像」の順で安全に別送(連投)します。
-
-    if (txt) {
-      const tempIdTxt = "pnd_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-      const tempObjTxt = { id: tempIdTxt, u: myUid, n: myName, p: myTrip, c: curColor, m: txt, t: nowTime };
-      pendingMsgs.set(tempIdTxt, tempObjTxt);
-      displayedMsgIds.add(tempIdTxt);
-
-      const tempElTxt = cMsg(tempObjTxt, true);
-      tempElTxt.style.opacity = "0.7";
-      insertMessageInOrder(tempElTxt);
-
-      db.ref(`chat/official`).push({ 
-        u: myUid, 
-        pnd: tempIdTxt, 
-        n: myName, 
-        p: myTrip, 
-        c: curColor, 
-        m: txt, 
-        t: firebase.database.ServerValue.TIMESTAMP 
-      }).catch(err => {
-        const local = renderedMwNodes.get(tempIdTxt); if (local) local.remove();
-        renderedMwNodes.delete(tempIdTxt); pendingMsgs.delete(tempIdTxt); displayedMsgIds.delete(tempIdTxt);
-      });
-    }
-
-    isAutoScroll = true;
-    unreadMsgIds.clear();
-    updateUnreadBadge();
-    scBottom(true);
-
-    requestAnimationFrame(() => {
-      scBottom(true);
-      setTimeout(() => scBottom(true), 50);
-      setTimeout(() => scBottom(true), 150);
-      setTimeout(() => scBottom(true), 300);
-    });
-
-    db.ref(`presence/official/${myUid}/p_t`).set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
-    db.ref(`presence/official/${myUid}/t`).set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
-  }
-
-  const renderedMwNodes = new Map();
-  let lastChatHash = "";
-
-  function insertMessageInOrder(el) {
-    if (!D.tli) return;
-    const ts = parseInt(el.dataset.ts || "0"), children = Array.from(D.tli.children);
-    let inserted = false;
-    for (let i = 0; i < children.length; i++) {
-      if (ts < parseInt(children[i].dataset.ts || "0")) {
-        D.tli.insertBefore(el, children[i]);
-        inserted = true;
-        break;
-      }
-    }
-    if (!inserted) D.tli.appendChild(el);
-    pruneOldSystemMessages(); 
-  }
-
-  function saveChatCacheFromDOM() { try { safeLS.remove("nz_chat_cache"); } catch(e) {} }
-
-  function pruneOldSystemMessages() {
-    if (!D.tli) return;
-    const children = Array.from(D.tli.children);
-    
-    let minNormalTs = Infinity;
-    children.forEach(el => {
-      const isSys = el.querySelector('.sys-msg') !== null;
-      if (!isSys) {
-        const ts = parseInt(el.dataset.ts || "0");
-        if (ts > 0 && ts < minNormalTs) {
-          minNormalTs = ts;
-        }
-      }
-    });
-
-    if (minNormalTs === Infinity) {
-      minNormalTs = 0;
-    }
-
-    children.forEach(el => {
-      const isSys = el.querySelector('.sys-msg') !== null;
-      if (isSys) {
-        const ts = parseInt(el.dataset.ts || "0");
-        if (ts < minNormalTs) {
-          el.style.display = "none";
-        } else {
-          el.style.display = "";
-        }
-      } else {
-        el.style.display = ""; 
-      }
-    });
-
-    if (scrollToOldestOnLoad) {
-      scrollToOldestOnLoad = false;
-      requestAnimationFrame(() => {
-        if (D.tl) {
-          D.tl.scrollTo({ top: 0, behavior: "smooth" });
-        }
-      });
-    } else {
-      const target = D.tli.querySelector('[data-scroll-target="true"]');
-      if (target) {
-        delete target.dataset.scrollTarget;
-        requestAnimationFrame(() => {
-          if (D.tl) {
-            D.tl.scrollTop = target.offsetTop - 12;
-          }
-        });
-      }
-    }
-  }
-
-  // replaceChildren() と仮想DOM Diffingを融合させた最速描画システム。
-  // 変更（新着や削除）が本当に発生した箇所のみをピンポイントで検知して挿入します [1]。
-  // 順序や要素数に変化がない場合はDOMツリーを一切触らないため、スマホ画面は完全に静止した状態になり、スクロール位置も一切ブレません [1]。
   function syncMessagesDOM(targetMsgs) {
     if (!D.tli || !targetMsgs || !Array.isArray(targetMsgs)) return;
-    const clean = targetMsgs.filter(m => m && m.id);
+    
+    // 【通信・表示最適化】描画する前に最新100件に厳格制限
+    let clean = targetMsgs.filter(m => m && m.id);
+    if (clean.length > maxLimit) {
+      clean = clean.slice(-maxLimit);
+    }
+
     const currentHash = clean.map(m => `${m.id}_${m.u}_${m.n}_${m.m}`).join("|");
     if (currentHash === lastChatHash && pendingMsgs.size === 0) return;
     lastChatHash = currentHash;
@@ -1073,7 +834,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     const targetIds = new Set(clean.map(m => m.id));
     const currentNodes = Array.from(D.tli.children);
 
-    // 不要ノード（今回のリストにないもの）のみをピンポイントでフェードアウトして削除
     currentNodes.forEach(n => {
       const mid = n.dataset.mid;
       if (mid && !mid.startsWith("pnd_") && !targetIds.has(mid)) {
@@ -1108,7 +868,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
     });
 
-    // 保留メッセージを追加
     pendingMsgs.forEach((pMsg, tempId) => {
       let pNode = renderedMwNodes.get(tempId);
       if (!pNode) {
@@ -1119,28 +878,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       finalElements.push(pNode);
     });
 
-    // 【100件以上の新着オーバーフロー検知用ロジック】
-    // 読んでいる最中に100件以上流れたら、自動スクロールを強制オンにして最下部に引き戻し、トーストでお知らせします [1]。
-    const currentNormalIds = currentNodes
-      .map(n => n.dataset.mid)
-      .filter(id => id && !id.startsWith("pnd_") && !id.startsWith("err_") && !id.startsWith("pnd_sys_"));
-
-    let hasOverlap = false;
-    if (currentNormalIds.length > 0) {
-      hasOverlap = currentNormalIds.some(id => targetIds.has(id));
-    } else {
-      hasOverlap = true; 
-    }
-
-    if (!isFirstLoad && !hasOverlap && !isLoadMoreTriggered) {
-      isAutoScroll = true;
-      unreadMsgIds.clear();
-      updateUnreadBadge();
-      showToast("100件以上の新着があったため、最新の発言に移動しました"); // トーストで優しく伝えます [1]
-    }
-
-    // 順序が本当に変わっている（または要素数が増えている）かチェックし、
-    // 変化があった箇所だけをピンポイントで追加、または一括置換。
     let needsRebuild = false;
     if (D.tli.children.length !== finalElements.length) {
       needsRebuild = true;
@@ -1154,36 +891,22 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (needsRebuild) {
-      // 完全に順序変更・要素数不一致がある場合のみ、1回のリフローで一括置換
       D.tli.replaceChildren(...finalElements);
     }
 
-    // 初回ロード時は、透明の状態で最下部まで一瞬でスクロールを完了させる [1]
     if (isFirstLoad) {
       if (D.tl) D.tl.scrollTop = D.tl.scrollHeight;
       isFirstLoad = false;
     }
 
-    // すべての配置・順序調整が完了した瞬間に初めて不透明度を1にし、チラつきなく浮かび上がらせる [1]
     if (D.tl && D.tl.style.opacity !== "1") {
       D.tl.style.opacity = "1";
     }
 
     pruneOldSystemMessages(); 
     updateUnreadBadge();
-
-    if (isLoadMoreTriggered) {
-      isLoadMoreTriggered = false;
-      isLoadingMore = false;
-      requestAnimationFrame(() => {
-        if (D.tl) D.tl.scrollTop = savedOldScrollTop + (D.tl.scrollHeight - savedOldScrollHeight);
-      });
-    } else {
-      scBottom();
-    }
+    scBottom();
     updateJumpBtns();
-
-    // キャッシュを更新しておく
     saveChatCacheToLS(clean);
   }
 
@@ -1329,6 +1052,19 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     return match ? match[1] : null;
   };
 
+  function getYoutubeId(url) {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  }
+
+  function getNicoId(url) {
+    if (!url) return null;
+    const match = url.match(/(sm\d+|so\d+|nm\d+|1\d+)/);
+    return match ? match[0] : null;
+  }
+
   function createMediaContainer(url) {
     const ytId = getYoutubeId(url), nicoId = getNicoId(url);
     const isImg = /\.(jpe?g|png|gif|webp)$/i.test(url);
@@ -1399,7 +1135,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   const closePlayer = () => {
     if (!D.fixedPlayer || !D.playerContent) return;
     
-    // もしオーディオ要素が再生中なら、ガタつきや裏で音が鳴り続けるゴースト再生を100%防止するために明示的に消去 [1]
     const ae = D.playerContent.querySelector("audio");
     if (ae) {
       ae.pause();
@@ -1414,7 +1149,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   function openFloatingPlayer(url, type) {
     if (!D.fixedPlayer || !D.playerContent) return;
     
-    // 開き直す前に、もし古いオーディオがあれば明示的に停止。再生機器の混線を回避します [1]
     const prevAe = D.playerContent.querySelector("audio");
     if (prevAe) {
       prevAe.pause();
@@ -1524,7 +1258,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   }
 
   function renderPresence(serverListMap) {
-    if (!isPresenceInitialized) return; // サーバーからの最新の一括回答が揃うまで描画を完全に待機 [1]
+    if (!isPresenceInitialized) return; 
     const clean = { ...serverListMap };
     if (isJoined && myUid) {
       if (!clean[myUid]) clean[myUid] = { id: myUid, n: myName, p: myTrip, c: curColor, t: getTrueTime(), p_t: getTrueTime() };
@@ -1544,7 +1278,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     const currentChips = Array.from(D.pl.children);
     const currentChipMap = new Map(currentChips.map(c => [c.dataset.uid, c]));
 
-    // 1. 不要になったメンバーのみをピンポイントでフェードアウト削除し、ガタつきを完全に抑止 [1]
     currentChips.forEach(chip => {
       const uid = chip.dataset.uid;
       if (uid && !targetIds.has(uid)) {
@@ -1552,7 +1285,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
     });
 
-    // 2. 新規追加、または変更のあるチップのみ作成・位置調整
     const finalChips = [];
     sorted.forEach(m => {
       let chip = currentChipMap.get(m.id);
@@ -1576,7 +1308,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       finalChips.push(chip);
     });
 
-    // 3. 順序または要素に変動がある場合のみ一括置換。静止状態のメンバーリストの瞬きを0にします [1]
     let needsRebuild = false;
     if (D.pl.children.length !== finalChips.length) {
       needsRebuild = true;
@@ -1593,7 +1324,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       D.pl.replaceChildren(...finalChips);
     }
 
-    // 初めてここで人数バッジとメンバーリストを滑らかにフェードイン表示 [1]
     if (D.pl) D.pl.style.opacity = "1";
     if (D.pcnt) {
       D.pcnt.style.opacity = "1";
@@ -1602,98 +1332,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     updateJumpBtns();
   }
 
-  // スマホ復帰時に一瞬でデータを強制同期する超高速処理
-  let lastSyncTime = 0;
+  // 【通信・パケット大幅削減】無駄なREST fetch処理を完全に撤去し、WebSocketのアクティブ化のみを行う
   async function forceSync() {
     if (!db) return;
-    
-    // 復帰時のイベント嵐を検知して多重リクエストを100%防止する安全ゲート [1]
-    const now = Date.now();
-    if (now - lastSyncTime < 1500) return; 
-    lastSyncTime = now;
-
-    db.goOnline(); 
-
-    // 復帰時や初期接続時、古いメンバー構成のチラつき（ゾンビチップ・1人➔2人へ動く状態）を完全に防ぐため、一旦DOMを隠して一括描画の完了を待ちます [1]
-    isPresenceInitialized = false;
-    if (D.pl) D.pl.style.opacity = "0";
-    if (D.pcnt) D.pcnt.style.opacity = "0";
-
-    // 400 Bad RequestによるJS実行停止を防ぐため、orderByクエリのダブルコード（"）やダラー（$）を完全にエスケープエンコードしてREST実行 [1]
-    const encodedLimitQuery = `limitToLast=${currentLimit}`;
-    const encodedOrderByQuery = `orderBy=${encodeURIComponent('"$key"')}`;
-
-    fetch(`https://nezuochat-default-rtdb.asia-southeast1.firebasedatabase.app/chat/official.json?${encodedOrderByQuery}&${encodedLimitQuery}`)
-      .then(res => {
-        // HTTPレスポンスヘッダーの "Date" から、サーバーの絶対時刻を即座に抽出！ [1]
-        // これにより、起動・復帰後のわずか数十ミリ秒の段階で、完璧なサーバー同期時刻を「最初から」確立します [1]。
-        const serverDateStr = res.headers.get("Date");
-        if (serverDateStr) {
-          serverTimeOffset = new Date(serverDateStr).getTime() - Date.now();
-          isOffsetLoaded = true;
-        }
-        if (!res.ok) throw new Error();
-        return res.json();
-      })
-      .then(data => {
-        if (!data || typeof data !== "object") {
-          syncMessagesDOM([]);
-          return;
-        }
-        const msgs = [];
-        for (const [key, val] of Object.entries(data)) {
-          if (val) {
-            val.id = key;
-            msgs.push(val);
-          }
-        }
-        // 時系列ソート
-        msgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
-        syncMessagesDOM(msgs); // DOM差分置換を呼び出して瞬時に同期 [1]
-      })
-      .catch(() => {
-        // 通信環境不通時やCORSエラー時のセーフティガード。表示ロックを防ぐため即フェードインさせます [1]
-        isFirstLoad = false;
-        if (D.tl && D.tl.style.opacity !== "1") {
-          D.tl.style.opacity = "1";
-        }
-        if (D.pl && D.pl.style.opacity !== "1") {
-          D.pl.style.opacity = "1";
-        }
-        if (D.pcnt && D.pcnt.style.opacity !== "1") {
-          D.pcnt.style.opacity = "1";
-        }
-      });
-
-    // 入室者リストも直接RESTで回収
-    fetch("https://nezuochat-default-rtdb.asia-southeast1.firebasedatabase.app/presence/official.json")
-      .then(res => res.json())
-      .then(list => {
-        const members = {}, nowTrue = getTrueTime();
-        if (list && typeof list === "object") {
-          for (const [id, u] of Object.entries(list)) {
-            if (u && u.n) {
-              let ut = (u.t && typeof u.t === "object") ? nowTrue : u.t;
-              if (!ut || typeof ut !== "number") continue;
-              let pt = u.p_t || ut;
-              if (isOffsetLoaded && id !== myUid && (nowTrue - pt >= 1800000)) { 
-                triggerOtherExit(id, u, pt + 1800000); 
-                continue; 
-              }
-              members[id] = { id, ...u, t: ut, p_t: pt };
-            }
-          }
-        }
-        currentPresenceMap = members;
-        savePresenceCache();
-        isPresenceInitialized = true; // サーバーからの最新データが一括で揃ったため、初期化を確定 [1]
-        renderPresence(members);      // 一発で最初から全員を同期描画 [1]
-      })
-      .catch(() => {
-        // エラー時も安全フラグをオンにしてWebSocketへフェードパスを引き渡す [1]
-        isPresenceInitialized = true;
-        renderPresence(currentPresenceMap);
-      });
+    db.goOnline();
   }
 
   function setupFirebaseListeners() {
@@ -1701,9 +1343,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     const chatRef = db.ref(`chat/official`), presenceRef = db.ref(`presence/official`);
     chatRef.off(); presenceRef.off();
 
-    const chatQuery = chatRef.limitToLast(currentLimit); 
+    const chatQuery = chatRef.orderByKey().limitToLast(currentLimit); 
 
-    // DOM差分置換(syncMessagesDOM)のみで処理するため、カクつきやもたつきが完全に皆無になります。
     chatQuery.on("value", snap => {
       const msgs = [];
       snap.forEach(child => {
@@ -1716,7 +1357,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       syncMessagesDOM(msgs);
       isFirstLoad = false;
     }, err => {
-      console.warn("Firebase value listener error:", err);
+      console.warn("Firebase query listener error:", err);
     });
 
     presenceRef.on("value", s => {
@@ -1736,7 +1377,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
       currentPresenceMap = members;
       savePresenceCache();
-      isPresenceInitialized = true; // WebSocket経由でも最初のロード完了時点で一括同期
+      isPresenceInitialized = true; 
       renderPresence(members);
     }, err => {
       console.warn("Firebase presence listener error:", err);
@@ -1744,14 +1385,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   }
 
   const initDirectDatabaseProcess = async () => {
-    // 起動時はゾンビメンバーの一瞬の残像やチラつきを防ぐため、loadCachedPresenceを完全に無効化し、チャット過去ログのみを0秒表示します [1]。
     loadCachedChat();
-
-    // 暗号キーの生成（makeTrip）の重い同期ループ処理を確実に完了させて、プロフィールの変数バインドを完成させます [1]。
-    // これにより、起動・復帰時に不正確な空の名前が他ユーザーへ伝染し、オンラインリストから自分が消去される同期バグが完全に解決します [1]。
     await syncProfileValues();
-
-    // プロフィール情報が100%揃い、バグのない状態が完成した直後に最速REST同期を実行 [1]
     forceSync();
 
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
@@ -1771,11 +1406,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         isFirebaseListenersBound = true;
       }
       if (isJoined) {
-        joinRoom(true);
+        joinRoom(true); 
       }
     }
 
     switchUIMode(isJoined ? "joined" : "guest");
+    if (D.tl) {
+      D.tl.style.opacity = "0";
+    }
 
     if (!isConnectedBound && db) {
       try {
@@ -1806,6 +1444,207 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       } catch (e) { console.warn("Fail serverTimeOffset", e); }
     }
   };
+
+  function insertMessageInOrder(newEl) {
+    if (!D.tli || !newEl) return;
+    const newTs = parseInt(newEl.dataset.ts, 10);
+    const children = Array.from(D.tli.children);
+    
+    let inserted = false;
+    for (let i = children.length - 1; i >= 0; i--) {
+      const childTs = parseInt(children[i].dataset.ts, 10);
+      if (newTs >= childTs) {
+        children[i].after(newEl);
+        inserted = true;
+        break;
+      }
+    }
+    if (!inserted) {
+      D.tli.prepend(newEl);
+    }
+  }
+
+  function scBottom(force = false) {
+    if (!D.tl) return;
+    if (isAutoScroll || force) {
+      _scPending = true;
+      requestAnimationFrame(() => {
+        D.tl.scrollTop = D.tl.scrollHeight;
+        _scPending = false;
+      });
+    }
+  }
+
+  function scBottomOnImgLoad() {
+    if (isAutoScroll) {
+      scBottom(true);
+    }
+  }
+
+  function buildPicker(container, selectedColor, btnClass, onSelect) {
+    if (!container) return;
+    container.innerHTML = "";
+    COLORS.forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = btnClass;
+      btn.style.backgroundColor = c.v;
+      btn.dataset.color = c.v;
+      btn.title = c.n;
+      if (c.v === selectedColor) {
+        btn.classList.add("sel");
+      }
+      btn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        onSelect(c.v);
+      });
+      container.appendChild(btn);
+    });
+  }
+
+  function parseTxtSplit(text) {
+    if (typeof text !== "string") return [];
+    const parts = text.split(UR);
+    const nodes = [];
+    parts.forEach((part) => {
+      if (part.match(UR)) {
+        const a = document.createElement("a");
+        a.href = part;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.textContent = part;
+        a.style.color = "#38bdf8";
+        a.style.textDecoration = "underline";
+        nodes.push(a);
+      } else if (part) {
+        nodes.push(document.createTextNode(part));
+      }
+    });
+    return nodes;
+  }
+
+  function pruneOldSystemMessages() {
+    if (!D.tli) return;
+    const nodes = Array.from(D.tli.children);
+    if (nodes.length > maxLimit) {
+      const toRemove = nodes.slice(0, nodes.length - maxLimit);
+      toRemove.forEach(n => {
+        const mid = n.dataset.mid;
+        if (mid) {
+          renderedMwNodes.delete(mid);
+          displayedMsgIds.delete(mid);
+        }
+        n.remove();
+      });
+    }
+  }
+
+  function updateUnreadBadge() {
+    if (!D.unreadBadge) return;
+    const count = unreadMsgIds.size;
+    if (count > 0) {
+      D.unreadBadge.textContent = count > 99 ? "99+" : count;
+      D.unreadBadge.style.display = "inline-flex";
+    } else {
+      D.unreadBadge.style.display = "none";
+    }
+  }
+
+  function updateJumpBtns() {
+    if (!D.tl) return;
+    const scrollTop = D.tl.scrollTop;
+    const scrollHeight = D.tl.scrollHeight;
+    const clientHeight = D.tl.clientHeight;
+
+    if (D.jumpUpBtn) {
+      D.jumpUpBtn.disabled = (scrollTop <= 5);
+    }
+    if (D.jumpDownBtn) {
+      D.jumpDownBtn.disabled = (scrollTop + clientHeight >= scrollHeight - 10);
+    }
+  }
+
+  async function sendMsg() {
+    if (!isJoined || !db || !D.mi) return;
+    const val = D.mi.value;
+    if (!val || !val.trim()) return;
+
+    const now = Date.now();
+    if (now - lastSendTime < 1000) {
+      showToast("送信が早すぎます。1秒以上あけてください。");
+      return;
+    }
+    lastSendTime = now;
+
+    const rawMsg = val;
+    D.mi.value = "";
+    D.mi.style.height = "auto";
+    D.mi.dispatchEvent(new Event("input"));
+    updateClrMsgBtnVisibility();
+
+    updateLastPostTime(getTrueTime());
+
+    // 【仕様修正】メッセージ送信時にデータベース上の生存期限(p_t)を更新してタイマーを延長
+    if (myUid) {
+      db.ref(`presence/official/${myUid}`).update({
+        p_t: firebase.database.ServerValue.TIMESTAMP
+      }).catch(()=>{});
+    }
+
+    const tempId = "pnd_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
+    const tempObj = {
+      id: tempId,
+      u: myUid,
+      n: myName,
+      p: myTrip,
+      c: curColor,
+      m: rawMsg,
+      t: getTrueTime()
+    };
+
+    pendingMsgs.set(tempId, tempObj);
+    
+    const tempEl = cMsg(tempObj, true);
+    insertMessageInOrder(tempEl);
+    scBottom(true);
+
+    db.ref("chat/official").push({
+      u: myUid,
+      n: myName,
+      p: myTrip,
+      c: curColor,
+      m: rawMsg,
+      t: firebase.database.ServerValue.TIMESTAMP
+    }).then(() => {
+      pendingMsgs.delete(tempId);
+      const node = renderedMwNodes.get(tempId);
+      if (node) node.remove();
+      renderedMwNodes.delete(tempId);
+    }).catch(err => {
+      pendingMsgs.delete(tempId);
+      const node = renderedMwNodes.get(tempId);
+      if (node) node.remove();
+      renderedMwNodes.delete(tempId);
+      showToast("メッセージの送信に失敗しました。");
+      console.error(err);
+    });
+
+    if (keepKbOpen) {
+      D.mi.focus();
+    } else {
+      D.mi.blur();
+    }
+    isAutoScroll = true;
+    scBottom(true);
+  }
+
+  function saveChatCacheToLS(msgs) {
+    try {
+      const slice = msgs.slice(-50);
+      safeLS.set("nz_chat_cache", JSON.stringify(slice));
+    } catch (e) {
+      console.warn("Failed to save chat cache", e);
+    }
+  }
 
   function initApp() {
     D = {
@@ -1851,13 +1690,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         requestAnimationFrame(() => {
           const scrollTop = D.tl.scrollTop, clientHeight = D.tl.clientHeight, scrollHeight = D.tl.scrollHeight;
           
-          if (scrollTop <= 0 && !isLoadingMore && currentLimit < maxLimit) {
-            const firstNormal = D.tli.querySelector('.mw:not([style*="display: none"]):not(:has(.sys-msg))');
-            if (firstNormal) {
-              firstNormal.dataset.scrollTarget = "true";
-            }
-            loadMoreLogs();
-          }
           if (!_scPending) {
             if (scrollTop + clientHeight >= scrollHeight - 30) {
               isAutoScroll = true;
@@ -1875,10 +1707,17 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }, { passive: true });
     }
 
-    if (D.playerCloseBtn) D.playerCloseBtn.onclick = closePlayer;
+    // 【環境最適化・タップ遅延排除】pointerdown への徹底移行
+    if (D.playerCloseBtn) {
+      D.playerCloseBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        closePlayer();
+      });
+    }
 
     if (D.exBtn) {
-      D.exBtn.addEventListener("click", () => {
+      D.exBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
         if (isJoined && confirm("退室して参加前の覗き見画面に戻りますか？")) {
           doExit();
         }
@@ -1887,14 +1726,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     if (D.sdBtn) {
       D.sdBtn.addEventListener("pointerdown", (e) => {
-        if (e.pointerType === "mouse" && e.button !== 0) return;
         e.preventDefault(); 
         sendMsg();
       });
     }
 
     if (D.clrBtn) {
-      D.clrBtn.addEventListener("click", () => {
+      D.clrBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
         tmpColor = curColor; updateModalColorPreview(tmpColor);
         buildPicker(D.clrPick2, tmpColor, "clrc2", (v) => {
           tmpColor = v; updateModalColorPreview(v);
@@ -1905,13 +1744,15 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (D.clrCancel) {
-      D.clrCancel.addEventListener("click", () => {
+      D.clrCancel.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
         if (D.clrmod) D.clrmod.classList.remove("show");
       });
     }
 
     if (D.clrOk) {
-      D.clrOk.addEventListener("click", async () => {
+      D.clrOk.addEventListener("pointerdown", async (e) => {
+        e.preventDefault();
         curColor = tmpColor; setGlobalColor(curColor); safeLS.set("nz_color", curColor);
         if (D.clrmod) D.clrmod.classList.remove("show"); await syncProfileValues();
         if (isJoined && db) {
@@ -1933,19 +1774,18 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (D.jumpUpBtn) {
-      D.jumpUpBtn.onclick = () => {
+      D.jumpUpBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
         if (D.tl) {
-          if (currentLimit < maxLimit) {
-            scrollToOldestOnLoad = true; 
-            loadMoreLogs();
-          } else {
-            D.tl.scrollTo({ top: 0, behavior: "smooth" });
-          }
+          D.tl.scrollTo({ top: 0, behavior: "smooth" });
         }
-      };
+      });
     }
     if (D.jumpDownBtn) {
-      D.jumpDownBtn.onclick = () => { isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); if (D.tl) D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" }); };
+      D.jumpDownBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); if (D.tl) D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" });
+      });
     }
 
     let isComposing = false;
@@ -1985,9 +1825,15 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       D.tripi.addEventListener("keydown", handleJoinKey);
     }
 
-    if (D.joinBtn) D.joinBtn.onclick = () => joinRoom();
+    if (D.joinBtn) {
+      D.joinBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        joinRoom();
+      });
+    }
     if (D.copyTripBtn) {
-      D.copyTripBtn.onclick = async () => {
+      D.copyTripBtn.addEventListener("pointerdown", async (e) => {
+        e.preventDefault();
         const niVal = (D.ni ? D.ni.value.trim() : "") || "名無し", tripiVal = D.tripi ? D.tripi.value.trim() : "";
         if (!tripiVal) return;
         const tLobby = await window.makeTrip(niVal, tripiVal);
@@ -1999,12 +1845,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             setTimeout(() => { copyBtn.textContent = original; copyBtn.style.background = ""; }, 1500);
           } catch (err) { alert("コピーに失敗しました。"); }
         }
-      };
+      });
     }
 
     const joinFormHeader = $("joinFormHeader");
     if (joinFormHeader) {
-      joinFormHeader.onclick = () => {
+      joinFormHeader.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
         isJoinFormExpanded = !isJoinFormExpanded;
         const content = $("joinFormContent"), arrow = $("joinFormArrow");
         if (isJoinFormExpanded) {
@@ -2015,10 +1862,15 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           if (arrow) arrow.style.transform = "rotate(0deg)";
         }
         scBottom(true);
-      };
+      });
     }
 
-    if (D.imgViewCloseBtn) D.imgViewCloseBtn.onclick = () => { if (D.imgViewMod) D.imgViewMod.classList.remove("show"); };
+    if (D.imgViewCloseBtn) {
+      D.imgViewCloseBtn.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        if (D.imgViewMod) D.imgViewMod.classList.remove("show");
+      });
+    }
 
     if (D.kbKeepOpenChk) {
       D.kbKeepOpenChk.checked = keepKbOpen;
@@ -2071,36 +1923,38 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }, { passive: false });
 
       overlay.addEventListener("click", (e) => { if (e.target === overlay && D.imgViewMod) D.imgViewMod.classList.remove("show"); });
-
-      // 拡大ズームモーダルへのダブルクリックイベントの追加（プレビュー操作性の進化） [1]
-      overlay.addEventListener("dblclick", () => {
-        resetZoom();
-      });
+      overlay.addEventListener("dblclick", () => { resetZoom(); });
     }
 
-    // バックグラウンド・ホーム復帰時に通信を再確立させ、即座に直接ポーリング要求をかけてログを同期
-    let resumeThrottle = false;
-    function handleResume() {
+    // 【環境最適化・電池/通信の極限削減】画面非表示(スリープ)時にWebSocketを完全遮断し、復帰時に再接続
+    function handleVisibilityChange() {
       if (document.visibilityState === "visible") {
-        if (resumeThrottle) return;
-        resumeThrottle = true;
-        setTimeout(() => { resumeThrottle = false; }, 800); 
-        
-        forceSync(); // WebSocketがネゴシエーションしている間に直接REST経由で即時同期 [1]
+        if (db) db.goOnline(); 
+        forceSync(); 
+      } else {
+        if (db) db.goOffline(); // 非表示中は自動オフライン（パケット・バッテリー消費ゼロ）
       }
     }
-    document.addEventListener("visibilitychange", handleResume);
-    window.addEventListener("focus", handleResume);
-    window.addEventListener("pageshow", handleResume);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // キーボードの「Escキー」で上部インラインメディアプレイヤー（音楽・動画・SNS）を即時閉じるショートカット [1]
+    // 【iOS/Androidキーボード表示崩れの完全対策】VisualViewportの監視
+    if (window.visualViewport) {
+      const resizeViewport = () => {
+        const height = window.visualViewport.height;
+        document.documentElement.style.setProperty('--app-viewport-height', `${height}px`);
+        scBottom(true);
+      };
+      window.visualViewport.addEventListener('resize', resizeViewport);
+      window.visualViewport.addEventListener('scroll', resizeViewport);
+    }
+
     window.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         closePlayer();
       }
     });
 
-    initDirectDatabaseProcess(); // REST最速同期を内包し、変数非同期バグを完全解決した起動フロー [1]
+    initDirectDatabaseProcess();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initApp); else initApp();
