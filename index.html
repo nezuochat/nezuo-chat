@@ -279,7 +279,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span class="logo">NEZUO CHAT</span>
-            <span class="pcnt" id="pcnt" style="opacity: 0; transition: opacity 0.15s ease;">0人</span>
+            <!-- 【チラつき防止】初期段階から即描画できるように opacity:0 と transition を完全排除 -->
+            <span class="pcnt" id="pcnt">0人</span>
           </div>
         </div>
         <div class="hbs">
@@ -289,7 +290,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <div id="pl" style="opacity: 0; transition: opacity 0.15s ease;"></div>
+    <!-- 【チラつき防止】初期段階から即描画できるように opacity:0 と transition を完全排除 -->
+    <div id="pl"></div>
 
     <div id="fixedPlayer">
       <div id="playerHeader">
@@ -580,6 +582,23 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const savePresenceCache = () => {
     safeLS.set("nz_presence_cache", JSON.stringify(currentPresenceMap));
+  };
+
+  // 【追加：入室者キャッシュ復元】リロード直後の秒速即時表示（チラつき防止）
+  const loadCachedPresence = () => {
+    try {
+      const cached = safeLS.get("nz_presence_cache");
+      if (cached) {
+        const members = JSON.parse(cached);
+        if (typeof members === "object" && members !== null) {
+          currentPresenceMap = members;
+          isPresenceInitialized = true; 
+          renderPresence(members);
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load cached presence", e);
+    }
   };
 
   const loadCachedChat = () => {
@@ -1419,9 +1438,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       D.pl.replaceChildren(...finalChips);
     }
 
-    if (D.pl) D.pl.style.opacity = "1";
     if (D.pcnt) {
-      D.pcnt.style.opacity = "1";
       D.pcnt.textContent = `${sorted.length}人`;
     }
     updateJumpBtns();
@@ -1465,8 +1482,19 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
 
     presenceRef.on("value", s => {
-      const list = s.val() || {}, members = {}, nowTrue = getTrueTime();
-      for (const [id, u] of Object.entries(list)) {
+      const list = s.val();
+      
+      // 【再接続・瞬断時の全消えチラつき防止】
+      // 一時的な接続切れや、再ログインの瞬間に空のデータ(null/空オブジェクト)が返ってきても、
+      // 画面の入室者一覧を一瞬で全クリアするのを控え、安全に以前のアクティブキャッシュ表示を維持させます。
+      if (!list || Object.keys(list).length === 0) {
+        if (isOffsetLoaded && isConnectedBound) {
+          return; 
+        }
+      }
+
+      const listObj = list || {}, members = {}, nowTrue = getTrueTime();
+      for (const [id, u] of Object.entries(listObj)) {
         if (u && u.n) {
           let ut = (u.t && typeof u.t === "object") ? nowTrue : u.t;
           if (!ut || typeof ut !== "number") continue;
@@ -1490,6 +1518,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const initDirectDatabaseProcess = async () => {
     loadCachedChat();
+    loadCachedPresence(); // 【追加】起動の瞬間にローカルキャッシュから入室者一覧を即時復元
     await syncProfileValues();
 
     // 【Firebase 匿名認証の導入：爆速化を崩さないバックグラウンド実行】
