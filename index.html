@@ -99,8 +99,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   overflow-y:auto;
   padding:12px;
   background-color:#0d1117;
-  opacity:0;
-  transition:opacity 0.15s ease;
   will-change:scroll-position;
   -webkit-overflow-scrolling:touch;
 }
@@ -301,8 +299,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       <div id="playerContent"></div>
     </div>
 
+    <!-- 【真っ黒（フェードロック）対策】初期opacityを「1」にし、キャッシュまたはサーバー受信までプレースホルダーを中に初期表示 [1] -->
     <div id="tl" role="log" aria-live="polite">
-      <div id="tl-inner"></div>
+      <div id="tl-inner">
+        <div id="tl-loading-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 16px; color: var(--mu); font-size: 13px; font-weight: bold; gap: 10px;">
+          <div class="spin"></div>
+          <span>チャットに接続しています...</span>
+        </div>
+      </div>
     </div>
 
     <div id="ibTopBar" style="background: var(--sf); border-top: 1px solid var(--bd); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0;">
@@ -455,7 +459,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const renderedMwNodes = new Map();
   let lastChatHash = "";
-  let lastMsgsCache = []; // 送信時の一時表示用の最新データキャッシュ
+  
+  // 【キャッシュの永続バグ修正】初期状態のキャッシュに前回の保存データを初期代入
+  let lastMsgsCache = []; 
+  try {
+    const cached = safeLS.get("nz_chat_cache");
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed)) lastMsgsCache = parsed;
+    }
+  } catch (e) {}
 
   const setGlobalColor = c => document.documentElement.style.setProperty("--usr-color", c);
   setGlobalColor(curColor);
@@ -805,7 +818,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (!isFirebaseListenersBound) {
-      setupFirebaseListeners();
+      queueSetupFirebaseListeners();
       isFirebaseListenersBound = true;
     }
 
@@ -911,6 +924,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
     });
 
+    // プレースホルダーがあれば安全に削除
+    const placeholder = $("tl-loading-placeholder");
+    if (placeholder && allMsgs.length > 0) {
+      placeholder.remove();
+    }
+
     const finalElements = [];
     allMsgs.forEach(m => {
       const uniqueId = m.id || m.pnd;
@@ -963,10 +982,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (isFirstLoad) {
       if (D.tl) D.tl.scrollTop = D.tl.scrollHeight;
       isFirstLoad = false;
-    }
-
-    if (D.tl && D.tl.style.opacity !== "1") {
-      D.tl.style.opacity = "1";
     }
 
     pruneOldSystemMessages(); 
@@ -1417,6 +1432,15 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     db.goOnline();
   }
 
+  // 【競合衝突防止のデバウンス制御】認証確定・回線切替・起動時が短時間に多重実行された場合の接続衝突を防ぐ
+  let setupListenersTimer = null;
+  function queueSetupFirebaseListeners() {
+    if (setupListenersTimer) clearTimeout(setupListenersTimer);
+    setupListenersTimer = setTimeout(() => {
+      setupFirebaseListeners();
+    }, 150);
+  }
+
   function setupFirebaseListeners() {
     if (!db) return;
     const chatRef = db.ref(`chat/official`), presenceRef = db.ref(`presence/official`);
@@ -1476,8 +1500,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           myUid = user.uid;
           safeLS.set("nz_permanent_uid", myUid);
           
-          // UIDが変わった場合はDOMを再描画し、自分の削除ボタンの有無を正確にバインド
-          if (oldUid !== myUid) {
+          // 【キャッシュクリアのバグ防止ガード】キャッシュ内にデータがある場合のみ安全に再バインドを実行
+          if (oldUid !== myUid && lastMsgsCache.length > 0) {
             syncMessagesDOM(lastMsgsCache);
           }
           
@@ -1493,7 +1517,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           switchUIMode(isJoined ? "joined" : "guest");
 
           // 【再接続・認証ラグ対策】認証確定のタイミングでチャット受信監視を再始動
-          setupFirebaseListeners();
+          queueSetupFirebaseListeners();
         } else {
           firebase.auth().signInAnonymously().catch(err => {
             console.error("Anonymous auth sign-in failed:", err);
@@ -1516,7 +1540,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (db) {
-      setupFirebaseListeners(); 
+      queueSetupFirebaseListeners(); 
       isFirebaseListenersBound = true;
       
       if (isJoined) {
@@ -1531,9 +1555,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     switchUIMode(isJoined ? "joined" : "guest");
-    if (D.tl) {
-      D.tl.style.opacity = "0";
-    }
 
     if (!isConnectedBound && db) {
       try {
@@ -1550,7 +1571,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         db.ref(".info/connected").on("value", snap => {
           if (snap.val() === true) {
             // 【再接続復帰】Firebaseが再接続を検知したタイミングでチャット監視を再起動
-            setupFirebaseListeners();
+            queueSetupFirebaseListeners();
 
             if (isJoined && myUid && myName.trim()) {
               db.ref(`presence/official/${myUid}`).set({
@@ -2038,8 +2059,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       if (document.visibilityState === "visible") {
         if (db) db.goOnline(); 
         forceSync(); 
-        // 【復帰対策】バックグラウンドから手前に戻ってきた際、強制的に最新のリスナーを確立
-        setupFirebaseListeners();
+        // 【復帰対策】バックグラウンドから復帰した際、デバウンスを挟んで安全にリッスンを再始動
+        queueSetupFirebaseListeners();
       } else {
         if (db) db.goOffline(); 
       }
