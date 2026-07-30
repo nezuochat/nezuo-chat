@@ -321,21 +321,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <div id="joinForm">
-      <div id="joinFormHeader" style="padding: 12px; text-align: center; cursor: pointer; font-size: 12.5px; color: var(--tx); font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 6px; user-select: none; background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.02);">
-        <span>💬 チャットに参加する (タップで展開)</span>
-        <span id="joinFormArrow" style="transition: transform 0.15s ease; display: inline-block;">▼</span>
+    <!-- 【参加フォーム：スッキリ化＆折りたたみ廃止】 -->
+    <div id="joinForm" style="display: none; flex-direction: column; padding: 14px; gap: 10px; border-top: 1px solid var(--bd); background: var(--sf); padding-bottom: calc(14px + var(--safe));">
+      <div class="jrow">
+        <input type="text" id="ni" class="inp" placeholder="名前 (10文字まで)" maxlength="10" autocomplete="off">
+        <input type="text" id="tripi" class="inp" placeholder="トリップキー (任意)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+        <button class="btn bp" id="joinBtn" style="height: 42px; padding: 0 16px;">参加する</button>
       </div>
-      <div id="joinFormContent" style="display: none; flex-direction: column; padding: 16px 14px calc(16px + var(--safe)); gap: 12px; border-top: 1px solid var(--bd);">
-        <div class="jrow">
-          <input type="text" id="ni" class="inp" placeholder="名前 (10文字まで)" maxlength="10" autocomplete="off">
-          <input type="text" id="tripi" class="inp" placeholder="トリップキー (任意)" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
-          <button class="btn bp" id="joinBtn" style="height: 42px; padding: 0 16px;">参加する</button>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2px; width: 100%; gap: 8px;">
-          <span id="tripPrevText" style="font-size: 11.5px; font-weight: bold; color: var(--usr-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">トリッププレビュー: 名無し</span>
-          <button id="copyTripBtn" class="btn bq" style="height: 26px; padding: 0 10px; font-size: 11px; border-radius: 6px; display: none; align-items: center; justify-content: center; font-weight: bold; border-color: rgba(255,255,255,0.1); flex-shrink: 0;" title="トリップをクリップボードにコピー">トリップをコピー</button>
-        </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%; gap: 8px;">
+        <span id="tripPrevText" style="font-size: 11.5px; font-weight: bold; color: var(--usr-color); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;">トリッププレビュー: 名無し</span>
+        <button id="copyTripBtn" class="btn bq" style="height: 26px; padding: 0 10px; font-size: 11px; border-radius: 6px; display: none; align-items: center; justify-content: center; font-weight: bold; border-color: rgba(255,255,255,0.1); flex-shrink: 0;" title="トリップをクリップボードにコピー">トリップをコピー</button>
       </div>
     </div>
 
@@ -442,7 +437,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let currentLimit = 100;
 
   let latestDisplayedTs = 0;
-  let isJoinFormExpanded = false; 
   let scale = 1, panX = 0, panY = 0;
   let lastPanX = 0, lastPanY = 0, isPanning = false;
   let initialDistance = 0;
@@ -651,6 +645,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     D.joinBtn.textContent = empty ? "名前を入力してください" : "参加する";
   }
 
+  // 【仕様最適化：折りたたみ制御を完全に廃止し、シンプルに表示・非表示をトグル】
   function switchUIMode(mode) {
     if (!D.ib || !D.joinForm || !D.exBtn || !D.clrBtn) return;
     if (mode === "guest") {
@@ -660,10 +655,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       D.clrBtn.style.display = "inline-flex"; 
       const kb = $("kbKeepOpenContainer");
       if (kb) kb.style.display = "none";
-      isJoinFormExpanded = false; 
-      const jc = $("joinFormContent"), ja = $("joinFormArrow");
-      if (jc) jc.style.display = "none";
-      if (ja) ja.style.transform = "rotate(0deg)";
     } else if (mode === "joined") {
       D.ib.style.display = "flex";
       D.joinForm.style.display = "none";
@@ -1289,7 +1280,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       };
 
       if (type === "youtube") {
-        const isShorts = url.includes("/shorts/"); // YouTube Shortsの自動判別 [1]
+        const isShorts = url.includes("/shorts/"); // YouTube Shorts of auto-detection
         const ytId = getYoutubeId(url);
 
         if (isShorts) {
@@ -1500,6 +1491,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             }).catch(()=>{});
           }
           switchUIMode(isJoined ? "joined" : "guest");
+
+          // 【再接続・認証ラグ対策】認証確定のタイミングでチャット受信監視を再始動
+          setupFirebaseListeners();
         } else {
           firebase.auth().signInAnonymously().catch(err => {
             console.error("Anonymous auth sign-in failed:", err);
@@ -1522,10 +1516,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (db) {
-      if (!isFirebaseListenersBound) {
-        setupFirebaseListeners();
-        isFirebaseListenersBound = true;
-      }
+      setupFirebaseListeners(); 
+      isFirebaseListenersBound = true;
+      
       if (isJoined) {
         joinRoom(true); 
         
@@ -1556,6 +1549,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         });
         db.ref(".info/connected").on("value", snap => {
           if (snap.val() === true) {
+            // 【再接続復帰】Firebaseが再接続を検知したタイミングでチャット監視を再起動
+            setupFirebaseListeners();
+
             if (isJoined && myUid && myName.trim()) {
               db.ref(`presence/official/${myUid}`).set({
                 n: myName,
@@ -1977,23 +1973,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       });
     }
 
-    const joinFormHeader = $("joinFormHeader");
-    if (joinFormHeader) {
-      joinFormHeader.addEventListener("pointerdown", (e) => {
-        e.preventDefault();
-        isJoinFormExpanded = !isJoinFormExpanded;
-        const content = $("joinFormContent"), arrow = $("joinFormArrow");
-        if (isJoinFormExpanded) {
-          if (content) content.style.display = "flex";
-          if (arrow) arrow.style.transform = "rotate(180deg)";
-        } else {
-          if (content) content.style.display = "none";
-          if (arrow) arrow.style.transform = "rotate(0deg)";
-        }
-        scBottom(true);
-      });
-    }
-
     if (D.imgViewCloseBtn) {
       D.imgViewCloseBtn.addEventListener("pointerdown", (e) => {
         e.preventDefault();
@@ -2059,6 +2038,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       if (document.visibilityState === "visible") {
         if (db) db.goOnline(); 
         forceSync(); 
+        // 【復帰対策】バックグラウンドから手前に戻ってきた際、強制的に最新のリスナーを確立
+        setupFirebaseListeners();
       } else {
         if (db) db.goOffline(); 
       }
