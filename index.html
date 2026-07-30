@@ -102,7 +102,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 }
 #tl-inner{display:flex;flex-direction:column;justify-content:flex-end;gap:0;width:100%;max-width:800px;margin:0 auto;min-height:100%}
 
-/* 非公開用プレースホルダー */
 #privatePlaceholder{
   display:none;
   flex:1;
@@ -282,7 +281,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   transform: translateX(-50%) translateY(0);
 }
 
-/* 管理設定エリア内の小規模スタイル */
 .adm-sec-title {
   font-size: 11px;
   font-weight: bold;
@@ -298,15 +296,24 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   <div id="cp">
     <div id="hdr">
       <div class="hr">
-        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <span class="logo">NEZUO CHAT</span>
-            <span class="pcnt" id="pcnt" style="display: none;"></span>
+        <!-- 【左側：タイトルコラム構造（1段目：タイトルと人数、2段目：バッジ、3段目：管理パネル）】 -->
+        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1;">
+          <!-- 1段目：タイトルと入室人数（絶対縦並び・改行を防止） -->
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow: hidden; white-space: nowrap; width: 100%;">
+            <span class="logo" style="font-weight: 900; font-size: 15px; letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0; display: inline-block; vertical-align: middle;">NEZUO CHAT</span>
+            <span class="pcnt" id="pcnt" style="display: none; white-space: nowrap; flex-shrink: 0; display: inline-block; vertical-align: middle;"></span>
+          </div>
+          <!-- 2段目：非公開、合言葉バッジ（部屋にロックがかかっている場合のみ、この段に自動表示されます） -->
+          <div id="roomStatusBadges" style="display: none; gap: 4px; align-items: center; flex-wrap: nowrap; overflow: hidden; width: 100%; min-height: 0;"></div>
+          <!-- 3段目：管理パネル（管理権限ログイン時のみタイトルの真下に極小サイズで表示） -->
+          <div id="adminBtnContainer" style="display: none; align-items: center; width: 100%;">
+            <button class="btn" id="admBtn" style="background: var(--in); border-color: var(--in); color: #fff; height: 24px; padding: 0 8px; font-size: 10px; border-radius: 4px; font-weight: bold; width: auto; display: inline-flex; align-items: center; gap: 4px; transition: none;" title="管理設定">
+              <span class="bclr-dot" style="background:#fff!important; width: 6px; height: 6px;"></span> ⚙️ 管理パネル
+            </button>
           </div>
         </div>
+        <!-- 右側：基本の操作ボタン -->
         <div class="hbs">
-          <!-- 管理パネルボタン（管理者ログイン時のみJSで自動表示） -->
-          <button class="bclr" id="admBtn" style="display: none; background: var(--in); border-color: var(--in); color: #fff;" title="管理設定"><span class="bclr-dot" style="background:#fff!important;"></span> ⚙️ 管理パネル</button>
           <button class="bclr" id="clrBtn" title="色設定"><span class="bclr-dot" id="clrDot"></span> 色設定</button>
           <button class="bx" id="exBtn" title="退室">退室</button>
         </div>
@@ -323,7 +330,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       <div id="playerContent"></div>
     </div>
 
-    <!-- 非公開時のプレースホルダー -->
     <div id="privatePlaceholder">
       <div style="font-size: 32px; filter: grayscale(1);">🔒</div>
       <div>このチャットルームは現在非公開です。<br><span style="font-size: 12px; font-weight: normal; color: var(--mu); margin-top: 4px; display: block;">入室するとログと参加者一覧を閲覧できます。</span></div>
@@ -380,7 +386,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 <div id="toastContainer" style="display:none;"></div>
 
-<!-- 色設定モーダル -->
 <div id="clrmod" class="mod-overlay">
   <div class="clrmc gc" style="max-width:320px;">
     <h3 style="font-size:13px; color:var(--tx); border-bottom:1px solid var(--bd); padding-bottom:6px; font-weight:bold;">🎨 色設定</h3>
@@ -395,7 +400,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   </div>
 </div>
 
-<!-- 拡大画像モーダル -->
 <div id="imgViewMod" class="mod-overlay">
   <div id="zoomViewport">
     <img id="imgViewSrc" alt="拡大画像">
@@ -405,46 +409,56 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   </div>
 </div>
 
-<!-- ⚙️ 管理者パネルモーダル -->
 <div id="adminMod" class="mod-overlay">
-  <div class="gc" style="max-width:380px;">
-    <h3 style="font-size:13.5px; color:var(--tx); border-bottom:1px solid var(--bd); padding-bottom:6px; font-weight:bold;">⚙️ 管理者コントロールパネル</h3>
+  <div class="gc" style="max-width:400px; padding: 20px;">
+    <h3 style="font-size:14px; color:var(--tx); border-bottom:2px solid var(--bd); padding-bottom:8px; font-weight:bold; margin-bottom: 12px;">⚙️ 管理者コントロールパネル</h3>
     
-    <div style="display: flex; flex-direction: column; gap: 12px; margin-top: 6px;">
+    <div style="display: flex; flex-direction: column; gap: 0;">
       
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size:12px; font-weight:bold;">🔒 非公開モード (ログと一覧を非入室者に隠す)</span>
-        <input type="checkbox" id="admPrivate" style="width: 16px; height: 16px; accent-color: var(--in); cursor: pointer;">
+      <div style="margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size:12px; font-weight:bold; color: var(--tx);">🔒 非公開モード</span>
+          <input type="checkbox" id="admPrivate" style="width: 18px; height: 18px; accent-color: var(--in); cursor: pointer;">
+        </div>
+        <div style="font-size: 10.5px; color: var(--mu); margin-top: 4px; line-height: 1.4;">オンにすると、未入室のユーザーからチャットログとアクティブユーザー一覧が完全に非表示（データ遮断）になります。</div>
       </div>
 
-      <div style="display: flex; justify-content: space-between; align-items: center;">
-        <span style="font-size:12px; font-weight:bold;">🚫 新規入室停止 (承認トリップ以外を拒否)</span>
-        <input type="checkbox" id="admStopJoin" style="width: 16px; height: 16px; accent-color: var(--in); cursor: pointer;">
+      <div style="margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size:12px; font-weight:bold; color: var(--tx);">🚫 新規入室停止</span>
+          <input type="checkbox" id="admStopJoin" style="width: 18px; height: 18px; accent-color: var(--in); cursor: pointer;">
+        </div>
+        <div style="font-size: 10.5px; color: var(--mu); margin-top: 4px; line-height: 1.4;">オンにすると、事前承認リストに登録されているトリップ保持者以外の新しい入室を遮断します。</div>
       </div>
 
-      <div>
-        <label for="admPass" style="font-size:11px; font-weight:bold; color:var(--mu); display:block; margin-bottom:4px;">🔑 入室合言葉 (空欄で合言葉ロック解除)</label>
-        <input type="text" id="admPass" class="inp" placeholder="例: hito-koto" autocomplete="off" style="height:36px; font-size:13px;">
+      <div style="margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
+        <label for="admPass" style="font-size:11.5px; font-weight:bold; color: var(--tx); display:block; margin-bottom:4px;">🔑 入室合言葉設定</label>
+        <input type="text" id="admPass" class="inp" placeholder="合言葉を空欄にするとロック解除" autocomplete="off" style="height:36px; font-size:13px;">
+        <div style="font-size: 10.5px; color: var(--mu); margin-top: 4px; line-height: 1.4;">入室時の簡易パスワード。事前承認リストに入っているユーザーは自動的に入力をパスして入室できます。</div>
       </div>
 
-      <div>
-        <label style="font-size:11px; font-weight:bold; color:var(--mu); display:block; margin-bottom:4px;">📋 事前承認トリップ登録</label>
-        <div style="display: flex; gap: 6px;">
+      <div style="margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
+        <label style="font-size:11.5px; font-weight:bold; color: var(--tx); display:block; margin-bottom:4px;">📋 事前承認トリップリスト</label>
+        <div style="display: flex; gap: 6px; margin-bottom: 6px;">
           <input type="text" id="admTripInput" class="inp" placeholder="例: ◆AbCdEfG123" autocomplete="off" style="height:36px; font-size:13px; flex: 1;">
-          <button class="btn" id="admTripAddBtn" style="background:var(--in); color:#fff; width: 60px; font-size: 12px; height:36px;">追加</button>
+          <button class="btn" id="admTripAddBtn" style="background:var(--in); color:#fff; width: 64px; font-size: 12px; height:36px; font-weight: bold;">追加</button>
         </div>
-        <div id="admTripList" style="background:var(--s2); border:1px solid var(--bd); border-radius:6px; max-height:80px; overflow-y:auto; padding:6px; margin-top:6px; font-size:11px; display:flex; flex-direction:column; gap:4px; font-family: monospace;">
-          <!-- 承認リストがJSでここに入る -->
-        </div>
+        <div id="admTripList" style="background:var(--s2); border:1px solid var(--bd); border-radius:6px; max-height:80px; overflow-y:auto; padding:6px; font-size:11px; display:flex; flex-direction:column; gap:4px; font-family: monospace;"></div>
       </div>
 
-      <div style="margin-top: 8px; border-top: 1px solid var(--bd); padding-top: 12px;">
+      <div style="margin-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px;">
+        <label style="font-size:11.5px; font-weight:bold; color: var(--tx); display:block; margin-bottom:4px;">🚫 追放（BAN）リスト管理</label>
+        <div id="admBanList" style="background:var(--s2); border:1px solid var(--bd); border-radius:6px; max-height:90px; overflow-y:auto; padding:6px; font-size:11px; display:flex; flex-direction:column; gap:4px;"></div>
+        <div style="font-size: 10.5px; color: var(--mu); margin-top: 4px; line-height: 1.4;">現在BANされているメンバー一覧です。「解除」を押すと即時再入室が許可されます。</div>
+      </div>
+
+      <div style="margin-bottom: 8px;">
         <button class="btn" id="admClearBtn" style="background: var(--ro); color:#fff; width: 100%; height:38px; font-weight:bold; font-size: 12px;">🚨 チャットログをすべて初期化</button>
       </div>
 
     </div>
 
-    <div class="clr-btns" style="margin-top: 14px;">
+    <div class="clr-btns" style="margin-top: 14px; border-top: 1px solid var(--bd); padding-top: 12px;">
       <button class="clr-cancel" id="admCancel">閉じる</button>
       <button class="clr-ok" id="admSave" style="background: var(--em);">設定を保存</button>
     </div>
@@ -521,7 +535,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let currentPresenceMap = {}; 
   let isConnectedBound = false;
 
-  // ルームの共通設定データを保持する
   let roomSettings = {
     isPrivate: false,
     newEntriesDisabled: false,
@@ -598,7 +611,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     return (h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0');
   };
 
-  // 【爆速化：単発SHA-256変換に変更（キーボード入力プレビューが1ミリ秒未満で即座に同期します）】
   window.makeTrip = async (name, tripKey) => {
     if (!tripKey) return "";
     const revKey = tripKey.split("").reverse().join("");
@@ -720,7 +732,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       const kb = $("kbKeepOpenContainer");
       if (kb) kb.style.display = "none";
       
-      // 未入室時の非公開モード連動表示制限
       applyPrivateModeUI();
     } else if (mode === "joined") {
       D.ib.style.display = "flex";
@@ -730,14 +741,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       const kb = $("kbKeepOpenContainer");
       if (kb) kb.style.display = "flex";
       
-      // 入室成功時は常にチャットと一覧を可視化
       $("tl").style.display = "block";
       $("pl").style.display = "flex";
       $("privatePlaceholder").style.display = "none";
     }
   }
 
-  // 非公開モードが有効かつ未入室時の表示制御
   function applyPrivateModeUI() {
     if (isJoined) return;
     if (roomSettings.isPrivate) {
@@ -778,14 +787,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       safeLS.remove("nz_is_joined");
       safeLS.remove("nz_last_post_time");
       if (myUid) await db.ref(`presence/official/${myUid}`).remove().catch(()=>{});
-      removeFirebaseListeners(); // 通信リスナーの完全解放（セキュリティ＆高速化）
+      removeFirebaseListeners(); 
       renderPresence(currentPresenceMap);
       switchUIMode("guest");
       return;
     }
     const cleanTrip = myTrip || "", cleanUid = myUid, cleanColor = curColor;
-    // 【お掃除成功：視認性の高いログへの修正】
-    const logText = "[SYS]::📢 [システムお知らせ] " + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が自動退室しました（30分間発言がなかったため）" : " が退室しました");
+    
+    const logText = "[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が自動退室しました (30分間発言がなかったため)" : " が退室しました");
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
     const exitTimeMillis = isAuto ? (lastPost + 30 * 60 * 1000) : getTrueTime();
 
@@ -805,7 +814,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     stopAutoExitTimer();
     safeLS.remove("nz_is_joined");
     safeLS.remove("nz_last_post_time");
-    removeFirebaseListeners(); // 通信リスナーの解除
+    removeFirebaseListeners(); 
     renderPresence(currentPresenceMap);
     switchUIMode("guest");
 
@@ -853,8 +862,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         const u = snap.val(), display = (u.n || "").trim();
         if (!display) { db.ref(`presence/official/${targetId}`).remove().catch(()=>{}); return; }
         
-        // 【お掃除ログの文面とアイコンの視認性向上】
-        const encLog = "[SYS]::📢 [システムお知らせ] " + `${display} ${u.p || ""}`.trim() + " が自動退室しました（30分間発言がなかったため）";
+        const encLog = "[SYS]::📢 [お知らせ] " + `${display} ${u.p || ""}`.trim() + " が自動退室しました (30分間発言がなかったため)";
         
         db.ref(`presence/official/${targetId}`).remove().then(() => {
           db.ref(`chat/official`).push({ 
@@ -876,7 +884,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   function showLocalSystemMessage(text) {
     const tempId = "err_sys_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-    const tempObj = { id: tempId, u: "system", n: "システムエラー", p: "", c: "#f43f5e", m: "[SYS]::" + text, t: getTrueTime() };
+    const tempObj = { id: tempId, u: "system", n: "システムエラー", p: "", c: "#f43f5e", m: "[SYS]::📢 [システムエラー] " + text, t: getTrueTime() };
     if (!displayedMsgIds.has(tempId)) {
       displayedMsgIds.add(tempId);
       const tempEl = cMsg(tempObj, false);
@@ -885,7 +893,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
   }
 
-  // 平文による高速な事前承認チェック
   function checkIsTripApproved(tripStr) {
     if (!tripStr || !roomSettings.approvedTrips) return false;
     return Object.values(roomSettings.approvedTrips).includes(tripStr);
@@ -908,10 +915,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     myName = n; 
     myTrip = await window.makeTrip(n, tk);
 
-    // BANされていないかチェック
     let isBanned = false;
     await db.ref(`banlist/${myUid}`).once("value").then(s => {
-      if (s.val() === true) isBanned = true;
+      if (s.val()) isBanned = true;
     });
     if (isBanned) {
       alert("管理者によりアクセスが制限されているため、入室できません。");
@@ -920,13 +926,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     const hasApprovedTrip = checkIsTripApproved(myTrip);
 
-    // 新規入室停止中の割り込み拒否（承認トリップ保有者のみパス）
     if (!isReconnect && roomSettings.newEntriesDisabled && !hasApprovedTrip && myUid !== ADMIN_UID) {
       alert("現在新規入室が制限されています（承認メンバー以外は入室できません）。");
       return;
     }
 
-    // 合言葉（ロック設定）のチェック（承認トリップ保有者は免除）
     if (!isReconnect && roomSettings.passcode && !hasApprovedTrip && myUid !== ADMIN_UID) {
       const userPass = prompt("合言葉（パスコード）を入力してください：");
       if (userPass !== roomSettings.passcode) {
@@ -943,7 +947,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     const nowTime = getTrueTime();
     updateLastPostTime(nowTime);
 
-    // 入室成功のタイミングで【爆速・遅延ロード】通信リスナーを開始
     queueSetupFirebaseListeners(); 
     switchUIMode("joined");
 
@@ -967,7 +970,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     const cleanName = (myName || "").trim();
     if (!isReconnect && cleanName) {
-      const enterText = `${cleanName} ${myTrip}`.trim() + " が入室しました", encEnterText = "[SYS]::" + enterText;
+      const enterText = "📢 [お知らせ] " + `${cleanName} ${myTrip}`.trim() + " が入室しました";
+      const encEnterText = "[SYS]::" + enterText;
       const tempId = "pnd_sys_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
       const tempObj = { id: tempId, u: myUid, n: myName, p: myTrip, c: curColor, m: encEnterText, t: nowTime };
       pendingMsgs.set(tempId, tempObj);
@@ -1129,11 +1133,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     const name = m.n || "名無し", trip = m.p || "", color = m.c || "#94a3b8";
     
-    // 【管理者UIDであれば全てのメッセージに「削除」ボタンを表示します】
     const isDeletable = (m.u === myUid && m.u !== "") || (myUid === ADMIN_UID);
     const delBtnHtml = isDeletable ? `<button class="msg-del-btn" data-del-id="${m.id || m.pnd}">削除</button>` : "";
 
-    // 【UIDの公のUI表示を完全廃止（内部データ上は保持し、BANや削除機能のみで使用）】
     el.innerHTML = `
       <div class="mm" style="color: ${color}">
         <span class="mm-name">${escapeHtml(name)}</span>
@@ -1221,7 +1223,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   }
 
   function createMediaContainer(url) {
-    // クエリパラメータやハッシュ記号を取り除いたクリーンなURLパスで拡張子判定を行います（爆速マッチ対応）
     const cleanUrl = url.split(/[?#]/)[0];
     
     const ytId = getYoutubeId(url), nicoId = getNicoId(url);
@@ -1477,13 +1478,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         chip.style.borderColor = color + "44";
         chip.textContent = text;
         
-        // 【管理者はオンラインユーザー一覧をクリックしてBAN（追い出し）を実行できます】
         if (myUid === ADMIN_UID && m.id !== ADMIN_UID) {
           chip.title = "クリックしてこのユーザーをBAN（追放）する";
           chip.style.cursor = "pointer";
           chip.addEventListener("click", () => {
-            if (confirm(`ユーザー「${m.n}」をBANしますか？\n(二度と再入室できなくなります)`)) {
-              banUser(m.id);
+            if (confirm(`ユーザー「${m.n}」をBANしますか？\n(即時キックされ、二度と再入室できなくなります)`)) {
+              banUser(m.id, m.n, m.p || "");
             }
           });
         }
@@ -1499,18 +1499,30 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     updateJumpBtns();
   }
 
-  // 管理者によるユーザーBAN機能
-  function banUser(targetUid) {
+  function banUser(targetUid, targetName, targetTrip) {
     if (!db || myUid !== ADMIN_UID) return;
-    db.ref(`banlist/${targetUid}`).set(true)
-      .then(() => {
-        showToast("ユーザーをBANしました。");
-        // オンラインから削除
-        db.ref(`presence/official/${targetUid}`).remove().catch(()=>{});
-      })
-      .catch((err) => {
-        console.error("BANに失敗しました:", err);
-      });
+    
+    db.ref(`banlist/${targetUid}`).set({
+      n: targetName,
+      p: targetTrip,
+      t: firebase.database.ServerValue.TIMESTAMP
+    }).then(() => {
+      showToast(`${targetName} をBAN（追放）しました。`);
+      
+      const banLogText = `[SYS]::📢 [お知らせ] ${targetName} ${targetTrip}`.trim() + " が管理者によって追放(BAN)されました";
+      db.ref("chat/official").push({
+        u: "system",
+        n: "システム",
+        p: "",
+        c: "#f43f5e",
+        m: banLogText,
+        t: firebase.database.ServerValue.TIMESTAMP
+      }).catch(()=>{});
+
+      db.ref(`presence/official/${targetUid}`).remove().catch(()=>{});
+    }).catch((err) => {
+      console.error("BANに失敗しました:", err);
+    });
   }
 
   async function forceSync() {
@@ -1529,10 +1541,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let chatQuery = null;
   let presenceRef = null;
 
-  // 【爆速遅延ロード：入室するまで過去ログやオンラインリストのデータ送受信を物理的に遮断します】
   function setupFirebaseListeners() {
     if (!db) return;
-    if (isFirebaseListenersBound) return; // 二重接続の防止
+    if (isFirebaseListenersBound) return; 
     isFirebaseListenersBound = true;
 
     const chatRef = db.ref(`chat/official`);
@@ -1588,14 +1599,35 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
   }
 
-  // 通信リスナーを完全に破棄して遅延状態（未入室）に戻す
   function removeFirebaseListeners() {
     if (chatQuery) chatQuery.off();
     if (presenceRef) presenceRef.off();
     isFirebaseListenersBound = false;
   }
 
-  // グローバルなルーム設定情報のリアルタイム取得
+  function applyRoomSettingsUI() {
+    const badgesContainer = $("roomStatusBadges");
+    if (badgesContainer) {
+      badgesContainer.innerHTML = "";
+      let count = 0;
+      if (roomSettings.isPrivate) {
+        badgesContainer.innerHTML += `<span style="font-size:10px; font-weight:900; background:#f43f5e; color:#fff; padding:2px 6px; border-radius:4px; letter-spacing:0.5px; box-shadow:0 1px 3px rgba(0,0,0,0.2); white-space: nowrap;">🔒非公開</span>`;
+        count++;
+      }
+      if (roomSettings.passcode) {
+        badgesContainer.innerHTML += `<span style="font-size:10px; font-weight:900; background:#fb923c; color:#fff; padding:2px 6px; border-radius:4px; letter-spacing:0.5px; box-shadow:0 1px 3px rgba(0,0,0,0.2); white-space: nowrap;">🔑合言葉</span>`;
+        count++;
+      }
+      if (roomSettings.newEntriesDisabled) {
+        badgesContainer.innerHTML += `<span style="font-size:10px; font-weight:900; background:#64748b; color:#fff; padding:2px 6px; border-radius:4px; letter-spacing:0.5px; box-shadow:0 1px 3px rgba(0,0,0,0.2); white-space: nowrap;">🚫入室制限</span>`;
+        count++;
+      }
+      // バッジが1つ以上あれば2段目（flexコラム内）を可視化、なければ非表示にして無駄な余白を削減
+      badgesContainer.style.display = count > 0 ? "flex" : "none";
+    }
+    applyPrivateModeUI();
+  }
+
   function initSettingsListener() {
     if (!db) return;
     db.ref("settings").on("value", snap => {
@@ -1605,7 +1637,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       roomSettings.passcode = val.passcode || "";
       roomSettings.approvedTrips = val.approvedTrips || {};
       
-      applyPrivateModeUI();
+      applyRoomSettingsUI();
       if (myUid === ADMIN_UID) {
         updateAdminModalFields();
       }
@@ -1626,19 +1658,17 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             syncMessagesDOM(lastMsgsCache);
           }
           
-          // 自分がBANリストに入っていないか監視
           db.ref(`banlist/${myUid}`).on("value", s => {
-            if (s.val() === true && isJoined) {
+            if (s.val() && isJoined) {
               alert("管理者によりアクセスが制限（BAN）されました。");
               doExit();
             }
           });
 
-          // 管理者ログイン時のUI変化
           if (myUid === ADMIN_UID) {
-            $("admBtn").style.display = "inline-flex";
+            $("adminBtnContainer").style.display = "inline-flex";
           } else {
-            $("admBtn").style.display = "none";
+            $("adminBtnContainer").style.display = "none";
           }
           
           if (isJoined && db) {
@@ -1651,10 +1681,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           }
           switchUIMode(isJoined ? "joined" : "guest");
           
-          // 常時監視が必要なルーム設定リスナーを初期化
           initSettingsListener();
 
-          // 入室済みの場合は通信データを開始、未入室なら開始せずロードを最速化
           if (isJoined) {
             queueSetupFirebaseListeners();
           } else {
@@ -1904,13 +1932,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     scBottom(true);
   }
 
-  // 管理画面用のデータ同期表示
+  let banlistListener = null;
+
   function updateAdminModalFields() {
     $("admPrivate").checked = roomSettings.isPrivate;
     $("admStopJoin").checked = roomSettings.newEntriesDisabled;
     $("admPass").value = roomSettings.passcode;
     
-    // 承認リストのUIレンダリング（O(N) 爆速描画）
     const container = $("admTripList");
     container.innerHTML = "";
     const list = roomSettings.approvedTrips || {};
@@ -1936,6 +1964,56 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
     if (Object.keys(list).length === 0) {
       container.innerHTML = `<span style="color:var(--mu); font-style:italic;">承認済みトリップはありません</span>`;
+    }
+
+    if (!banlistListener) {
+      banlistListener = db.ref("banlist").on("value", snap => {
+        const banContainer = $("admBanList");
+        if (!banContainer) return;
+        banContainer.innerHTML = "";
+        
+        const val = snap.val() || {};
+        Object.entries(val).forEach(([uid, info]) => {
+          const name = (info && info.n) ? info.n : "不明";
+          const trip = (info && info.p) ? info.p : "";
+          const displayStr = trip ? `${name} ${trip}` : name;
+          
+          const div = document.createElement("div");
+          div.style.display = "flex";
+          div.style.justify = "space-between";
+          div.style.alignItems = "center";
+          div.style.padding = "4px 6px";
+          div.style.background = "rgba(244,63,94,0.06)";
+          div.style.border = "1px solid rgba(244,63,94,0.12)";
+          div.style.borderRadius = "4px";
+          
+          div.innerHTML = `
+            <span style="color:#fda4af; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;">${escapeHtml(displayStr)}</span>
+            <button class="btn" style="background:#ef4444; color:#fff; font-size:10px; padding:2px 8px; border-radius:4px; height:22px; width:auto; font-weight:bold;">解除</button>
+          `;
+          
+          div.querySelector("button").onclick = () => {
+            if (confirm(`ユーザー「${displayStr}」のBANを解除しますか？`)) {
+              db.ref(`banlist/${uid}`).remove().then(() => {
+                showToast(`${displayStr} のBANを解除しました。`);
+              });
+            }
+          };
+          banContainer.appendChild(div);
+        });
+
+        if (Object.keys(val).length === 0) {
+          banContainer.innerHTML = `<span style="color:var(--mu); font-style:italic;">BAN中のユーザーはいません</span>`;
+        }
+      });
+    }
+  }
+
+  function closeAdminModal() {
+    adminMod.classList.remove("show");
+    if (banlistListener && db) {
+      db.ref("banlist").off("value", banlistListener);
+      banlistListener = null;
     }
   }
 
@@ -2155,7 +2233,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       });
     }
 
-    // ⚙️ 管理者設定関連のイベントリスナー
     const adminBtn = $("admBtn");
     const adminMod = $("adminMod");
     if (adminBtn && adminMod) {
@@ -2166,18 +2243,17 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       });
       $("admCancel").addEventListener("pointerdown", (e) => {
         e.preventDefault();
-        adminMod.classList.remove("show");
+        closeAdminModal();
       });
       $("admSave").addEventListener("pointerdown", (e) => {
         e.preventDefault();
-        // 設定をFirebaseへコミット
         db.ref("settings").update({
           isPrivate: $("admPrivate").checked,
           newEntriesDisabled: $("admStopJoin").checked,
           passcode: $("admPass").value.trim()
         }).then(() => {
           showToast("設定を保存しました。");
-          adminMod.classList.remove("show");
+          closeAdminModal();
         }).catch((err) => {
           alert("設定の保存に失敗しました：" + err.message);
         });
@@ -2200,17 +2276,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         if (confirm("🚨 警告：チャットログをすべて完全に消去します。この操作は取り消せません。\nよろしいですか？")) {
           db.ref("chat/official").remove()
             .then(() => {
-              // 削除完了のお知らせログを1通送信
               db.ref("chat/official").push({
                 u: "system",
                 n: "システム",
                 p: "",
                 c: "#f43f5e",
-                m: "[SYS]::📢 [システムお知らせ] 管理者によってチャットログがすべて初期化されました。",
+                m: "[SYS]::📢 [お知らせ] 管理者によってチャットログがすべて初期化されました",
                 t: firebase.database.ServerValue.TIMESTAMP
               });
               showToast("ログを全消去しました。");
-              adminMod.classList.remove("show");
+              closeAdminModal();
             })
             .catch((err) => {
               alert("初期化に失敗しました：" + err.message);
