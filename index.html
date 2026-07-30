@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
 <link rel="preconnect" href="https://img.cdn.nimg.jp" crossorigin>
 
-<!-- Firebase SDK v8 (Authを追加) -->
+<!-- Firebase SDK v8 -->
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
@@ -48,7 +48,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .bclr{border-color:var(--usr-color)!important}
 .bclr-dot{width:11px;height:10px;border-radius:50%;background:var(--usr-color)!important}
 
-/* 【チラつき防止】初期状態では絶対に非表示のままロックする */
 .bx{
   background:rgba(244,63,94,.16)!important;
   border-color:rgba(244,63,94,.4)!important;
@@ -65,7 +64,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #fixedPlayer{display:none;flex-direction:column;background:var(--s2);border-bottom:1px solid var(--bd);width:100%}
 #playerHeader{background:var(--sf);padding:10px 14px;font-size:13px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bd)}
 
-/* 【プレイヤーの角丸を完全撤去（四角化）】 */
 #playerContent{
   width:100%;
   max-width:480px;
@@ -111,7 +109,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   width:100%;
   padding:12px 14px;
   border-bottom:1px solid rgba(51,65,85,.18);
-  contain-intrinsic-size: 80px;
+  contain-intrinsic-size: 80px; /* 見えている位置だけ読み込む（画面外のレイアウト計算・描画コストをゼロ化） */
   content-visibility: auto;
 }
 .mw.new-msg-anim{animation:slideInUp .06s ease-out forwards}
@@ -120,7 +118,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .mm-trip{font-size:11px;margin-left:2px;overflow:hidden;text-overflow:ellipsis}
 .ts{color:var(--mu);opacity:.6;font-size:10px;margin-left:auto;font-family:monospace}
 
-/* 【標準コピー復元】本文とリンクの長押しによるブラウザ標準コピー・共有ポップアップを完全に許可 [1] */
 .mb, .mb a {
   user-select: text !important;
   -webkit-user-select: text !important;
@@ -207,7 +204,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   height:auto;
   aspect-ratio: 16 / 10;
   object-fit: cover;
-  border-radius:0 !important; /* 角を四角にする */
+  border-radius:0 !important;
   margin-top:6px;
   border:1px solid var(--bd);
   display:block;
@@ -223,7 +220,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .media-badge {font-size:10px;font-weight:900;color:#fff;padding:3px 8px;border-radius:4px;letter-spacing:0.5px}
 .open-player-btn {font-size:11.5px;font-weight:800;color:#38bdf8;background:rgba(56, 189, 248, 0.1);border:1px solid rgba(56, 189, 248, 0.3);padding:5px 12px;border-radius:6px;transition:all 0.12s ease}
 
-/* 【削除ボタン】メッセージの右下に収まるよう絶対配置でスタイル調整 */
 .msg-del-btn {
   position: absolute;
   right: 14px;
@@ -279,7 +275,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
           <div style="display: flex; align-items: center; gap: 8px;">
             <span class="logo">NEZUO CHAT</span>
-            <!-- 【チラつき防止】初期段階から即描画できるように opacity:0 と transition を完全排除 -->
             <span class="pcnt" id="pcnt">0人</span>
           </div>
         </div>
@@ -290,7 +285,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- 【チラつき防止】初期段階から即描画できるように opacity:0 と transition を完全排除 -->
     <div id="pl"></div>
 
     <div id="fixedPlayer">
@@ -301,7 +295,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       <div id="playerContent"></div>
     </div>
 
-    <!-- 【真っ黒（フェードロック）対策】初期opacityを「1」にし、キャッシュまたはサーバー受信までプレースホルダーを中に初期表示 [1] -->
     <div id="tl" role="log" aria-live="polite">
       <div id="tl-inner">
         <div id="tl-loading-placeholder" style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 16px; color: var(--mu); font-size: 13px; font-weight: bold; gap: 10px;">
@@ -319,7 +312,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         </div>
       </div>
       <div class="jump-btns">
-        <button class="jump-btn" id="jumpUpBtn" title="最上部へ" disabled>▲</button>
+        <button class="jump-btn" id="jumpUpBtn" title="最上部(100件の最古ログ)へ" disabled>▲</button>
         <div style="position: relative; display: inline-block;">
           <button class="jump-btn" id="jumpDownBtn" title="タイムラインの最下部へ" disabled>▼</button>
           <span id="unreadBadge" style="display: none; position: absolute; top: -6px; right: -6px; background: var(--ro); color: #fff; font-size: 9px; font-weight: bold; border-radius: 10px; min-width: 18px; height: 18px; padding: 0 4px; align-items: center; justify-content: center; line-height: 1; border: 1.5px solid var(--sf); box-shadow: 0 2px 5px rgba(0,0,0,0.3); pointer-events: none; z-index: 5;">0</span>
@@ -327,7 +320,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- 【参加フォーム：スッキリ化＆折りたたみ廃止】 -->
     <div id="joinForm" style="display: none; flex-direction: column; padding: 14px; gap: 10px; border-top: 1px solid var(--bd); background: var(--sf); padding-bottom: calc(14px + var(--safe));">
       <div class="jrow">
         <input type="text" id="ni" class="inp" placeholder="名前 (10文字まで)" maxlength="10" autocomplete="off">
@@ -427,7 +419,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   let isAutoScroll = true; 
   const unreadMsgIds = new Set(); 
   let _scPending = false; 
-  let autoExitTimeoutId = null; // 一発タイマー [1]
+  let autoExitTimeoutId = null; 
   let serverTimeOffset = 0; 
   let isOffsetLoaded = false;
   const displayedMsgIds = new Set();
@@ -461,16 +453,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const renderedMwNodes = new Map();
   let lastChatHash = "";
-  
-  // 【キャッシュの永続バグ修正】初期状態のキャッシュに前回の保存データを初期代入
   let lastMsgsCache = []; 
-  try {
-    const cached = safeLS.get("nz_chat_cache");
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed)) lastMsgsCache = parsed;
-    }
-  } catch (e) {}
 
   const setGlobalColor = c => document.documentElement.style.setProperty("--usr-color", c);
   setGlobalColor(curColor);
@@ -580,41 +563,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }, 3000);
   };
 
-  const savePresenceCache = () => {
-    safeLS.set("nz_presence_cache", JSON.stringify(currentPresenceMap));
-  };
-
-  // 【追加：入室者キャッシュ復元】リロード直後の秒速即時表示（チラつき防止）
-  const loadCachedPresence = () => {
-    try {
-      const cached = safeLS.get("nz_presence_cache");
-      if (cached) {
-        const members = JSON.parse(cached);
-        if (typeof members === "object" && members !== null) {
-          currentPresenceMap = members;
-          isPresenceInitialized = true; 
-          renderPresence(members);
-        }
-      }
-    } catch (e) {
-      console.warn("Failed to load cached presence", e);
-    }
-  };
-
-  const loadCachedChat = () => {
-    try {
-      const cached = safeLS.get("nz_chat_cache");
-      if (cached) {
-        const msgs = JSON.parse(cached);
-        if (Array.isArray(msgs) && msgs.length > 0) {
-          syncMessagesDOM(msgs);
-        }
-      }
-    } catch (e) {
-      console.warn("Failed to load cached chat", e);
-    }
-  };
-
   const updateModalColorPreview = (color) => {
     if (D.clrPrev) {
       D.clrPrev.style.color = color;
@@ -677,20 +625,19 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     D.joinBtn.textContent = empty ? "名前を入力してください" : "参加する";
   }
 
-  // 【仕様最適化：折りたたみ制御を完全に廃止し、シンプルに表示・非表示をトグル】
   function switchUIMode(mode) {
     if (!D.ib || !D.joinForm || !D.exBtn || !D.clrBtn) return;
     if (mode === "guest") {
       D.ib.style.display = "none";
       D.joinForm.style.display = "flex";
-      D.exBtn.style.setProperty("display", "none", "important"); // 退室ボタンを非表示 [1]
+      D.exBtn.style.setProperty("display", "none", "important"); 
       D.clrBtn.style.display = "inline-flex"; 
       const kb = $("kbKeepOpenContainer");
       if (kb) kb.style.display = "none";
     } else if (mode === "joined") {
       D.ib.style.display = "flex";
       D.joinForm.style.display = "none";
-      D.exBtn.style.setProperty("display", "inline-flex", "important"); // 参加時のみ表示 [1]
+      D.exBtn.style.setProperty("display", "inline-flex", "important"); 
       D.clrBtn.style.display = "inline-flex"; 
       const kb = $("kbKeepOpenContainer");
       if (kb) kb.style.display = "flex";
@@ -699,15 +646,15 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
 
-  // 【仕様最適化・省電力化】ループ監視を完全に廃止し、30分後に「1回だけ」ピンポイントで起動するシングルショット・タイマー方式に完全移行 [1]
+  // 【生存確認通信の撤去 ＆ 自動退室の維持】
+  // 定期的なハートビート通信は行わず、無操作30分（発言やアクションなし）のタイマーによる自己自動退室処理を維持 [1]
   function startAutoExitChecker() {
-    stopAutoExitTimer(); // 既存のタイマーを確実にクリア
+    stopAutoExitTimer(); 
     if (!isJoined) return;
     
-    // 30分（1,800,000ms）後に一度だけ自動退室を実行 [1]
     autoExitTimeoutId = setTimeout(() => {
       doExit(true);
-    }, 1800000);
+    }, 1800000); // 30分 [1]
   }
 
   function stopAutoExitTimer() {
@@ -773,25 +720,20 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }).catch(()=>{});
   }
 
-  // 【自動退室お掃除処理のバグ潰し】セキュリティルールとトランザクション排他ロック仕様の競合を完全に解消 [1]
+  // 他ユーザーのお掃除処理（30分間更新のない退室忘れのユーザーを消去）[1]
   function triggerOtherExit(targetId, targetUser, calculatedTimeoutTime) {
     if (targetUser.exiting || !db) return;
     targetUser.exiting = true;
     
     db.ref(`presence/official/${targetId}`).transaction(currentData => {
-      // データベースからの読み込みが完了していない状態（null）は無視して待つ [1]
       if (currentData === null) return currentData;
-      
-      // すでに他のユーザーがお掃除を開始しているならアボート
       if (currentData.exiting) return; 
       
-      // 自分がこのデータの排他的なお掃除権（ロック）を獲得
       currentData.exiting = true;
       return currentData;
     }, (err, committed, snap) => {
       if (err) { targetUser.exiting = false; return; }
       
-      // ロック権の獲得に100%成功した場合のみ、責任を持ってプレゼンス削除と自動退室ログ送信を行う [1]
       if (committed && snap.exists()) {
         const u = snap.val(), display = (u.n || "").trim();
         if (!display) { db.ref(`presence/official/${targetId}`).remove().catch(()=>{}); return; }
@@ -852,15 +794,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     switchUIMode("joined");
 
     const opt = { ...currentPresenceMap };
-    opt[myUid || "temp_uid"] = { id: myUid || "temp_uid", n: myName, p: myTrip, c: curColor, t: nowTime, p_t: nowTime };
+    opt[myUid || "temp_uid"] = { id: myUid || "temp_uid", n: myName, p: myTrip, c: curColor, t: nowTime };
     renderPresence(opt);
 
     db.ref(`presence/official/${myUid}`).set({
       n: myName,
       p: myTrip,
       c: curColor,
-      t: firebase.database.ServerValue.TIMESTAMP,
-      p_t: firebase.database.ServerValue.TIMESTAMP
+      t: firebase.database.ServerValue.TIMESTAMP
     }).catch(err => {
       console.warn("Presence registration failed:", err);
       if (err.message && err.message.includes("permission_denied")) {
@@ -894,7 +835,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   const pendingMsgs = new Map();
 
-  // 【重複排除・時刻順の完全保証】syncMessagesDOMの再構築
+  // 【チラつきのないDOM差分更新の完全実装】
+  // replaceChildrenを完全に排除し、新規のメッセージだけをピンポイントで滑らかに追加 [1]
   function syncMessagesDOM(targetMsgs) {
     if (!D.tli || !targetMsgs || !Array.isArray(targetMsgs)) return;
     
@@ -903,17 +845,18 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       clean = clean.slice(-maxLimit);
     }
 
-    // A. サーバーから戻ってきた本データに一時ID（pnd）があれば、該当する保留データを手元から完全消去 [1]
     clean.forEach(m => {
       if (m.pnd && pendingMsgs.has(m.pnd)) {
         pendingMsgs.delete(m.pnd);
         const node = renderedMwNodes.get(m.pnd);
-        if (node) node.remove();
-        renderedMwNodes.delete(m.pnd);
+        if (node) {
+          node.remove();
+          renderedMwNodes.delete(m.pnd);
+          displayedMsgIds.delete(m.pnd);
+        }
       }
     });
 
-    // B. 正式データと、未送信の保留データを一括マージ [1]
     const allMsgs = [...clean];
     pendingMsgs.forEach((pMsg) => {
       if (!allMsgs.some(m => m.id === pMsg.id || (pMsg.pnd && m.pnd === pMsg.pnd))) {
@@ -921,53 +864,41 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
     });
 
-    // C. すべてのデータをタイムスタンプを基準にして古い順に完全ソート [1]
     allMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
-
-    const currentHash = allMsgs.map(m => `${m.id || m.pnd}_${m.u}_${m.n}_${m.m}`).join("|");
-    if (currentHash === lastChatHash) return;
-    lastChatHash = currentHash;
 
     const targetIds = new Set(allMsgs.map(m => m.id || m.pnd));
     const currentNodes = Array.from(D.tli.children);
 
+    // 不要になった古いノードのみを個別にDOMから削除
     currentNodes.forEach(n => {
       const mid = n.dataset.mid;
       if (mid && !targetIds.has(mid)) {
         n.remove();
         renderedMwNodes.delete(mid);
         displayedMsgIds.delete(mid);
-        
-        // 【追加】削除されたメッセージが未読リストにある場合、未読リストからも取り除く
         unreadMsgIds.delete(mid);
       }
     });
 
-    // プレースホルダーがあれば安全に削除
     const placeholder = $("tl-loading-placeholder");
     if (placeholder && allMsgs.length > 0) {
       placeholder.remove();
     }
 
-    const finalElements = [];
     allMsgs.forEach(m => {
       const uniqueId = m.id || m.pnd;
       let el = renderedMwNodes.get(uniqueId);
+      
       if (el) {
         updateExistingMsgNode(m, el);
       } else {
         el = cMsg(m, !isFirstLoad);
         renderedMwNodes.set(uniqueId, el);
         displayedMsgIds.add(uniqueId);
+        insertMessageInOrder(el); // 適切なタイムスタンプ位置にピンポイント挿入
       }
       
-      if (m.pnd && !m.id) {
-        el.style.opacity = "0.6";
-      } else {
-        el.style.opacity = "1";
-      }
-
-      finalElements.push(el);
+      el.style.opacity = (m.pnd && !m.id) ? "0.6" : "1";
 
       const msgTime = getMsgTime(m);
       if (!isFirstLoad && m.u !== myUid) {
@@ -982,35 +913,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
     });
 
-    let needsRebuild = false;
-    if (D.tli.children.length !== finalElements.length) {
-      needsRebuild = true;
-    } else {
-      for (let i = 0; i < finalElements.length; i++) {
-        if (D.tli.children[i] !== finalElements[i]) {
-          needsRebuild = true;
-          break;
-        }
-      }
-    }
-
-    if (needsRebuild) {
-      D.tli.replaceChildren(...finalElements);
-    }
-
     if (isFirstLoad) {
       if (D.tl) D.tl.scrollTop = D.tl.scrollHeight;
       isFirstLoad = false;
     }
 
-    pruneOldSystemMessages(); 
     updateUnreadBadge();
     scBottom();
     updateJumpBtns();
-    saveChatCacheToLS(clean);
   }
 
-  // 【差分更新の安全化】メッセージの内容や送信者UIDに変化があれば安全にDOMを作り直して置換
   function updateExistingMsgNode(m, el) {
     const isSys = m.sys === true || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
     const col = m.c || "#94a3b8";
@@ -1023,7 +935,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
   }
 
-  // 【削除処理の本体】保留中ならローカルから、送信済みならFirebaseから安全に削除
   const deleteMessage = (msgId) => {
     if (!db || !msgId) return;
 
@@ -1071,8 +982,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     const name = m.n || "名無し", trip = m.p || "", color = m.c || "#94a3b8";
-
-    // 自分の発言かつシステムメッセージ以外の場合に「削除」ボタンを追加
     const isMyMsg = (m.u === myUid) && (m.u !== "");
     const delBtnHtml = isMyMsg ? `<button class="msg-del-btn" data-del-id="${m.id || m.pnd}">削除</button>` : "";
 
@@ -1099,7 +1008,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
     }
 
-    // 削除ボタンのクリックイベントを設定
     if (isMyMsg) {
       const delBtn = el.querySelector(".msg-del-btn");
       if (delBtn) {
@@ -1234,6 +1142,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     updateJumpBtns();
   };
 
+  // 【インライン再生プレイヤーの更なる軽量化＆自動再生なし（静的カバーファサード方式）】
   function openFloatingPlayer(url, type) {
     if (!D.fixedPlayer || !D.playerContent) return;
     
@@ -1287,83 +1196,90 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       fetchAudioSize(url, sz);
 
     } else {
-      D.playerContent.innerHTML = `
-        <div id="playerLoader" class="player-loader" style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; background:rgba(0,0,0,0.8); z-index:10;">
-          <div class="spin"></div>
-          <span style="font-size:12px; color:var(--mu);">メディアを読み込み中...</span>
-        </div>
-      `;
+      const ytId = getYoutubeId(url);
+      const nicoId = getNicoId(url);
 
-      const iframe = document.createElement("iframe");
-      iframe.frameBorder = "0";
-      iframe.scrolling = "no"; // スクロールバーの出現を完全抑止
-      iframe.allow = "autoplay; encrypted-media; picture-in-picture";
-      iframe.allowFullscreen = true;
-      iframe.style.width = "100%";
-      iframe.style.height = "100%";
-      iframe.style.opacity = "0"; 
-      iframe.style.transition = "opacity 0.2s ease";
-
-      iframe.onload = () => {
-        const loader = $("playerLoader");
-        if (loader) {
-          loader.style.opacity = "0";
-          setTimeout(() => loader.remove(), 200);
-        }
-        iframe.style.opacity = "1";
-      };
-
-      if (type === "youtube") {
-        const isShorts = url.includes("/shorts/"); // YouTube Shorts of auto-detection
-        const ytId = getYoutubeId(url);
-
+      if (type === "youtube" && ytId) {
+        const isShorts = url.includes("/shorts/");
         if (isShorts) {
-          if (titleEl) titleEl.textContent = "📱 YouTube Shorts再生プレイヤー";
-          
-          // 【Shorts 9:16サイズをチャットが隠れない「コンパクト」な大きさに最適化】 [1]
-          // スマホおよびPCでの動画の高さを制限し、下にチャットタイムラインが綺麗に露出するようにアスペクト比を保ったまま縮小 [1]。
+          if (titleEl) titleEl.textContent = "📱 YouTube Shorts 再生";
           if (window.innerWidth <= 580) {
-            D.playerContent.style.height = "280px"; // 498pxから280pxにコンパクト化 [1]
-            D.playerContent.style.width = "157px";  // 9:16比率
+            D.playerContent.style.height = "280px";
+            D.playerContent.style.width = "157px";
           } else {
             D.playerContent.style.height = "380px";
-            D.playerContent.style.width = "214px";  // 9:16比率
+            D.playerContent.style.width = "214px";
           }
-          
-          let origin = window.location.protocol.startsWith("http") ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
-          iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&controls=1&rel=0&showinfo=0&iv_load_policy=3&playsinline=1&loop=1&playlist=${ytId}&modestbranding=1&disablekb=1${origin}`;
         } else {
-          if (titleEl) titleEl.textContent = "📺 YouTube再生プレイヤー";
-          
-          // 【横型YouTubeの操作最適化】スマホ時はコントロールや画質選択ボタンが指先で快適に押せるように「幅320px × 高さ180px(16:9)」に最適化 [1]
+          if (titleEl) titleEl.textContent = "📺 YouTube 再生";
           if (window.innerWidth <= 580) {
             D.playerContent.style.height = "180px";
             D.playerContent.style.width = "320px";
           } else {
             D.playerContent.style.aspectRatio = "16/9";
           }
-          iframe.style.transform = "none";
-          
-          let origin = window.location.protocol.startsWith("http") ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
-          // 最速起動ロードのためにミュート(mute=1)で自動再生。スピーカーアイコンタップでいつでも音を出せます [1]
-          iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&mute=1&controls=1&rel=0&playsinline=1&modestbranding=1${origin}`;
         }
-        
-        D.playerContent.appendChild(iframe);
-      } else if (type === "niconico") {
-        if (titleEl) titleEl.textContent = "📺 ニコニコ動画再生プレイヤー";
-        
-        // 【ニコニコ動画の操作最適化】スマホ時はコントロールや画質切替ボタンが快適に押せるように「幅320px × 高さ180px(16:9)」に最適化 [1]
+
+        // YouTubeカバーサムネイルを設置し、クリックするまで重い動画スクリプトをロードしない [1]
+        const thumbUrl = `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`;
+        D.playerContent.innerHTML = `
+          <div id="playerFacade" style="position:relative; width:100%; height:100%; background:#000; cursor:pointer; display:flex; align-items:center; justify-content:center;">
+            <img src="${thumbUrl}" style="width:100%; height:100%; object-fit:cover; opacity:0.65;" alt="動画サムネイル">
+            <div style="position:absolute; width:68px; height:48px; background:rgba(0,0,0,0.85); border-radius:12px; display:flex; align-items:center; justify-content:center; border:2px solid #fff;">
+              <div style="width:0; height:0; border-style:solid; border-width:10px 0 10px 18px; border-color:transparent transparent transparent #fff; margin-left:4px;"></div>
+            </div>
+            <span style="position:absolute; bottom:10px; font-size:11px; background:rgba(0,0,0,0.8); padding:3px 10px; border-radius:4px; color:#fff; font-weight:bold;">クリックしてロード</span>
+          </div>
+        `;
+
+        $("playerFacade").onclick = () => {
+          let origin = window.location.protocol.startsWith("http") ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
+          const iframe = document.createElement("iframe");
+          iframe.frameBorder = "0";
+          iframe.scrolling = "no";
+          iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+          iframe.allowFullscreen = true;
+          iframe.style.width = "100%";
+          iframe.style.height = "100%";
+          // autoplay=0 にして自動再生を完全オフ
+          iframe.src = `https://www.youtube-nocookie.com/embed/${ytId}?autoplay=0&controls=1&rel=0&playsinline=1&modestbranding=1${origin}`;
+          
+          D.playerContent.innerHTML = "";
+          D.playerContent.appendChild(iframe);
+        };
+
+      } else if (type === "niconico" && nicoId) {
+        if (titleEl) titleEl.textContent = "📺 ニコニコ動画 再生";
         if (window.innerWidth <= 580) {
           D.playerContent.style.height = "180px";
           D.playerContent.style.width = "320px";
         } else {
           D.playerContent.style.aspectRatio = "16/9";
         }
-        const nicoId = getNicoId(url);
-        // ニコニコもブラウザ制限にかからず開いた瞬間から秒速で再生が始まるようにミュート自動再生(mute=1)を指定 [1]
-        iframe.src = `https://embed.nicovideo.jp/watch/${nicoId}?jsapi=0&autoplay=1&mute=1`;
-        D.playerContent.appendChild(iframe);
+
+        D.playerContent.innerHTML = `
+          <div id="playerFacade" style="position:relative; width:100%; height:100%; background:#131722; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:8px;">
+            <div style="width:68px; height:48px; background:rgba(37,99,235,0.9); border-radius:12px; display:flex; align-items:center; justify-content:center; border:2px solid #fff;">
+              <div style="width:0; height:0; border-style:solid; border-width:10px 0 10px 18px; border-color:transparent transparent transparent #fff; margin-left:4px;"></div>
+            </div>
+            <span style="font-size:11.5px; font-weight:bold; color:var(--mu);">クリックしてニコニコ動画をロード</span>
+          </div>
+        `;
+
+        $("playerFacade").onclick = () => {
+          const iframe = document.createElement("iframe");
+          iframe.frameBorder = "0";
+          iframe.scrolling = "no";
+          iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+          iframe.allowFullscreen = true;
+          iframe.style.width = "100%";
+          iframe.style.height = "100%";
+          // autoplay=0 にして自動再生を完全オフ
+          iframe.src = `https://embed.nicovideo.jp/watch/${nicoId}?jsapi=0&autoplay=0`;
+          
+          D.playerContent.innerHTML = "";
+          D.playerContent.appendChild(iframe);
+        };
       }
     }
 
@@ -1375,23 +1291,21 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (!isPresenceInitialized) return; 
     const clean = { ...serverListMap };
     if (isJoined && myUid) {
-      if (!clean[myUid]) clean[myUid] = { id: myUid, n: myName, p: myTrip, c: curColor, t: getTrueTime(), p_t: getTrueTime() };
+      if (!clean[myUid]) clean[myUid] = { id: myUid, n: myName, p: myTrip, c: curColor, t: getTrueTime() };
     } else if (!isJoined && myUid) delete clean[myUid];
     populatePresenceList(Object.values(clean).filter(m => m && m.n));
   }
 
-  let lastPresenceHash = null;
+  // 【入室者リストのチラつきゼロ完全差分更新化】
+  // replaceChildrenによるリスト全クリア・再描画を廃止し、差分を個別に append/remove [1]
   function populatePresenceList(membersList) {
     if (!D.pl) return;
     const sorted = [...membersList].filter(m => m.n && m.n.trim() !== "").sort((a, b) => a.id.localeCompare(b.id));
-    const currentHash = sorted.map(m => `${m.id}_${m.n}_${m.p || ""}_${m.c}`).join("|");
-    if (currentHash === lastPresenceHash) return;
-    lastPresenceHash = currentHash;
 
     const targetIds = new Set(sorted.map(m => m.id));
     const currentChips = Array.from(D.pl.children);
-    const currentChipMap = new Map(currentChips.map(c => [c.dataset.uid, c]));
 
+    // 不要になったチップ（退室者）のみを個別削除 [1]
     currentChips.forEach(chip => {
       const uid = chip.dataset.uid;
       if (uid && !targetIds.has(uid)) {
@@ -1399,11 +1313,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
     });
 
-    const finalChips = [];
+    // 入室者のチップを個別に追加 or 更新 [1]
     sorted.forEach(m => {
-      let chip = currentChipMap.get(m.id);
       const text = m.p ? `${m.n} ${m.p}` : m.n;
       const color = m.c || "#94a3b8";
+      let chip = D.pl.querySelector(`[data-uid="${m.id}"]`);
       
       if (chip) {
         if (chip.textContent !== text) chip.textContent = text;
@@ -1418,25 +1332,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         chip.style.color = color;
         chip.style.borderColor = color + "44";
         chip.textContent = text;
+        D.pl.appendChild(chip); // 差分追加 [1]
       }
-      finalChips.push(chip);
     });
-
-    let needsRebuild = false;
-    if (D.pl.children.length !== finalChips.length) {
-      needsRebuild = true;
-    } else {
-      for (let i = 0; i < finalChips.length; i++) {
-        if (D.pl.children[i] !== finalChips[i]) {
-          needsRebuild = true;
-          break;
-        }
-      }
-    }
-
-    if (needsRebuild) {
-      D.pl.replaceChildren(...finalChips);
-    }
 
     if (D.pcnt) {
       D.pcnt.textContent = `${sorted.length}人`;
@@ -1449,7 +1347,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     db.goOnline();
   }
 
-  // 【競合衝突防止のデバウンス制御】認証確定・回線切替・起動時が短時間に多重実行された場合の接続衝突を防ぐ
   let setupListenersTimer = null;
   function queueSetupFirebaseListeners() {
     if (setupListenersTimer) clearTimeout(setupListenersTimer);
@@ -1484,9 +1381,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     presenceRef.on("value", s => {
       const list = s.val();
       
-      // 【再接続・瞬断時の全消えチラつき防止】
-      // 一時的な接続切れや、再ログインの瞬間に空のデータ(null/空オブジェクト)が返ってきても、
-      // 画面の入室者一覧を一瞬で全クリアするのを控え、安全に以前のアクティブキャッシュ表示を維持させます。
       if (!list || Object.keys(list).length === 0) {
         if (isOffsetLoaded && isConnectedBound) {
           return; 
@@ -1498,17 +1392,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         if (u && u.n) {
           let ut = (u.t && typeof u.t === "object") ? nowTrue : u.t;
           if (!ut || typeof ut !== "number") continue;
-          let pt = u.p_t || ut;
           
-          if (isOffsetLoaded && id !== myUid && (nowTrue - pt >= 1800000)) { 
-            triggerOtherExit(id, u, pt + 1800000); 
+          // 生存確認通信は排除。最後の入室/発言タイミング `ut` から30分経っているかチェック [1]
+          if (isOffsetLoaded && id !== myUid && (nowTrue - ut >= 1800000)) { 
+            triggerOtherExit(id, u, ut + 1800000); 
             continue; 
           }
-          members[id] = { id, ...u, t: ut, p_t: pt };
+          members[id] = { id, ...u, t: ut };
         }
       }
       currentPresenceMap = members;
-      savePresenceCache();
       isPresenceInitialized = true; 
       renderPresence(members);
     }, err => {
@@ -1517,11 +1410,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   }
 
   const initDirectDatabaseProcess = async () => {
-    loadCachedChat();
-    loadCachedPresence(); // 【追加】起動の瞬間にローカルキャッシュから入室者一覧を即時復元
     await syncProfileValues();
 
-    // 【Firebase 匿名認証の導入：爆速化を崩さないバックグラウンド実行】
     if (typeof firebase !== 'undefined' && firebase.auth) {
       firebase.auth().onAuthStateChanged(async (user) => {
         if (user) {
@@ -1529,7 +1419,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           myUid = user.uid;
           safeLS.set("nz_permanent_uid", myUid);
           
-          // 【キャッシュクリアのバグ防止ガード】キャッシュ内にデータがある場合のみ安全に再バインドを実行
           if (oldUid !== myUid && lastMsgsCache.length > 0) {
             syncMessagesDOM(lastMsgsCache);
           }
@@ -1539,13 +1428,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
               n: myName,
               p: myTrip,
               c: curColor,
-              t: firebase.database.ServerValue.TIMESTAMP,
-              p_t: firebase.database.ServerValue.TIMESTAMP
+              t: firebase.database.ServerValue.TIMESTAMP
             }).catch(()=>{});
           }
           switchUIMode(isJoined ? "joined" : "guest");
-
-          // 【再接続・認証ラグ対策】認証確定のタイミングでチャット受信監視を再始動
           queueSetupFirebaseListeners();
         } else {
           firebase.auth().signInAnonymously().catch(err => {
@@ -1575,7 +1461,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       if (isJoined) {
         joinRoom(true); 
         
-        // 【仕様修正】起動復帰時に前回の最後の活動からの正確な「残り時間」を計算し、一発タイマー（setTimeout）を再セット [1]
         const elapsed = nowTrue - lastPost;
         const remaining = Math.max(1000, (30 * 60 * 1000) - elapsed);
         stopAutoExitTimer();
@@ -1599,7 +1484,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         });
         db.ref(".info/connected").on("value", snap => {
           if (snap.val() === true) {
-            // 【再接続復帰】Firebaseが再接続を検知したタイミングでチャット監視を再起動
             queueSetupFirebaseListeners();
 
             if (isJoined && myUid && myName.trim()) {
@@ -1607,8 +1491,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
                 n: myName,
                 p: myTrip,
                 c: curColor,
-                t: firebase.database.ServerValue.TIMESTAMP,
-                p_t: firebase.database.ServerValue.TIMESTAMP
+                t: firebase.database.ServerValue.TIMESTAMP
               }).catch(()=>{});
             }
           }
@@ -1695,22 +1578,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     return nodes;
   }
 
-  function pruneOldSystemMessages() {
-    if (!D.tli) return;
-    const nodes = Array.from(D.tli.children);
-    if (nodes.length > maxLimit) {
-      const toRemove = nodes.slice(0, nodes.length - maxLimit);
-      toRemove.forEach(n => {
-        const mid = n.dataset.mid;
-        if (mid) {
-          renderedMwNodes.delete(mid);
-          displayedMsgIds.delete(mid);
-        }
-        n.remove();
-      });
-    }
-  }
-
   function updateUnreadBadge() {
     if (!D.unreadBadge) return;
     const count = unreadMsgIds.size;
@@ -1754,14 +1621,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     D.mi.dispatchEvent(new Event("input"));
     updateClrMsgBtnVisibility();
 
-    updateLastPostTime(getTrueTime());
-
-    // 【生存延長】メッセージ送信時に、30分タイマーを正確にリセット（再セット）する [1]
-    startAutoExitChecker();
+    const timestampNow = getTrueTime();
+    updateLastPostTime(timestampNow);
+    startAutoExitChecker(); // アクションにより自動退室を30分延長 [1]
 
     if (myUid) {
       db.ref(`presence/official/${myUid}`).update({
-        p_t: firebase.database.ServerValue.TIMESTAMP
+        t: firebase.database.ServerValue.TIMESTAMP
       }).catch(()=>{});
     }
 
@@ -1773,11 +1639,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       p: myTrip,
       c: curColor,
       m: rawMsg,
-      t: getTrueTime()
+      t: timestampNow
     };
 
     pendingMsgs.set(tempId, tempObj);
-    
     syncMessagesDOM(lastMsgsCache);
 
     db.ref("chat/official").push({
@@ -1811,15 +1676,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
     isAutoScroll = true;
     scBottom(true);
-  }
-
-  function saveChatCacheToLS(msgs) {
-    try {
-      const slice = msgs.slice(-50);
-      safeLS.set("nz_chat_cache", JSON.stringify(slice));
-    } catch (e) {
-      console.warn("Failed to save chat cache", e);
-    }
   }
 
   function initApp() {
@@ -1948,6 +1804,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       });
     }
 
+    // 【上ボタン（▲）押下で現在読み込まれている100件の一番古いところまでスムーズに移動】
     if (D.jumpUpBtn) {
       D.jumpUpBtn.addEventListener("pointerdown", (e) => {
         e.preventDefault();
@@ -2088,7 +1945,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       if (document.visibilityState === "visible") {
         if (db) db.goOnline(); 
         forceSync(); 
-        // 【復帰対策】バックグラウンドから復帰した際、デバウンスを挟んで安全にリッスンを再始動
         queueSetupFirebaseListeners();
       } else {
         if (db) db.goOffline(); 
@@ -2113,6 +1969,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
 
     initDirectDatabaseProcess();
+  }
+
+  function getDistance(t1, t2) {
+    return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initApp); else initApp();
