@@ -203,7 +203,19 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #imgViewMod.show{display:flex!important}
 #zoomViewport{width:100%;height:calc(100dvh - 100px);position:absolute;top:0;left:0;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:grab}
 #zoomViewport:active{cursor:grabbing}
-#imgViewSrc{max-width:95%;max-height:95%;object-fit:contain;border-radius:0 !important;user-select:none;-webkit-user-drag:none}
+
+/* 拡大モーダル内画像（スマホでの長押し保存・コンテキストメニューを有効化） */
+#imgViewSrc{
+  max-width:95%;
+  max-height:95%;
+  object-fit:contain;
+  border-radius:0 !important;
+  -webkit-touch-callout: default !important;
+  -webkit-user-select: auto !important;
+  user-select: auto !important;
+  -webkit-user-drag: auto !important;
+}
+
 .modal-bottom-close-container{width:100%;display:flex;justify-content:center;position:absolute;bottom:0;left:0;padding:16px 0 calc(16px + var(--safe))}
 .modal-bottom-close{padding:12px 24px;background:var(--ro);color:#fff;border-radius:24px;font-weight:bold;font-size:14px}
 .clrpick-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
@@ -212,13 +224,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #joinBtn{background:linear-gradient(135deg,var(--in),#6366f1)!important;color:#fff!important;font-weight:900!important}
 #copyTripBtn{background:#0ea5e9!important;color:#fff!important;font-weight:800!important}
 
+/* タイムライン内画像（最大180pxに縮小・スマホでの長押し保存を有効化） */
 .inline-img{
-  max-width:280px;
-  max-height:280px;
-  width:100%;
+  max-width:180px;
+  max-height:180px;
+  width:auto;
   height:auto;
-  aspect-ratio: 16 / 10;
-  object-fit: cover;
+  object-fit:contain;
   border-radius:0 !important;
   margin-top:6px;
   border:1px solid var(--bd);
@@ -227,6 +239,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   transition:transform 0.12s ease,opacity 0.12s ease;
   content-visibility:auto;
   background-color:rgba(255,255,255,0.02);
+  -webkit-touch-callout: default !important;
+  -webkit-user-select: auto !important;
+  user-select: auto !important;
+  -webkit-user-drag: auto !important;
 }
 .inline-img:hover{opacity:0.9;transform:scale(1.02)}
 
@@ -301,7 +317,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           <!-- 1段目：タイトルと入室人数（絶対縦並び・改行を防止） -->
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow: hidden; white-space: nowrap; width: 100%;">
             <span class="logo" style="font-weight: 900; font-size: 15px; letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0; display: inline-block; vertical-align: middle;">NEZUO CHAT</span>
-            <span class="pcnt" id="pcnt" style="display: none; white-space: nowrap; flex-shrink: 0; display: inline-block; vertical-align: middle;"></span>
+            <span class="pcnt" id="pcnt" style="display: none; white-space: nowrap; flex-shrink: 0; vertical-align: middle;"></span>
           </div>
           <!-- 2段目：非公開、合言葉バッジ（部屋にロックがかかっている場合のみ、この段に自動表示されます） -->
           <div id="roomStatusBadges" style="display: none; gap: 4px; align-items: center; flex-wrap: nowrap; overflow: hidden; width: 100%; min-height: 0;"></div>
@@ -679,11 +695,23 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   };
 
   const clampPan = () => {
-    if (scale <= 1) { panX = 0; panY = 0; }
-    else {
-      const maxPan = (scale - 1) * 150;
-      panX = Math.max(-maxPan, Math.min(maxPan, panX));
-      panY = Math.max(-maxPan, Math.min(maxPan, panY));
+    if (scale <= 1) { 
+      panX = 0; 
+      panY = 0; 
+    } else {
+      const img = D.imgViewSrc;
+      const vp = $("zoomViewport");
+      if (img && vp) {
+        const rect = img.getBoundingClientRect();
+        const vpW = vp.clientWidth || window.innerWidth;
+        const vpH = vp.clientHeight || (window.innerHeight - 100);
+
+        const maxPanX = Math.max(0, (rect.width - vpW) / 2);
+        const maxPanY = Math.max(0, (rect.height - vpH) / 2);
+
+        panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
+        panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
+      }
     }
   };
 
@@ -752,10 +780,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   }
 
   function applyPrivateModeUI() {
-    if (isJoined) return;
+    if (isJoined) {
+      $("tl").style.display = "block";
+      $("pl").style.display = "flex";
+      $("privatePlaceholder").style.display = "none";
+      return;
+    }
     if (roomSettings.isPrivate) {
       $("tl").style.display = "none";
       $("pl").style.display = "none";
+      if ($("pcnt")) $("pcnt").style.display = "none";
       $("privatePlaceholder").style.display = "flex";
     } else {
       $("tl").style.display = "block";
@@ -1455,6 +1489,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   function populatePresenceList(membersList) {
     if (!D.pl) return;
+    if (!isJoined && roomSettings.isPrivate) {
+      D.pl.style.display = "none";
+      if (D.pcnt) D.pcnt.style.display = "none";
+      return;
+    }
+    D.pl.style.display = "flex";
+
     const sorted = [...membersList].filter(m => m.n && m.n.trim() !== "").sort((a, b) => a.id.localeCompare(b.id));
 
     const targetIds = new Set(sorted.map(m => m.id));
@@ -1728,12 +1769,27 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     if (db) {
       if (isJoined) {
-        joinRoom(true); 
-        
-        const elapsed = nowTrue - lastPost;
-        const remaining = Math.max(1000, (30 * 60 * 1000) - elapsed);
-        stopAutoExitTimer();
-        autoExitTimeoutId = setTimeout(() => { doExit(true); }, remaining);
+        db.ref(`presence/official/${myUid}`).once("value").then(snap => {
+          if (snap.exists()) {
+            joinRoom(true); 
+            
+            const refreshedNowTrue = getTrueTime();
+            const refreshedLastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
+            const elapsed = refreshedNowTrue - refreshedLastPost;
+            const remaining = Math.max(1000, (30 * 60 * 1000) - elapsed);
+            stopAutoExitTimer();
+            autoExitTimeoutId = setTimeout(() => { doExit(true); }, remaining);
+          } else {
+            isJoined = false;
+            safeLS.remove("nz_is_joined");
+            safeLS.remove("nz_last_post_time");
+            removeFirebaseListeners();
+            switchUIMode("guest");
+            renderPresence(currentPresenceMap);
+          }
+        }).catch(() => {
+          joinRoom(true);
+        });
       }
     }
 
@@ -1758,12 +1814,32 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             }
 
             if (isJoined && myUid && myName.trim()) {
-              db.ref(`presence/official/${myUid}`).set({
-                n: myName,
-                p: myTrip,
-                c: curColor,
-                t: firebase.database.ServerValue.TIMESTAMP
-              }).catch(()=>{});
+              // 瞬断の再接続時は、発言時間を不当に更新しない（基本情報のみアップデート）
+              db.ref(`presence/official/${myUid}`).once("value").then(s => {
+                if (s.exists()) {
+                  db.ref(`presence/official/${myUid}`).update({
+                    n: myName,
+                    p: myTrip,
+                    c: curColor
+                  }).catch(()=>{});
+                } else {
+                  // 切断中にすでに退室処理されていた場合は、即座にローカルフラグを安全にクリア
+                  isJoined = false;
+                  stopAutoExitTimer();
+                  safeLS.remove("nz_is_joined");
+                  safeLS.remove("nz_last_post_time");
+                  removeFirebaseListeners();
+                  switchUIMode("guest");
+                  renderPresence(currentPresenceMap);
+                }
+              }).catch(() => {
+                db.ref(`presence/official/${myUid}`).set({
+                  n: myName,
+                  p: myTrip,
+                  c: curColor,
+                  t: firebase.database.ServerValue.TIMESTAMP
+                }).catch(()=>{});
+              });
             }
           }
         });
@@ -1828,12 +1904,19 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
   }
 
+  // URL展開時、画像URLは生テキストリンクをバブル内に表示しない仕様に変更
   function parseTxtSplit(text) {
     if (typeof text !== "string") return [];
     const parts = text.split(UR);
     const nodes = [];
     parts.forEach((part) => {
       if (part.match(UR)) {
+        const cleanUrl = part.split(/[?#]/)[0];
+        const isImg = /\.(jpe?g|png|gif|webp|svg|bmp)$/i.test(cleanUrl);
+        
+        // 画像URLの場合は、メッセージバブル内に生テキスト(<a>リンク)を出力せずにスキップ
+        if (isImg) return;
+
         const a = document.createElement("a");
         a.href = part;
         a.target = "_blank";
@@ -1896,6 +1979,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     updateLastPostTime(timestampNow);
     startAutoExitChecker(); 
 
+    // 発言があった時のみ、データベースのタイムスタンプ(t)を更新
     if (myUid) {
       db.ref(`presence/official/${myUid}`).update({
         t: firebase.database.ServerValue.TIMESTAMP 
