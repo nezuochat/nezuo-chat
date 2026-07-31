@@ -721,6 +721,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     D.joinBtn.textContent = empty ? "名前を入力してください" : "参加する";
   }
 
+  function shouldBindListeners() {
+    return isJoined || !roomSettings.isPrivate;
+  }
+
   function switchUIMode(mode) {
     if (!D.ib || !D.joinForm || !D.exBtn || !D.clrBtn) return;
     
@@ -781,40 +785,18 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   async function doExit(isAuto = false) {
     if (!isJoined || !db) return;
     const cleanName = (myName || "").trim();
-    if (!cleanName) {
-      isJoined = false;
-      stopAutoExitTimer();
-      safeLS.remove("nz_is_joined");
-      safeLS.remove("nz_last_post_time");
-      if (myUid) await db.ref(`presence/official/${myUid}`).remove().catch(()=>{});
-      removeFirebaseListeners(); 
-      renderPresence(currentPresenceMap);
-      switchUIMode("guest");
-      return;
-    }
-    const cleanTrip = myTrip || "", cleanUid = myUid, cleanColor = curColor;
-    
-    const logText = "[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が自動退室しました (30分間発言がなかったため)" : " が退室しました");
-    const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
-    const exitTimeMillis = isAuto ? (lastPost + 30 * 60 * 1000) : getTrueTime();
-
-    const tempId = "pnd_sys_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-    const tempObj = { id: tempId, u: cleanUid || "sys_exit", n: cleanName, p: cleanTrip, c: cleanColor, m: logText, t: exitTimeMillis };
-    pendingMsgs.set(tempId, tempObj);
-    displayedMsgIds.add(tempId);
-
-    const tempEl = cMsg(tempObj, true);
-    insertMessageInOrder(tempEl);
-    
-    isAutoScroll = true;
-    unreadMsgIds.clear();
-    updateUnreadBadge();
+    const cleanTrip = myTrip || "";
+    const cleanUid = myUid;
+    const cleanColor = curColor;
 
     isJoined = false;
     stopAutoExitTimer();
     safeLS.remove("nz_is_joined");
     safeLS.remove("nz_last_post_time");
-    removeFirebaseListeners(); 
+    
+    if (!shouldBindListeners()) {
+      removeFirebaseListeners(); 
+    }
     renderPresence(currentPresenceMap);
     switchUIMode("guest");
 
@@ -826,23 +808,38 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     db.goOnline();
 
-    if (cleanUid) await db.ref(`presence/official/${myUid}`).remove().catch(()=>{});
-    
     if (isAuto) {
       showToast("⏱️ 30分間発言がなかったため、自動退室しました。"); 
     } else {
       showToast("🚪 退室しました。");
     }
 
-    await db.ref(`chat/official`).push({ 
-      u: cleanUid || "sys_exit", 
-      pnd: tempId, 
-      n: cleanName, 
-      p: cleanTrip, 
-      c: curColor, 
-      m: logText, 
-      t: exitTimeMillis 
-    }).catch(()=>{});
+    if (cleanUid && cleanName) {
+      const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
+      const exitTimeMillis = isAuto ? (lastPost + 30 * 60 * 1000) : getTrueTime();
+      const logText = "[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が自動退室しました (30分間発言がなかったため)" : " が退室しました");
+
+      db.ref(`presence/official/${cleanUid}`).transaction(currentData => {
+        if (currentData === null) return; 
+        if (currentData.exiting) return; 
+        currentData.exiting = true;
+        return currentData;
+      }, (err, committed, snap) => {
+        if (err) return;
+        if (committed && snap.exists()) {
+          db.ref(`presence/official/${cleanUid}`).remove().then(() => {
+            db.ref(`chat/official`).push({ 
+              u: cleanUid, 
+              n: cleanName, 
+              p: cleanTrip, 
+              c: cleanColor, 
+              m: logText, 
+              t: exitTimeMillis 
+            }).catch(()=>{});
+          }).catch(()=>{});
+        }
+      }).catch(()=>{});
+    }
   }
 
   function triggerOtherExit(targetId, targetUser, calculatedTimeoutTime) {
@@ -850,7 +847,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     targetUser.exiting = true;
     
     db.ref(`presence/official/${targetId}`).transaction(currentData => {
-      if (currentData === null) return currentData;
+      if (currentData === null) return; 
       if (currentData.exiting) return; 
       
       currentData.exiting = true;
@@ -1243,9 +1240,20 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       const img = document.createElement("img");
       img.className = "inline-img";
       img.src = url;
+      img.alt = "添付画像";
       img.decoding = "async";
       img.loading = "lazy";
       img.onload = () => scBottomOnImgLoad();
+      img.onerror = () => {
+        img.style.display = "none";
+        const errBadge = document.createElement("span");
+        errBadge.className = "media-badge";
+        errBadge.style.background = "var(--ro)";
+        errBadge.style.fontSize = "10px";
+        errBadge.textContent = "⚠️ 画像の読み込みに失敗しました";
+        container.appendChild(errBadge);
+        scBottomOnImgLoad();
+      };
       img.onclick = () => {
         if (D.imgViewSrc && D.imgViewMod) {
           D.imgViewSrc.src = url;
@@ -1543,6 +1551,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   function setupFirebaseListeners() {
     if (!db) return;
+    if (!shouldBindListeners()) {
+      removeFirebaseListeners();
+      return;
+    }
     if (isFirebaseListenersBound) return; 
     isFirebaseListenersBound = true;
 
@@ -1622,10 +1634,15 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         badgesContainer.innerHTML += `<span style="font-size:10px; font-weight:900; background:#64748b; color:#fff; padding:2px 6px; border-radius:4px; letter-spacing:0.5px; box-shadow:0 1px 3px rgba(0,0,0,0.2); white-space: nowrap;">🚫入室制限</span>`;
         count++;
       }
-      // バッジが1つ以上あれば2段目（flexコラム内）を可視化、なければ非表示にして無駄な余白を削減
       badgesContainer.style.display = count > 0 ? "flex" : "none";
     }
     applyPrivateModeUI();
+    
+    if (shouldBindListeners()) {
+      queueSetupFirebaseListeners();
+    } else {
+      removeFirebaseListeners();
+    }
   }
 
   function initSettingsListener() {
@@ -1683,7 +1700,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           
           initSettingsListener();
 
-          if (isJoined) {
+          if (shouldBindListeners()) {
             queueSetupFirebaseListeners();
           } else {
             removeFirebaseListeners();
@@ -1736,7 +1753,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         });
         db.ref(".info/connected").on("value", snap => {
           if (snap.val() === true) {
-            if (isJoined) {
+            if (shouldBindListeners()) {
               queueSetupFirebaseListeners();
             }
 
@@ -2344,7 +2361,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       if (document.visibilityState === "visible") {
         if (db) db.goOnline(); 
         forceSync(); 
-        if (isJoined) {
+        if (shouldBindListeners()) {
           queueSetupFirebaseListeners();
         }
       } else {
