@@ -19,8 +19,29 @@
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
-:root{--bg:#090d16;--sf:#151c2c;--s2:#0b101c;--bd:#27314f;--tx:#f1f5f9;--mu:#94a3b8;--m2:#4e5e78;--in:#4f46e5;--i2:#3b32c0;--em:#10b981;--e2:#059669;--ro:#f43f5e;--usr-color:#94a3b8;--safe:env(safe-area-inset-bottom,0px);--app-viewport-height:100dvh}
-html,body{height:100dvh;width:100%;overflow:hidden;background:#05070a;color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
+:root{
+  --bg:#090d16;
+  --sf:#151c2c;
+  --s2:#0b101c;
+  --bd:#27314f;
+  --tx:#f1f5f9;
+  --mu:#94a3b8;
+  --m2:#4e5e78;
+  --in:#4f46e5;
+  --i2:#3b32c0;
+  --em:#10b981;
+  --e2:#059669;
+  --ro:#f43f5e;
+  --usr-color:#94a3b8;
+  --safe:env(safe-area-inset-bottom,0px);
+  --app-viewport-height:100vh;
+}
+@supports (height: 100dvh) {
+  :root {
+    --app-viewport-height: 100dvh;
+  }
+}
+html,body{height:100%;height:100vh;height:100dvh;width:100%;overflow:hidden;background:#05070a;color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;overscroll-behavior:none}
 input,textarea,select{font-family:inherit;font-size:16px!important}
 
 button,.chip,.btn,.jump-btn,.bsd,.bclrm,.open-player-btn,.modal-bottom-close,.msg-del-btn{
@@ -38,7 +59,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   transition:none!important;
 }
 
-#app{height:var(--app-viewport-height,100dvh);display:flex;position:fixed;inset:0;flex-direction:column;z-index:50;background:#05070a}
+#app{height:var(--app-viewport-height,100vh);display:flex;position:fixed;top:0;left:0;right:0;bottom:0;flex-direction:column;z-index:50;background:#05070a}
 #cp{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;background:#0d1117;position:relative;max-width:900px;width:100%;margin:0 auto;border-left:1px solid var(--bd);border-right:1px solid var(--bd)}
 #hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:8px 12px;flex-shrink:0}
 .hr{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -94,7 +115,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #tl{
   flex:1;
   min-height:0;
-  overflow-y:auto;
+  overflow-y:scroll;
   padding:12px;
   background-color:#0d1117;
   will-change:scroll-position;
@@ -124,8 +145,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   width:100%;
   padding:12px 14px;
   border-bottom:1px solid rgba(51,65,85,.18);
-  contain-intrinsic-size: 80px;
-  content-visibility: auto;
 }
 .mw.new-msg-anim{animation:slideInUp .06s ease-out forwards}
 .mm{display:flex;align-items:center;gap:6px;font-size:12.5px;margin-bottom:6px;width:100%;overflow:hidden;white-space:nowrap}
@@ -186,7 +205,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .bsd:hover{background:var(--i2)}
 .bsd svg{width:20px;height:20px;transform:rotate(45deg);margin-top:-1px;margin-left:-2px}
 
-.mod-overlay{position:fixed;inset:0;background:rgba(5,7,22,.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:10000;padding:12px}
+.mod-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(5,7,22,.85);backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;z-index:10000;padding:12px}
 .mod-overlay.show{display:flex}
 .gc,.clrmc{background:var(--sf);border:1px solid var(--bd);border-radius:12px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px;padding:16px;max-height:80vh;overflow-y:auto}
 .clr-prev{background:var(--bg);padding:12px;border-radius:8px;text-align:center;font-size:11px;font-weight:700}
@@ -204,7 +223,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #zoomViewport{width:100%;height:calc(100dvh - 100px);position:absolute;top:0;left:0;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:grab}
 #zoomViewport:active{cursor:grabbing}
 
-/* 拡大モーダル内画像（スマホでの長押し保存・コンテキストメニューを有効化） */
+/* 拡大モーダル内画像 */
 #imgViewSrc{
   max-width:95%;
   max-height:95%;
@@ -224,27 +243,26 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #joinBtn{background:linear-gradient(135deg,var(--in),#6366f1)!important;color:#fff!important;font-weight:900!important}
 #copyTripBtn{background:#0ea5e9!important;color:#fff!important;font-weight:800!important}
 
-/* タイムライン内画像（最大180pxに縮小・スマホでの長押し保存を有効化） */
-.inline-img{
-  max-width:180px;
-  max-height:180px;
-  width:auto;
-  height:auto;
-  object-fit:contain;
-  border-radius:0 !important;
-  margin-top:6px;
-  border:1px solid var(--bd);
-  display:block;
-  cursor:zoom-in;
-  transition:transform 0.12s ease,opacity 0.12s ease;
-  content-visibility:auto;
-  background-color:rgba(255,255,255,0.02);
+/* タイムライン内画像（枠なし・画像のみ、見やすい位置） */
+.inline-img {
+  max-width: 100%;
+  max-height: 200px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 4px;
+  margin-top: 6px;
+  border: none !important;
+  background-color: transparent !important;
+  display: block;
+  cursor: zoom-in;
+  transition: transform 0.12s ease, opacity 0.12s ease;
   -webkit-touch-callout: default !important;
   -webkit-user-select: auto !important;
   user-select: auto !important;
   -webkit-user-drag: auto !important;
 }
-.inline-img:hover{opacity:0.9;transform:scale(1.02)}
+.inline-img:hover{opacity:0.9;transform:scale(1.01)}
 
 .media-link-container {margin-top:8px;background:rgba(11, 16, 28, 0.6);border:1px solid var(--bd);border-radius:8px;padding:8px 12px;display:inline-flex;flex-direction:column;gap:6px;max-width:100%}
 .media-inline-row {display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -319,9 +337,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             <span class="logo" style="font-weight: 900; font-size: 15px; letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0; display: inline-block; vertical-align: middle;">NEZUO CHAT</span>
             <span class="pcnt" id="pcnt" style="display: none; white-space: nowrap; flex-shrink: 0; vertical-align: middle;"></span>
           </div>
-          <!-- 2段目：非公開、合言葉バッジ（部屋にロックがかかっている場合のみ、この段に自動表示されます） -->
+          <!-- 2段目：非公開、合言葉バッジ -->
           <div id="roomStatusBadges" style="display: none; gap: 4px; align-items: center; flex-wrap: nowrap; overflow: hidden; width: 100%; min-height: 0;"></div>
-          <!-- 3段目：管理パネル（管理権限ログイン時のみタイトルの真下に極小サイズで表示） -->
+          <!-- 3段目：管理パネル -->
           <div id="adminBtnContainer" style="display: none; align-items: center; width: 100%;">
             <button class="btn" id="admBtn" style="background: var(--in); border-color: var(--in); color: #fff; height: 24px; padding: 0 8px; font-size: 10px; border-radius: 4px; font-weight: bold; width: auto; display: inline-flex; align-items: center; gap: 4px; transition: none;" title="管理設定">
               <span class="bclr-dot" style="background:#fff!important; width: 6px; height: 6px;"></span> ⚙️ 管理パネル
@@ -409,9 +427,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     <div class="clrbox" style="margin-bottom:10px;">
       <div class="clrpick-grid" id="clrPick2"></div>
     </div>
+    <!-- OK（適用）ボタンを左、キャンセルボタンを右に変更 -->
     <div class="clr-btns">
-      <button class="clr-cancel" id="clrCancel">キャンセル</button>
       <button class="clr-ok" id="clrOk">適用</button>
+      <button class="clr-cancel" id="clrCancel">キャンセル</button>
     </div>
   </div>
 </div>
@@ -474,9 +493,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     </div>
 
+    <!-- 保存（OK）ボタンを左、閉じるボタンを右に変更 -->
     <div class="clr-btns" style="margin-top: 14px; border-top: 1px solid var(--bd); padding-top: 12px;">
-      <button class="clr-cancel" id="admCancel">閉じる</button>
       <button class="clr-ok" id="admSave" style="background: var(--em);">設定を保存</button>
+      <button class="clr-cancel" id="admCancel">閉じる</button>
     </div>
   </div>
 </div>
@@ -1190,10 +1210,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }
     }
 
+    // clickイベントへの変更により、confirmダイアログ呼び出しに伴う無限イベントループを回避
     if (isDeletable) {
       const delBtn = el.querySelector(".msg-del-btn");
       if (delBtn) {
-        delBtn.addEventListener("pointerdown", (e) => {
+        delBtn.addEventListener("click", (e) => {
           e.preventDefault();
           e.stopPropagation();
           const targetId = delBtn.dataset.delId;
@@ -1814,7 +1835,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             }
 
             if (isJoined && myUid && myName.trim()) {
-              // 瞬断の再接続時は、発言時間を不当に更新しない（基本情報のみアップデート）
               db.ref(`presence/official/${myUid}`).once("value").then(s => {
                 if (s.exists()) {
                   db.ref(`presence/official/${myUid}`).update({
@@ -1823,7 +1843,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
                     c: curColor
                   }).catch(()=>{});
                 } else {
-                  // 切断中にすでに退室処理されていた場合は、即座にローカルフラグを安全にクリア
                   isJoined = false;
                   stopAutoExitTimer();
                   safeLS.remove("nz_is_joined");
@@ -1896,7 +1915,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       if (c.v === selectedColor) {
         btn.classList.add("sel");
       }
-      btn.addEventListener("pointerdown", (e) => {
+      btn.addEventListener("click", (e) => {
         e.preventDefault();
         onSelect(c.v);
       });
@@ -1904,7 +1923,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     });
   }
 
-  // URL展開時、画像URLは生テキストリンクをバブル内に表示しない仕様に変更
   function parseTxtSplit(text) {
     if (typeof text !== "string") return [];
     const parts = text.split(UR);
@@ -1914,7 +1932,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         const cleanUrl = part.split(/[?#]/)[0];
         const isImg = /\.(jpe?g|png|gif|webp|svg|bmp)$/i.test(cleanUrl);
         
-        // 画像URLの場合は、メッセージバブル内に生テキスト(<a>リンク)を出力せずにスキップ
         if (isImg) return;
 
         const a = document.createElement("a");
@@ -1979,7 +1996,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     updateLastPostTime(timestampNow);
     startAutoExitChecker(); 
 
-    // 発言があった時のみ、データベースのタイムスタンプ(t)を更新
     if (myUid) {
       db.ref(`presence/official/${myUid}`).update({
         t: firebase.database.ServerValue.TIMESTAMP 
@@ -2179,15 +2195,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       }, { passive: true });
     }
 
+    // 全てのクリック操作にclickイベントを採用し、confirm起動時の多重イベント発火を防ぎます
     if (D.playerCloseBtn) {
-      D.playerCloseBtn.addEventListener("pointerdown", (e) => {
+      D.playerCloseBtn.addEventListener("click", (e) => {
         e.preventDefault();
         closePlayer();
       });
     }
 
     if (D.exBtn) {
-      D.exBtn.addEventListener("pointerdown", (e) => {
+      D.exBtn.addEventListener("click", (e) => {
         e.preventDefault();
         if (isJoined && confirm("退室して参加前の画面に戻りますか？")) {
           doExit();
@@ -2196,14 +2213,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (D.sdBtn) {
-      D.sdBtn.addEventListener("pointerdown", (e) => {
+      D.sdBtn.addEventListener("click", (e) => {
         e.preventDefault(); 
         sendMsg();
       });
     }
 
     if (D.clrBtn) {
-      D.clrBtn.addEventListener("pointerdown", (e) => {
+      D.clrBtn.addEventListener("click", (e) => {
         e.preventDefault();
         tmpColor = curColor; updateModalColorPreview(tmpColor);
         buildPicker(D.clrPick2, tmpColor, "clrc2", (v) => {
@@ -2215,14 +2232,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (D.clrCancel) {
-      D.clrCancel.addEventListener("pointerdown", (e) => {
+      D.clrCancel.addEventListener("click", (e) => {
         e.preventDefault();
         if (D.clrmod) D.clrmod.classList.remove("show");
       });
     }
 
     if (D.clrOk) {
-      D.clrOk.addEventListener("pointerdown", async (e) => {
+      D.clrOk.addEventListener("click", async (e) => {
         e.preventDefault();
         curColor = tmpColor; setGlobalColor(curColor); safeLS.set("nz_color", curColor);
         if (D.clrmod) D.clrmod.classList.remove("show"); await syncProfileValues();
@@ -2233,7 +2250,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (D.clrMsgBtn) {
-      D.clrMsgBtn.addEventListener("pointerdown", (e) => {
+      D.clrMsgBtn.addEventListener("click", (e) => {
         e.preventDefault(); 
         if (D.mi) {
           D.mi.value = "";
@@ -2245,7 +2262,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (D.jumpUpBtn) {
-      D.jumpUpBtn.addEventListener("pointerdown", (e) => {
+      D.jumpUpBtn.addEventListener("click", (e) => {
         e.preventDefault();
         if (D.tl) {
           D.tl.scrollTo({ top: 0, behavior: "smooth" });
@@ -2253,7 +2270,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       });
     }
     if (D.jumpDownBtn) {
-      D.jumpDownBtn.addEventListener("pointerdown", (e) => {
+      D.jumpDownBtn.addEventListener("click", (e) => {
         e.preventDefault();
         isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); if (D.tl) D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" });
       });
@@ -2297,13 +2314,13 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (D.joinBtn) {
-      D.joinBtn.addEventListener("pointerdown", (e) => {
+      D.joinBtn.addEventListener("click", (e) => {
         e.preventDefault();
         joinRoom();
       });
     }
     if (D.copyTripBtn) {
-      D.copyTripBtn.addEventListener("pointerdown", async (e) => {
+      D.copyTripBtn.addEventListener("click", async (e) => {
         e.preventDefault();
         const niVal = (D.ni ? D.ni.value.trim() : "") || "名無し", tripiVal = D.tripi ? D.tripi.value.trim() : "";
         if (!tripiVal) return;
@@ -2320,7 +2337,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (D.imgViewCloseBtn) {
-      D.imgViewCloseBtn.addEventListener("pointerdown", (e) => {
+      D.imgViewCloseBtn.addEventListener("click", (e) => {
         e.preventDefault();
         if (D.imgViewMod) D.imgViewMod.classList.remove("show");
       });
@@ -2337,16 +2354,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     const adminBtn = $("admBtn");
     const adminMod = $("adminMod");
     if (adminBtn && adminMod) {
-      adminBtn.addEventListener("pointerdown", (e) => {
+      adminBtn.addEventListener("click", (e) => {
         e.preventDefault();
         updateAdminModalFields();
         adminMod.classList.add("show");
       });
-      $("admCancel").addEventListener("pointerdown", (e) => {
+      $("admCancel").addEventListener("click", (e) => {
         e.preventDefault();
         closeAdminModal();
       });
-      $("admSave").addEventListener("pointerdown", (e) => {
+      $("admSave").addEventListener("click", (e) => {
         e.preventDefault();
         db.ref("settings").update({
           isPrivate: $("admPrivate").checked,
@@ -2359,7 +2376,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           alert("設定の保存に失敗しました：" + err.message);
         });
       });
-      $("admTripAddBtn").addEventListener("pointerdown", (e) => {
+      $("admTripAddBtn").addEventListener("click", (e) => {
         e.preventDefault();
         const inp = $("admTripInput");
         const val = inp.value.trim();
@@ -2372,7 +2389,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           showToast("事前承認トリップを追加しました。");
         });
       });
-      $("admClearBtn").addEventListener("pointerdown", (e) => {
+      $("admClearBtn").addEventListener("click", (e) => {
         e.preventDefault();
         if (confirm("🚨 警告：チャットログをすべて完全に消去します。この操作は取り消せません。\nよろしいですか？")) {
           db.ref("chat/official").remove()
