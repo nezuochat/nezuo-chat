@@ -80,54 +80,72 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #cp{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;background:#0d1117;position:relative;max-width:900px;width:100%;margin:0 auto;border-left:1px solid var(--bd);border-right:1px solid var(--bd)}
 
 /* ヘッダー */
-#hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:8px 12px;flex-shrink:0}
+#hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:6px 12px;flex-shrink:0}
 .hr{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .pcnt{font-size:11px;font-weight:900;background:rgba(255,255,255,.08);padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.05)}
 .hbs{display:flex;gap:8px;align-items:center}
-.hbs button{padding:6px 14px;height:40px;border-radius:8px;font-size:12.5px;font-weight:700;background:var(--bg);border:1px solid var(--bd);color:var(--tx);display:flex;align-items:center;gap:6px}
+.hbs button{padding:6px 14px;height:34px;border-radius:8px;font-size:12px;font-weight:700;background:var(--bg);border:1px solid var(--bd);color:var(--tx);display:flex;align-items:center;gap:6px}
 .bclr{border-color:var(--usr-color)!important}
 .bclr-dot{width:11px;height:10px;border-radius:50%;background:var(--usr-color)!important}
 
-/* ロビー画面 */
+/* ロビー画面 (極限まで余白を削減) */
 #lobbyScreen {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 16px;
+  padding: 10px 12px;
   background: #0d1117;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 10px;
 }
 .lobby-sec {
   background: var(--sf);
   border: 1px solid var(--bd);
-  border-radius: 12px;
-  padding: 16px;
+  border-radius: 10px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 8px;
 }
 .lobby-sec h2 {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 800;
   color: var(--tx);
   border-bottom: 1px solid rgba(255,255,255,0.05);
-  padding-bottom: 6px;
+  padding-bottom: 4px;
 }
 .lobby-row {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
 .lobby-row label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: bold;
   color: var(--mu);
 }
 .grid-2col {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 8px;
+}
+
+/* コピートリッププレビュー用装飾 */
+#lobbyTripPrev {
+  font-size: 11px;
+  font-weight: bold;
+  color: var(--usr-color);
+  text-align: center;
+  background: rgba(0,0,0,0.2);
+  padding: 6px;
+  border-radius: 6px;
+  margin-top: 2px;
+  cursor: pointer;
+  border: 1px dashed rgba(255,255,255,0.1);
+  transition: background 0.12s ease;
+}
+#lobbyTripPrev:hover {
+  background: rgba(255,255,255,0.06);
 }
 
 /* メインチャット画面 */
@@ -209,8 +227,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .sys-msg{position:relative;text-align:center;font-size:12px;font-weight:bold;color:var(--mu);margin:10px 0;background:rgba(255,255,255,.02);padding:10px 16px;border-radius:8px;border:1px solid rgba(255,255,255,.04);word-break:break-all;line-height:1.5}
 .sys-ts{display:block;font-size:11px;color:var(--mu);opacity:.75;font-family:monospace;margin-top:6px}
 
-#ib{display:none;flex-direction:column;padding:6px calc(8px + env(safe-area-inset-right,0px)) calc(6px + var(--safe)) calc(8px + env(safe-area-inset-left,0px));background:var(--sf);border-top:1px solid var(--bd);gap:6px}
-#ib.show{display:flex}
+/* 入力バー */
+#ib{display:flex;flex-direction:column;padding:6px calc(8px + env(safe-area-inset-right,0px)) calc(6px + var(--safe)) calc(8px + env(safe-area-inset-left,0px));background:var(--sf);border-top:1px solid var(--bd);gap:6px}
 #ibToolbar{width:100%;align-items:flex-end;display:flex;gap:10px}
 .jump-btns{display:flex;gap:6px}
 .jump-btn{width:56px;height:34px;border-radius:8px;background:var(--s2);border:1px solid var(--bd);color:var(--tx);font-size:12px;font-weight:bold;display:flex;align-items:center;justify-content:center}
@@ -238,13 +256,26 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .clr-cancel,.clr-ok{flex:1;padding:11px;border-radius:8px;font-size:12.5px;font-weight:700;text-align:center}
 .clr-cancel{background:var(--bg);border:1px solid var(--bd);color:var(--tx)}
 .clr-ok{background:var(--in);color:#fff}
-.inp{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;color:var(--tx);outline:none;font-size:14px;height:42px}
-.btn{padding:10px 8px;border-radius:8px;font-size:13.5px;font-weight:700;display:flex;align-items:center;justify-content:center}
 
-/* アコーディオン (ホストパネル・ロビーカラー設定用) */
-.acc-item {border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;}
-.acc-hdr {font-size: 12.5px; font-weight: bold; color: var(--tx); padding: 8px 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;}
-.acc-bdy {display: none; padding: 8px 0; flex-direction: column; gap: 10px;}
+/* コンパクト入力枠・コンパクトボタン */
+.inp{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:6px;padding:6px 10px;color:var(--tx);outline:none;font-size:14px;height:36px}
+.btn{padding:8px 8px;border-radius:6px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;height:36px}
+
+/* 無効化ボタン用の洗練されたCSS（必須入力が空の場合） */
+.btn:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+  box-shadow: none !important;
+  background: var(--bg) !important;
+  border-color: rgba(255,255,255,0.05) !important;
+  color: var(--mu) !important;
+}
+
+/* アコーディオン */
+.acc-item {border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px;}
+.acc-hdr {font-size: 11px; font-weight: bold; color: var(--tx); padding: 6px 0; cursor: pointer; display: flex; justify-content: space-between; align-items: center;}
+.acc-bdy {display: none; padding: 6px 0; flex-direction: column; gap: 8px;}
 .acc-bdy.show {display: flex;}
 
 #imgViewMod{background:rgba(0,0,0,.96);backdrop-filter:blur(10px);flex-direction:column}
@@ -277,9 +308,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   user-select: auto !important;
 }
 
-.clrpick-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:6px}
-.clrc2{aspect-ratio:1;width:100%;max-width:24px;border-radius:50%;margin:0 auto;border:2px solid transparent}
-.clrc2.sel{border-color:var(--tx)!important;transform:scale(1.25)}
+.clrpick-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:4px}
+.clrc2{aspect-ratio:1;width:100%;max-width:20px;border-radius:50%;margin:0 auto;border:2px solid transparent}
+.clrc2.sel{border-color:var(--tx)!important;transform:scale(1.2)}
 
 .inline-img {
   max-width: 100%;
@@ -321,15 +352,15 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   background: rgba(15, 23, 42, 0.95);
   border: 1px solid var(--bd);
   color: var(--tx);
-  padding: 10px 18px;
+  padding: 8px 16px;
   border-radius: 8px;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: bold;
   z-index: 100000;
   box-shadow: 0 4px 16px rgba(0,0,0,0.5);
   pointer-events: none;
   opacity: 0;
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;
   display: none;
   align-items: center;
   gap: 8px;
@@ -358,38 +389,38 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           </div>
           <div id="roomStatusBadges" style="display: none; gap: 4px; align-items: center; flex-wrap: nowrap; overflow: hidden; width: 100%;"></div>
           <div id="adminBtnContainer" style="display: none; align-items: center; width: 100%;">
-            <button class="btn" id="admBtn" style="background: var(--in); border-color: var(--in); color: #fff; height: 24px; padding: 0 8px; font-size: 10px; border-radius: 4px; font-weight: bold; width: auto; display: inline-flex; align-items: center; gap: 4px;">
+            <button class="btn" id="admBtn" style="background: var(--in); border-color: var(--in); color: #fff; height: 22px; padding: 0 8px; font-size: 10px; border-radius: 4px; font-weight: bold; width: auto; display: inline-flex; align-items: center; gap: 4px;">
               <span class="bclr-dot" style="background:#fff!important; width: 6px; height: 6px;"></span> ⚙️ ホストパネル
             </button>
           </div>
         </div>
         <div class="hbs">
           <button class="bclr" id="clrBtn" title="色設定"><span class="bclr-dot" id="clrDot"></span> 色設定</button>
-          <button class="btn" id="inviteBtn" style="background: var(--sf); border: 1px solid var(--bd); font-size: 12px; height: 40px; display: none;">🔗 招待コピー</button>
-          <button class="btn" id="exBtn" style="background: rgba(244,63,94,0.15); border: 1px solid rgba(244,63,94,0.3); color: #fda4af; display: none;">退室</button>
+          <button class="btn" id="inviteBtn" style="background: var(--sf); border: 1px solid var(--bd); font-size: 11.5px; height: 34px; display: none;">🔗 招待コピー</button>
+          <button class="btn" id="exBtn" style="background: rgba(244,63,94,0.15); border: 1px solid rgba(244,63,94,0.3); color: #fda4af; height: 34px; display: none;">退室</button>
         </div>
       </div>
     </div>
 
-    <!-- 1. ロビー画面 -->
+    <!-- 1. ロビー画面 (完全1画面最適化) -->
     <div id="lobbyScreen">
       <!-- ユーザー設定セクション -->
       <div class="lobby-sec">
-        <h2>👤 ユーザー設定</h2>
+        <h2>👤 ユーザー設定 (必須入力)</h2>
         <div class="grid-2col">
           <div class="lobby-row">
-            <label for="lobbyName">名前 (10文字まで)</label>
-            <input type="text" id="lobbyName" class="inp" placeholder="名前を入力..." maxlength="10" autocomplete="off">
+            <label for="lobbyName">名前</label>
+            <input type="text" id="lobbyName" class="inp" placeholder="名前..." maxlength="10" autocomplete="off">
           </div>
           <div class="lobby-row">
-            <label for="lobbyTrip">トリップキー (任意)</label>
+            <label for="lobbyTrip">トリップキー (必須)</label>
             <input type="text" id="lobbyTrip" class="inp" placeholder="トリップキー..." autocomplete="off">
           </div>
         </div>
         
         <!-- 折りたたみ式表示カラー設定 -->
         <div class="acc-item" style="border-bottom: none; padding-bottom: 0;">
-          <div class="acc-hdr" onclick="toggleAcc('lobbyColorAcc')" style="font-size: 11px; font-weight: bold; color: var(--mu); padding: 0 0 6px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
+          <div class="acc-hdr" onclick="toggleAcc('lobbyColorAcc')" style="font-size: 10px; font-weight: bold; color: var(--mu); padding: 0 0 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
             🎨 表示カラー設定を開く <span class="acc-icon">▶</span>
           </div>
           <div class="acc-bdy" id="lobbyColorAcc">
@@ -397,35 +428,54 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           </div>
         </div>
 
-        <div style="font-size: 11.5px; font-weight: bold; color: var(--usr-color); text-align: center; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 6px; margin-top: 4px;" id="lobbyTripPrev">
-          プレビュー: 名無し
+        <!-- タップしてコピー可能なプレビューエリア -->
+        <div id="lobbyTripPrev" title="タップして生成されたトリップをコピー">
+          プレビュー: 名前とトリップキーを入力してください
         </div>
       </div>
 
       <!-- 部屋作成・入室セクション -->
       <div class="lobby-sec">
         <h2>🔑 部屋作成 / パスワード入室</h2>
-        <!-- 視認性を劇的に向上させた自動生成ボタン（最上部に配置） -->
-        <button class="btn" id="btnGen" style="width: 100%; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; font-weight: bold; font-size: 13px; height: 42px; border-radius: 8px; box-shadow: 0 4px 12px rgba(79,70,229,0.3); margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.1);">🎲 部屋IDとパスワードを自動生成する</button>
+        <button class="btn" id="btnGen" style="width: 100%; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; font-weight: bold; font-size: 12px; height: 36px; border-radius: 6px; box-shadow: 0 3px 10px rgba(79,70,229,0.25); border: 1px solid rgba(255,255,255,0.08);">🎲 部屋IDとパスワードを自動生成する</button>
 
-        <div class="lobby-row">
-          <label for="lobbyRoomId">部屋ID (英数字推奨)</label>
-          <input type="text" id="lobbyRoomId" class="inp" placeholder="例: room-xyz" autocomplete="off">
+        <div class="grid-2col">
+          <div class="lobby-row">
+            <label for="lobbyRoomId">部屋ID</label>
+            <input type="text" id="lobbyRoomId" class="inp" placeholder="例: room-xyz" autocomplete="off">
+          </div>
+          <div class="lobby-row">
+            <label for="lobbyRoomPass">部屋パスワード</label>
+            <input type="text" id="lobbyRoomPass" class="inp" placeholder="パスワード..." autocomplete="off">
+          </div>
         </div>
-        <div class="lobby-row">
-          <label for="lobbyRoomPass">部屋パスワード (E2EE暗号キー)</label>
-          <input type="text" id="lobbyRoomPass" class="inp" placeholder="パスワードを入力..." autocomplete="off">
+
+        <!-- 折りたたみ式：入室前詳細設定（使い捨て部屋専用） -->
+        <div class="acc-item" style="border-bottom: none; padding-bottom: 0;">
+          <div class="acc-hdr" onclick="toggleAcc('lobbyRoomSettingsAcc')" style="font-size: 10px; font-weight: bold; color: var(--mu); padding: 0 0 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
+            🛠️ 新規作成時の詳細設定を開く <span class="acc-icon">▶</span>
+          </div>
+          <div class="acc-bdy" id="lobbyRoomSettingsAcc">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 0;">
+              <span style="font-size:11px; font-weight:bold; color: var(--tx);">新規入室制限 (事前承認のみ)</span>
+              <input type="checkbox" id="lobbyStopJoin" style="width: 16px; height: 16px; accent-color: var(--in); cursor: pointer;">
+            </div>
+            <div style="padding-top: 2px;">
+              <label for="lobbyPasscode" style="font-size:10px; font-weight:bold; color: var(--mu); display:block; margin-bottom:2px;">入室合言葉設定 (二重ロック用・任意)</label>
+              <input type="text" id="lobbyPasscode" class="inp" placeholder="合言葉を指定..." autocomplete="off" style="height:32px; font-size:12.5px;">
+            </div>
+          </div>
         </div>
-        <div style="margin-top: 6px;">
-          <button class="btn" id="btnJoin" style="width: 100%; background: var(--in); color: #fff; font-size: 14px; font-weight: bold; height: 44px; border-radius: 8px; box-shadow: 0 4px 12px rgba(79,70,229,0.2);">部屋に入る / 部屋を作る</button>
+
+        <div style="margin-top: 4px;">
+          <button class="btn" id="btnJoin" style="width: 100%; background: var(--in); color: #fff; font-size: 13px; font-weight: bold; height: 38px; border-radius: 6px; box-shadow: 0 3px 10px rgba(79,70,229,0.2);" disabled>部屋に入る / 部屋を作る</button>
         </div>
       </div>
 
       <!-- 公式部屋セクション -->
       <div class="lobby-sec" style="border-color: #fb923c;">
-        <h2 style="color: #fdba74;">🏢 常設公式部屋</h2>
-        <p style="font-size: 11px; color: var(--mu); line-height: 1.4;">誰でも自由にアクセスできる暗号化されていないオープンな常設公式部屋です。</p>
-        <button class="btn" id="btnJoinOfficial" style="background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; font-size: 13.5px; font-weight: 900; height: 44px; width: 100%;">🏢 常設公式部屋に入る</button>
+        <h2 style="color: #fdba74; font-size: 11px;">🏢 常設公式部屋</h2>
+        <button class="btn" id="btnJoinOfficial" style="background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; font-size: 13px; font-weight: 900; height: 38px; width: 100%; border-radius: 6px;" disabled>🏢 常設公式部屋に入る</button>
       </div>
     </div>
 
@@ -533,10 +583,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         <div class="acc-hdr" onclick="toggleAcc('accBasic')">🔒 部屋の基本公開設定 <span class="acc-icon">▶</span></div>
         <div class="acc-bdy" id="accBasic">
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
-            <span style="font-size:12px; font-weight:bold; color: var(--tx);">非公開モード</span>
-            <input type="checkbox" id="admPrivate" style="width: 18px; height: 18px; accent-color: var(--in); cursor: pointer;">
-          </div>
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
             <span style="font-size:12px; font-weight:bold; color: var(--tx);">新規入室制限 (事前承認のみ)</span>
             <input type="checkbox" id="admStopJoin" style="width: 18px; height: 18px; accent-color: var(--in); cursor: pointer;">
           </div>
@@ -601,7 +647,7 @@ function toggleAcc(id) {
   const safeSS = {
     get(key) { try { return sessionStorage.getItem(key); } catch (e) { return null; } },
     set(key, val) { try { sessionStorage.setItem(key, val); } catch (e) {} },
-    remove(key) { try { sessionStorage.removeItem(key); } catch (e) {} }
+    remove(key) { try { localStorage.removeItem(key); } catch (e) {} }
   };
 
   const firebaseConfig = {
@@ -627,7 +673,7 @@ function toggleAcc(id) {
   const $ = id => document.getElementById(id);
   let D = {};
 
-  // E2EE (Web Crypto API AES-GCM) 互換ラッパー
+  // E2EE (Web Crypto API AES-GCM) 高信頼性互換ラッパー
   const E2EE = {
     hasCrypto: (typeof window !== 'undefined' && window.crypto && window.crypto.subtle),
     async deriveKey(passcode) {
@@ -652,10 +698,16 @@ function toggleAcc(id) {
         const encrypted = await crypto.subtle.encrypt(
           { name: "AES-GCM", iv: iv }, key, encoder.encode(text)
         );
-        const combined = new Uint8Array(iv.length + encrypted.byteLength);
+        const encryptedBytes = new Uint8Array(encrypted);
+        const combined = new Uint8Array(iv.length + encryptedBytes.length);
         combined.set(iv);
-        combined.set(new Uint8Array(encrypted), iv.length);
-        return btoa(String.fromCharCode(...combined));
+        combined.set(encryptedBytes, iv.length);
+        
+        let binary = "";
+        for (let i = 0; i < combined.length; i++) {
+          binary += String.fromCharCode(combined[i]);
+        }
+        return btoa(binary);
       } catch (e) {
         return "[PLAIN]::" + text;
       }
@@ -664,8 +716,23 @@ function toggleAcc(id) {
       if (!base64Text) return "";
       if (base64Text.startsWith("[PLAIN]::")) return base64Text.substring(9);
       if (!key || !this.hasCrypto) return base64Text;
+
+      let combined;
       try {
-        const combined = new Uint8Array(atob(base64Text).split("").map(c => c.charCodeAt(0)));
+        const binary = atob(base64Text);
+        combined = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+          combined[i] = binary.charCodeAt(i);
+        }
+      } catch (e) {
+        return base64Text;
+      }
+
+      if (combined.length < 28) {
+        return base64Text;
+      }
+
+      try {
         const iv = combined.slice(0, 12);
         const ciphertext = combined.slice(12);
         const decrypted = await crypto.subtle.decrypt(
@@ -709,7 +776,6 @@ function toggleAcc(id) {
   let isSending = false;
 
   const maxLimit = 100;
-  let latestDisplayedTs = 0;
   let scale = 1, panX = 0, panY = 0;
   let lastPanX = 0, lastPanY = 0, isPanning = false;
   let initialDistance = 0;
@@ -718,7 +784,6 @@ function toggleAcc(id) {
   let isConnectedBound = false;
 
   let roomSettings = {
-    isPrivate: false,
     newEntriesDisabled: false,
     passcode: "",
     approvedTrips: {},
@@ -858,6 +923,7 @@ function toggleAcc(id) {
     });
   };
 
+  // トースト表示：1.5秒で即座に消えるように最適化
   const showToast = (msg) => {
     const container = $("toastContainer");
     if (!container) return;
@@ -870,7 +936,7 @@ function toggleAcc(id) {
     window.toastTimer = setTimeout(() => {
       container.classList.remove("show");
       setTimeout(() => { container.style.display = "none"; }, 200);
-    }, 4500); 
+    }, 1500); // 1.5秒に短縮
   };
 
   const updateModalColorPreview = (color) => {
@@ -934,6 +1000,15 @@ function toggleAcc(id) {
     } catch(e) {}
   };
 
+  // トリップキー必須判定によるバリデーション
+  const validateLobbyInputs = () => {
+    const name = ($("lobbyName") ? $("lobbyName").value.trim() : "");
+    const trip = ($("lobbyTrip") ? $("lobbyTrip").value.trim() : "");
+    const isEmpty = (!name || !trip);
+    $("btnJoin").disabled = isEmpty;
+    $("btnJoinOfficial").disabled = isEmpty;
+  };
+
   const syncProfileValues = async () => {
     const nameVal = safeLS.get("nz_ni") || "";
     const tripVal = safeLS.get("nz_tripi") || "";
@@ -952,8 +1027,9 @@ function toggleAcc(id) {
       if ($("lobbyTripPrev")) $("lobbyTripPrev").textContent = `プレビュー: ${trimmedNi || "名無し"} ${myTrip}`;
     } else {
       myTrip = "";
-      if ($("lobbyTripPrev")) $("lobbyTripPrev").textContent = `プレビュー: ${trimmedNi || "名無し"}`;
+      if ($("lobbyTripPrev")) $("lobbyTripPrev").textContent = `プレビュー: 名前とトリップキーを入力してください`;
     }
+    validateLobbyInputs();
   };
 
   function switchScreen(joined) {
@@ -1092,7 +1168,6 @@ function toggleAcc(id) {
 
     const settingsSnap = await db.ref(`settings/${currentRoomId}`).once("value");
     const val = settingsSnap.val() || {};
-    roomSettings.isPrivate = val.isPrivate || false;
     roomSettings.newEntriesDisabled = val.newEntriesDisabled || false;
     roomSettings.passcode = val.passcode || "";
     roomSettings.approvedTrips = val.approvedTrips || {};
@@ -1100,7 +1175,14 @@ function toggleAcc(id) {
 
     if (!settingsSnap.exists() && currentRoomId !== "official") {
       roomSettings.creatorUid = myUid;
-      db.ref(`settings/${currentRoomId}/creatorUid`).set(myUid);
+      roomSettings.newEntriesDisabled = $("lobbyStopJoin").checked;
+      roomSettings.passcode = $("lobbyPasscode").value.trim();
+      
+      db.ref(`settings/${currentRoomId}`).set({
+        creatorUid: myUid,
+        newEntriesDisabled: roomSettings.newEntriesDisabled,
+        passcode: roomSettings.passcode
+      });
     }
 
     const hasApprovedTrip = checkIsTripApproved(myTrip);
@@ -1602,10 +1684,6 @@ function toggleAcc(id) {
     if (badgesContainer) {
       badgesContainer.innerHTML = "";
       let count = 0;
-      if (roomSettings.isPrivate) {
-        badgesContainer.innerHTML += `<span style="font-size:10px; font-weight:900; background:#f43f5e; color:#fff; padding:2px 6px; border-radius:4px; letter-spacing:0.5px; box-shadow:0 1px 3px rgba(0,0,0,0.2); white-space: nowrap;">🔒非公開</span>`;
-        count++;
-      }
       if (roomSettings.passcode) {
         badgesContainer.innerHTML += `<span style="font-size:10px; font-weight:900; background:#fb923c; color:#fff; padding:2px 6px; border-radius:4px; letter-spacing:0.5px; box-shadow:0 1px 3px rgba(0,0,0,0.2); white-space: nowrap;">🔑合言葉</span>`;
         count++;
@@ -1624,7 +1702,6 @@ function toggleAcc(id) {
     if (!db || !currentRoomId) return;
     db.ref(`settings/${currentRoomId}`).on("value", snap => {
       const val = snap.val() || {};
-      roomSettings.isPrivate = val.isPrivate || false;
       roomSettings.newEntriesDisabled = val.newEntriesDisabled || false;
       roomSettings.passcode = val.passcode || "";
       roomSettings.approvedTrips = val.approvedTrips || {};
@@ -1870,7 +1947,6 @@ function toggleAcc(id) {
   let banlistListener = null;
 
   function updateAdminModalFields() {
-    $("admPrivate").checked = roomSettings.isPrivate;
     $("admStopJoin").checked = roomSettings.newEntriesDisabled;
     $("admPass").value = roomSettings.passcode;
     
@@ -2070,12 +2146,25 @@ function toggleAcc(id) {
       $("lobbyTrip").addEventListener("input", () => { safeLS.set("nz_tripi", $("lobbyTrip").value); syncProfileValues(); });
     }
 
-    // 英数字のみで安全に部屋IDとパスワードを自動生成するロジック
+    // タップしてトリップをクリップボードにコピー
+    $("lobbyTripPrev").addEventListener("click", async (e) => {
+      e.preventDefault();
+      if (!myTrip) {
+        showToast("⚠️ トリップが生成されていません。トリップキーを入力してください。");
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(myTrip);
+        showToast(`📋 トリップ「${myTrip}」をコピーしました！`);
+      } catch(err) {
+        showToast("⚠️ コピーに失敗しました。お手数ですが手動で選択してコピーしてください。");
+      }
+    });
+
     $("btnGen").addEventListener("click", (e) => {
       e.preventDefault();
       const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
       
-      // 部屋ID: 「rm- + 英数字8文字」
       let randId = "rm-";
       if (typeof window !== 'undefined' && window.crypto) {
         const randVals = new Uint8Array(8);
@@ -2088,7 +2177,6 @@ function toggleAcc(id) {
       }
       $("lobbyRoomId").value = randId;
 
-      // パスワード: 「英数字12文字」
       let randPass = "";
       if (typeof window !== 'undefined' && window.crypto) {
         const randVals = new Uint8Array(12);
@@ -2110,9 +2198,9 @@ function toggleAcc(id) {
       const inviteUrl = window.location.origin + window.location.pathname + "#" + hashStr;
       try {
         await navigator.clipboard.writeText(inviteUrl);
-        showToast("🔗 招待URLをクリップボードにコピーしました！");
+        showToast("🔗 招待URLをコピーしました！");
       } catch(err) {
-        alert("コピーに失敗しました。このURLを直接共有してください：\n" + inviteUrl);
+        alert("コピーに失敗しました：\n" + inviteUrl);
       }
     });
 
@@ -2143,7 +2231,6 @@ function toggleAcc(id) {
       $("admSave").addEventListener("click", (e) => {
         e.preventDefault();
         db.ref(`settings/${currentRoomId}`).update({
-          isPrivate: $("admPrivate").checked,
           newEntriesDisabled: $("admStopJoin").checked,
           passcode: $("admPass").value.trim()
         }).then(() => { showToast("ホスト設定を保存しました。"); closeAdminModal(); });
