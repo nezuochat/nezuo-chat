@@ -12,11 +12,6 @@
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
 <link rel="preconnect" href="https://img.cdn.nimg.jp" crossorigin>
 
-<!-- Firebase SDK v8 -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
@@ -34,22 +29,13 @@
   --ro:#f43f5e;
   --usr-color:#94a3b8;
   --safe:env(safe-area-inset-bottom,0px);
-  --app-viewport-height:100vh;
 }
-@supports (height: 100dvh) {
-  :root {
-    --app-viewport-height: 100dvh;
-  }
-}
-/* 【バグ防止】html, bodyをfixedにすることで、モバイル端末でのキーボード開閉時の画面ズレ・ズームバグを防止 */
 html,body {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  height: 100vh;
-  height: 100dvh;
   overflow: hidden;
   background: #05070a;
   color: var(--tx);
@@ -72,7 +58,21 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   transition:none!important;
 }
 
-#app{height:var(--app-viewport-height,100vh);display:flex;position:fixed;top:0;left:0;right:0;bottom:0;flex-direction:column;z-index:50;background:#05070a}
+#app {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  background: #05070a;
+  will-change: transform, height;
+}
+
 #cp{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;background:#0d1117;position:relative;max-width:900px;width:100%;margin:0 auto;border-left:1px solid var(--bd);border-right:1px solid var(--bd)}
 #hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:8px 12px;flex-shrink:0}
 .hr{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -237,7 +237,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #zoomViewport{width:100%;height:calc(100dvh - 100px);position:absolute;top:0;left:0;display:flex;align-items:center;justify-content:center;overflow:hidden;cursor:grab}
 #zoomViewport:active{cursor:grabbing}
 
-/* 拡大画面の閉じるボタン：右上固定（画像と被らない位置） */
 .modal-top-close {
   position: absolute;
   top: calc(20px + env(safe-area-inset-top, 0px));
@@ -262,7 +261,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   background: rgba(0, 0, 0, 0.8) !important;
 }
 
-/* 拡大画面の角を完全に四角化 */
 #imgViewSrc{
   max-width:95%;
   max-height:95%;
@@ -280,7 +278,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #joinBtn{background:linear-gradient(135deg,var(--in),#6366f1)!important;color:#fff!important;font-weight:900!important}
 #copyTripBtn{background:#0ea5e9!important;color:#fff!important;font-weight:800!important}
 
-/* インライン画像のカード枠撤去 ＆ 角を四角に統一 */
 .inline-img {
   max-width: 100%;
   max-height: 200px;
@@ -327,7 +324,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 #toastContainer {
   position: fixed;
-  bottom: calc(70px + var(--safe));
+  bottom: 70px;
   left: 50%;
   transform: translateX(-50%) translateY(20px);
   background: rgba(15, 23, 42, 0.95);
@@ -367,7 +364,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   <div id="cp">
     <div id="hdr">
       <div class="hr">
-        <!-- 【左側：タイトルコラム構造】 -->
         <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1;">
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow: hidden; white-space: nowrap; width: 100%;">
             <span class="logo" style="font-weight: 900; font-size: 15px; letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0; display: inline-block; vertical-align: middle;">NEZUO CHAT</span>
@@ -380,7 +376,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             </button>
           </div>
         </div>
-        <!-- 右側：基本の操作ボタン -->
         <div class="hbs">
           <button class="bclr" id="clrBtn" title="色設定"><span class="bclr-dot" id="clrDot"></span> 色設定</button>
           <button class="bx" id="exBtn" title="退室">退室</button>
@@ -469,7 +464,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 </div>
 
 <div id="imgViewMod" class="mod-overlay">
-  <!-- 閉じるボタンを右上固定へ移動（画像に被らない位置） -->
   <button class="modal-top-close" id="imgViewCloseBtn" title="閉じる">✕</button>
   <div id="zoomViewport">
     <img id="imgViewSrc" alt="拡大画像">
@@ -539,8 +533,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   </div>
 </div>
 
-<script>
-(function() {
+<!-- Firebase Web SDK v10 (モジュール式) 読み込みおよびプログラム処理 -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getDatabase, ref, set, update, push, remove, runTransaction, query, orderByKey, limitToLast, onValue, onChildAdded, onChildRemoved, get, serverTimestamp, goOnline } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
   const ADMIN_UID = "J64MocsPo0QD7hSwZpQgEeDdO6X2";
 
   const safeLS = {
@@ -559,15 +557,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     appId: "1:154725381397:web:8742ccd957e20cee8ce51c"
   };
 
-  let db = null;
-  if (typeof firebase !== 'undefined') {
-    try {
-      if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-      if (typeof firebase.database === 'function') db = firebase.database();
-    } catch (e) {
-      console.error("Firebase SDK init error:", e);
-    }
-  }
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getDatabase(app);
 
   const $ = id => document.getElementById(id);
   let D = {};
@@ -630,10 +622,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   setGlobalColor(curColor);
 
   const getFirebaseTimestamp = () => {
-    if (typeof firebase !== 'undefined' && firebase.database && firebase.database.ServerValue) {
-      return firebase.database.ServerValue.TIMESTAMP;
-    }
-    return Date.now();
+    return serverTimestamp();
   };
 
   const getTrueTime = () => {
@@ -925,39 +914,36 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (D.mi) D.mi.blur();
     requestAnimationFrame(() => { scBottom(true); });
 
-    db.goOnline();
+    goOnline(db);
+
+    const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
+    const exitTimeMillis = isAuto ? (lastPost + 30 * 60 * 1000) : getTrueTime();
+    const logText = "[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が自動退室しました (30分間発言がなかったため)" : " が退室しました");
+
+    runTransaction(ref(db, `presence/official/${cleanUid}`), currentData => {
+      if (currentData === null) return currentData; 
+      if (currentData.exiting) return; 
+      currentData.exiting = true;
+      return currentData;
+    }).then((result) => {
+      if (result.committed) {
+        remove(ref(db, `presence/official/${cleanUid}`)).then(() => {
+          push(ref(db, `chat/official`), { 
+            u: "system", 
+            n: "システム", 
+            p: "", 
+            c: "#f43f5e", 
+            m: logText, 
+            t: exitTimeMillis 
+          }).catch(()=>{});
+        }).catch(()=>{});
+      }
+    }).catch(()=>{});
 
     if (isAuto) {
       showToast("⏱️ 30分間発言がなかったため、自動退室しました。"); 
     } else {
       showToast("🚪 退室しました。");
-    }
-
-    if (cleanUid && cleanName) {
-      const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
-      const exitTimeMillis = isAuto ? (lastPost + 30 * 60 * 1000) : getTrueTime();
-      const logText = "[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が自動退室しました (30分間発言がなかったため)" : " が退室しました");
-
-      db.ref(`presence/official/${cleanUid}`).transaction(currentData => {
-        if (currentData === null) return; 
-        if (currentData.exiting) return; 
-        currentData.exiting = true;
-        return currentData;
-      }, (err, committed, snap) => {
-        if (err) return;
-        if (committed && snap.exists()) {
-          db.ref(`presence/official/${cleanUid}`).remove().then(() => {
-            db.ref(`chat/official`).push({ 
-              u: "system", 
-              n: "システム", 
-              p: "", 
-              c: "#f43f5e", 
-              m: logText, 
-              t: exitTimeMillis 
-            }).catch(()=>{});
-          }).catch(()=>{});
-        }
-      }).catch(()=>{});
     }
   }
 
@@ -965,20 +951,23 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (targetUser.exiting || !db) return;
     targetUser.exiting = true;
     
-    db.ref(`presence/official/${targetId}`).transaction(currentData => {
-      if (currentData === null) return; 
+    runTransaction(ref(db, `presence/official/${targetId}`), currentData => {
+      if (currentData === null) return currentData; 
       if (currentData.exiting) return; 
       currentData.exiting = true;
       return currentData;
-    }, (err, committed, snap) => {
-      if (err) { targetUser.exiting = false; return; }
-      if (committed && snap.exists()) {
-        const u = snap.val(), display = (u.n || "").trim();
-        if (!display) { db.ref(`presence/official/${targetId}`).remove().catch(()=>{}); return; }
+    }).then((result) => {
+      if (result.committed) {
+        const u = result.snapshot.val();
+        const display = (u.n || "").trim();
+        if (!display) { 
+          remove(ref(db, `presence/official/${targetId}`)).catch(()=>{}); 
+          return; 
+        }
         const encLog = "[SYS]::📢 [お知らせ] " + `${display} ${u.p || ""}`.trim() + " が自動退室しました (30分間発言がなかったため)";
         
-        db.ref(`presence/official/${targetId}`).remove().then(() => {
-          db.ref(`chat/official`).push({ 
+        remove(ref(db, `presence/official/${targetId}`)).then(() => {
+          push(ref(db, `chat/official`), { 
             u: "system", 
             n: "システム", 
             p: "", 
@@ -992,6 +981,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       } else {
         targetUser.exiting = false;
       }
+    }).catch(() => {
+      targetUser.exiting = false;
     });
   }
 
@@ -1026,7 +1017,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     myTrip = await window.makeTrip(n, tk);
 
     let isBanned = false;
-    await db.ref(`banlist/${myUid}`).once("value").then(s => { if (s.val()) isBanned = true; });
+    const banSnap = await get(ref(db, `banlist/${myUid}`));
+    if (banSnap.val()) isBanned = true;
+
     if (isBanned) {
       alert("管理者によりアクセスが制限されているため、入室できません。");
       return;
@@ -1061,12 +1054,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     opt[myUid] = { id: myUid, n: myName, p: myTrip, c: curColor, t: nowTime };
     renderPresence(opt);
 
-    const pRef = db.ref(`presence/official/${myUid}`);
-    pRef.set({
+    const pRef = ref(db, `presence/official/${myUid}`);
+    set(pRef, {
       n: myName,
       p: myTrip,
       c: curColor,
-      t: getFirebaseTimestamp()
+      t: serverTimestamp()
     }).catch(err => {
       console.warn("Presence registration failed:", err);
       if (err.message && err.message.includes("permission_denied")) {
@@ -1088,14 +1081,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       isAutoScroll = true;
       scBottom(true);
 
-      db.ref(`chat/official`).push({ 
+      push(ref(db, `chat/official`), { 
         u: "system", 
         pnd: tempId, 
         n: "システム", 
         p: "", 
         c: curColor, 
         m: enterText, 
-        t: getFirebaseTimestamp()
+        t: serverTimestamp()
       }).then(() => {
         pendingMsgs.delete(tempId);
         const el = renderedMwNodes.get(tempId);
@@ -1109,7 +1102,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     scBottom(true);
   }
 
-  // 【爆速化】キャッシュ保存用ヘルパー
   const serializeAndSaveCache = (msgs) => {
     try {
       const cleanMsgs = msgs.slice(-maxLimit).map(m => ({
@@ -1126,7 +1118,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     } catch(e) {}
   };
 
-  // 【爆速化・遅延保存】同期頻度を間引くデバウンスキャッシュ
   let cacheDebounceTimeout;
   const triggerCacheSave = () => {
     clearTimeout(cacheDebounceTimeout);
@@ -1148,7 +1139,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }, 1200);
   };
 
-  // 【チラつき防止】インプレース（同一DOM書換え）同期
   function syncSingleMessage(m, isNewIncoming = false) {
     if (m.pnd && pendingMsgs.has(m.pnd)) {
       pendingMsgs.delete(m.pnd);
@@ -1182,7 +1172,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         if (msgTime > latestDisplayedTs) {
           latestDisplayedTs = msgTime;
         }
-        triggerCacheSave(); // キャッシュ更新
+        triggerCacheSave();
         return; 
       }
     }
@@ -1211,7 +1201,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     updateUnreadBadge();
     scBottom();
     updateJumpBtns();
-    triggerCacheSave(); // キャッシュ更新
+    triggerCacheSave();
   }
 
   function updateExistingMsgNode(m, el) {
@@ -1236,7 +1226,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       displayedMsgIds.delete(msgId);
       return;
     }
-    db.ref(`chat/official/${msgId}`).remove()
+    remove(ref(db, `chat/official/${msgId}`))
       .then(() => { showToast("メッセージを削除しました。"); })
       .catch(() => { showToast("削除に失敗しました。"); });
   };
@@ -1609,27 +1599,37 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   function banUser(targetUid, targetName, targetTrip) {
     if (!db || myUid !== ADMIN_UID) return;
-    db.ref(`banlist/${targetUid}`).set({
+    set(ref(db, `banlist/${targetUid}`), {
       n: targetName,
       p: targetTrip,
-      t: getFirebaseTimestamp()
+      t: serverTimestamp()
     }).then(() => {
       showToast(`${targetName} をBANしました。`);
       const banLogText = `[SYS]::📢 [お知らせ] ${targetName} ${targetTrip}`.trim() + " が管理者によって追放(BAN)されました";
-      db.ref("chat/official").push({
+      push(ref(db, "chat/official"), {
         u: "system",
         n: "システム",
         p: "",
         c: "#f43f5e",
         m: banLogText,
-        t: getFirebaseTimestamp()
+        t: serverTimestamp()
       }).catch(()=>{});
-      db.ref(`presence/official/${targetUid}`).remove().catch(()=>{});
+      remove(ref(db, `presence/official/${targetUid}`)).catch(()=>{});
     });
   }
 
+  let unsubChatAdded = null;
+  let unsubChatRemoved = null;
+  let unsubPresence = null;
+
+  function removeFirebaseListeners() {
+    if (unsubChatAdded) { unsubChatAdded(); unsubChatAdded = null; }
+    if (unsubChatRemoved) { unsubChatRemoved(); unsubChatRemoved = null; }
+    if (unsubPresence) { unsubPresence(); unsubPresence = null; }
+    isFirebaseListenersBound = false;
+  }
+
   let chatQuery = null;
-  let presenceRef = null;
 
   function setupFirebaseListeners() {
     if (!db) return;
@@ -1640,15 +1640,15 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     if (isFirebaseListenersBound) return; 
     isFirebaseListenersBound = true;
 
-    const chatRef = db.ref(`chat/official`);
-    presenceRef = db.ref(`presence/official`);
-    chatRef.off(); 
-    presenceRef.off();
+    removeFirebaseListeners();
 
-    chatQuery = chatRef.orderByKey().limitToLast(maxLimit); 
+    const chatRef = ref(db, `chat/official`);
+    const presenceRefLocal = ref(db, `presence/official`);
+
+    chatQuery = query(chatRef, orderByKey(), limitToLast(maxLimit)); 
 
     let isFirstBatchLoaded = false;
-    chatQuery.once("value").then(snap => {
+    get(chatQuery).then(snap => {
       const msgs = [];
       snap.forEach(child => {
         const m = child.val();
@@ -1656,10 +1656,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       });
       msgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
 
-      // 【チラつき・ジャンプ完全防止】一時的に非表示にしてDOM構築 ＆ 同期スクロールした後に再表示
       if (D.tl) D.tl.style.visibility = "hidden";
 
-      // キャッシュが存在しない場合、または新データ受信時にローカルバッファクリア
       if (D.tli) D.tli.innerHTML = "";
       displayedMsgIds.clear();
       renderedMwNodes.clear();
@@ -1676,17 +1674,15 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       isFirstBatchLoaded = true;
       isFirstLoad = false;
       
-      // 同期的にスクロールを最下部に固定
       if (D.tl) {
         D.tl.scrollTop = D.tl.scrollHeight;
-        // 同期的にリフロー（強制描画計算）を発生させてから可視化する（ジャンプチラつきの根本解決）
         const forceReflow = D.tl.offsetHeight;
         D.tl.style.visibility = "visible";
       }
       updateJumpBtns();
-      serializeAndSaveCache(msgs); // 初回データをローカルキャッシュに保存
+      serializeAndSaveCache(msgs);
 
-      chatQuery.on("child_added", child => {
+      unsubChatAdded = onChildAdded(chatQuery, child => {
         if (!isFirstBatchLoaded) return; 
         const m = child.val();
         if (m) {
@@ -1696,7 +1692,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       });
     });
 
-    chatQuery.on("child_removed", child => {
+    unsubChatRemoved = onChildRemoved(chatQuery, child => {
       const key = child.key;
       const el = renderedMwNodes.get(key);
       if (el) {
@@ -1706,11 +1702,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         unreadMsgIds.delete(key);
         updateUnreadBadge();
         updateJumpBtns();
-        triggerCacheSave(); // キャッシュ更新
+        triggerCacheSave();
       }
     });
 
-    presenceRef.on("value", s => {
+    unsubPresence = onValue(presenceRefLocal, s => {
       const list = s.val() || {};
       const members = {}, nowTrue = getTrueTime();
       for (const [id, u] of Object.entries(list)) {
@@ -1732,15 +1728,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
   function queueSetupFirebaseListeners() {
     setupFirebaseListeners();
-  }
-
-  function removeFirebaseListeners() {
-    if (chatQuery) {
-      chatQuery.off("child_added");
-      chatQuery.off("child_removed");
-    }
-    if (presenceRef) presenceRef.off("value");
-    isFirebaseListenersBound = false;
   }
 
   function applyRoomSettingsUI() {
@@ -1770,9 +1757,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
   }
 
+  let unsubSettings = null;
   function initSettingsListener() {
     if (!db) return;
-    db.ref("settings").on("value", snap => {
+    if (unsubSettings) unsubSettings();
+    unsubSettings = onValue(ref(db, "settings"), snap => {
       const val = snap.val() || {};
       roomSettings.isPrivate = val.isPrivate || false;
       roomSettings.newEntriesDisabled = val.newEntriesDisabled || false;
@@ -1806,38 +1795,36 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   const initDirectDatabaseProcess = async () => {
     await syncProfileValues();
 
-    if (typeof firebase !== 'undefined' && firebase.auth) {
-      firebase.auth().onAuthStateChanged(async (user) => {
-        if (user) {
-          myUid = user.uid;
-          safeLS.set("nz_permanent_uid", myUid);
-          
-          db.ref(`banlist/${myUid}`).on("value", s => {
-            if (s.val() && isJoined) {
-              alert("管理者によりアクセスが制限（BAN）されました。");
-              doExit();
-            }
-          });
-
-          $("adminBtnContainer").style.display = myUid === ADMIN_UID ? "inline-flex" : "none";
-          
-          if (isJoined && db) {
-            db.ref(`presence/official/${myUid}`).set({
-              n: myName,
-              p: myTrip,
-              c: curColor,
-              t: getFirebaseTimestamp()
-            }).catch(()=>{});
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        myUid = user.uid;
+        safeLS.set("nz_permanent_uid", myUid);
+        
+        onValue(ref(db, `banlist/${myUid}`), s => {
+          if (s.val() && isJoined) {
+            alert("管理者によりアクセスが制限（BAN）されました。");
+            doExit();
           }
-          switchUIMode(isJoined ? "joined" : "guest");
-          initSettingsListener();
-        } else {
-          firebase.auth().signInAnonymously().catch(()=>{});
-        }
-      });
-    }
+        });
 
-    if (db) db.goOnline();
+        $("adminBtnContainer").style.display = myUid === ADMIN_UID ? "inline-flex" : "none";
+        
+        if (isJoined) {
+          set(ref(db, `presence/official/${myUid}`), {
+            n: myName,
+            p: myTrip,
+            c: curColor,
+            t: serverTimestamp()
+          }).catch(()=>{});
+        }
+        switchUIMode(isJoined ? "joined" : "guest");
+        initSettingsListener();
+      } else {
+        signInAnonymously(auth).catch(()=>{});
+      }
+    });
+
+    goOnline(db);
 
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
     const nowTrue = getTrueTime();
@@ -1845,33 +1832,31 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       isJoined = false;
       safeLS.remove("nz_is_joined");
       safeLS.remove("nz_last_post_time");
-      if (db && myUid) db.ref(`presence/official/${myUid}`).remove().catch(()=>{});
+      if (myUid) remove(ref(db, `presence/official/${myUid}`)).catch(()=>{});
     }
 
-    if (db) {
-      if (isJoined) {
-        db.ref(`presence/official/${myUid}`).once("value").then(snap => {
-          if (snap.exists()) {
-            joinRoom(true); 
-            const elapsed = getTrueTime() - parseInt(safeLS.get("nz_last_post_time") || "0");
-            stopAutoExitTimer();
-            autoExitTimeoutId = setTimeout(() => { doExit(true); }, Math.max(1000, (30 * 60 * 1000) - elapsed));
-          } else {
-            isJoined = false;
-            safeLS.remove("nz_is_joined");
-            safeLS.remove("nz_last_post_time");
-            removeFirebaseListeners();
-            switchUIMode("guest");
-            renderPresence(currentPresenceMap);
-          }
-        }).catch(() => { joinRoom(true); });
-      }
+    if (isJoined) {
+      get(ref(db, `presence/official/${myUid}`)).then(snap => {
+        if (snap.exists()) {
+          joinRoom(true); 
+          const elapsed = getTrueTime() - parseInt(safeLS.get("nz_last_post_time") || "0");
+          stopAutoExitTimer();
+          autoExitTimeoutId = setTimeout(() => { doExit(true); }, Math.max(1000, (30 * 60 * 1000) - elapsed));
+        } else {
+          isJoined = false;
+          safeLS.remove("nz_is_joined");
+          safeLS.remove("nz_last_post_time");
+          removeFirebaseListeners();
+          switchUIMode("guest");
+          renderPresence(currentPresenceMap);
+        }
+      }).catch(() => { joinRoom(true); });
     }
 
     switchUIMode(isJoined ? "joined" : "guest");
 
-    if (!isConnectedBound && db) {
-      db.ref(".info/serverTimeOffset").on("value", snap => { 
+    if (!isConnectedBound) {
+      onValue(ref(db, ".info/serverTimeOffset"), snap => { 
         serverTimeOffset = snap.val() || 0; 
         isOffsetLoaded = true;
         if (isJoined) {
@@ -1879,14 +1864,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           if (elapsed >= 30 * 60 * 1000) doExit(true);
         }
       });
-      db.ref(".info/connected").on("value", snap => {
+      onValue(ref(db, ".info/connected"), snap => {
         if (snap.val() === true) {
           if (shouldBindListeners()) queueSetupFirebaseListeners();
           if (isJoined && myUid && myName.trim()) {
-            const pRef = db.ref(`presence/official/${myUid}`);
-            pRef.once("value").then(s => {
+            const pRef = ref(db, `presence/official/${myUid}`);
+            get(pRef).then(s => {
               if (s.exists()) {
-                pRef.update({ n: myName, p: myTrip, c: curColor });
+                update(pRef, { n: myName, p: myTrip, c: curColor });
               } else {
                 isJoined = false;
                 stopAutoExitTimer();
@@ -2024,8 +2009,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     startAutoExitChecker(); 
 
     if (myUid) {
-      db.ref(`presence/official/${myUid}`).update({
-        t: getFirebaseTimestamp()
+      update(ref(db, `presence/official/${myUid}`), {
+        t: serverTimestamp()
       }).catch(()=>{});
     }
 
@@ -2045,14 +2030,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     insertMessageInOrder(tempEl);
     scBottom(true);
 
-    db.ref("chat/official").push({
+    push(ref(db, "chat/official"), {
       pnd: tempId, 
       u: myUid,
       n: myName,
       p: myTrip,
       c: curColor,
       m: rawMsg,
-      t: getFirebaseTimestamp()
+      t: serverTimestamp()
     }).then(() => {
       isSending = false;
       if (D.sdBtn) D.sdBtn.disabled = false;
@@ -2101,7 +2086,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       `;
       div.querySelector("button").onclick = () => {
         customConfirm("承認トリップの削除", `このトリップ「${val}」を事前承認リストから削除しますか？`, "削除する", "キャンセル").then(ok => {
-          if (ok) db.ref(`settings/approvedTrips/${key}`).remove();
+          if (ok) remove(ref(db, `settings/approvedTrips/${key}`));
         });
       };
       container.appendChild(div);
@@ -2111,7 +2096,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     }
 
     if (!banlistListener) {
-      banlistListener = db.ref("banlist").on("value", snap => {
+      banlistListener = onValue(ref(db, "banlist"), snap => {
         const banContainer = $("admBanList");
         if (!banContainer) return;
         banContainer.innerHTML = "";
@@ -2135,7 +2120,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           div.querySelector("button").onclick = () => {
             customConfirm("BAN解除", `ユーザー「${displayStr}」のBANを解除しますか？`, "解除する", "キャンセル").then(ok => {
               if (ok) {
-                db.ref(`banlist/${uid}`).remove().then(() => { showToast("BANを解除しました。"); });
+                remove(ref(db, `banlist/${uid}`)).then(() => { showToast("BANを解除しました。"); });
               }
             });
           };
@@ -2151,7 +2136,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   function closeAdminModal() {
     $("adminMod").classList.remove("show");
     if (banlistListener && db) {
-      db.ref("banlist").off("value", banlistListener);
+      banlistListener(); 
       banlistListener = null;
     }
   }
@@ -2169,7 +2154,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       mi: $("mi"), kbKeepOpenChk: $("kbKeepOpenChk"), clrDot: $("clrDot")
     };
 
-    // 接続前にまずローカルキャッシュをレンダリング（爆速ロード）
     loadLocalCache();
 
     if (D.tl) {
@@ -2180,7 +2164,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         requestAnimationFrame(() => {
           const scrollTop = D.tl.scrollTop, clientHeight = D.tl.clientHeight, scrollHeight = D.tl.scrollHeight;
           if (!_scPending) {
-            // 最下部から50px以内を許容（スクロール追従バグの解消）
             if (scrollTop + clientHeight >= scrollHeight - 50) {
               isAutoScroll = true;
               if (unreadMsgIds.size > 0) { unreadMsgIds.clear(); updateUnreadBadge(); }
@@ -2235,8 +2218,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         curColor = tmpColor; setGlobalColor(curColor); safeLS.set("nz_color", curColor);
         if (D.clrmod) D.clrmod.classList.remove("show"); 
         await syncProfileValues();
-        if (isJoined && db) {
-          db.ref(`presence/official/${myUid}`).update({ c: curColor }).catch(()=>{});
+        if (isJoined) {
+          update(ref(db, `presence/official/${myUid}`), { c: curColor }).catch(()=>{});
         }
       });
     }
@@ -2271,12 +2254,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
       D.mi.addEventListener("focus", () => { 
         isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); 
-        // 【最適化】キーボードがせり上がってくるアニメーションに完全に追従させる
         forceScrollBottom();
         setTimeout(forceScrollBottom, 50);
         setTimeout(forceScrollBottom, 150);
         setTimeout(forceScrollBottom, 300);
-        setTimeout(forceScrollBottom, 500);
       });
       D.mi.addEventListener("input", () => {
         D.mi.style.height = "auto";
@@ -2342,7 +2323,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       $("admCancel").addEventListener("click", (e) => { e.preventDefault(); closeAdminModal(); });
       $("admSave").addEventListener("click", (e) => {
         e.preventDefault();
-        db.ref("settings").update({
+        update(ref(db, "settings"), {
           isPrivate: $("admPrivate").checked,
           newEntriesDisabled: $("admStopJoin").checked,
           passcode: $("admPass").value.trim()
@@ -2353,17 +2334,17 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         const inp = $("admTripInput");
         const val = inp.value.trim();
         if (!val || !val.startsWith("◆")) { alert("「◆」から始まる正しいトリップを入力してください。"); return; }
-        db.ref("settings/approvedTrips").push(val).then(() => { inp.value = ""; showToast("事前承認トリップを追加しました。"); });
+        push(ref(db, "settings/approvedTrips"), val).then(() => { inp.value = ""; showToast("事前承認トリップを追加しました。"); });
       });
       $("admClearBtn").addEventListener("click", (e) => {
         e.preventDefault();
         customConfirm("🚨 チャットログの全初期化", "警告：チャットログをすべて完全に消去します。この操作は取り消せません。\n本当に初期化しますか？", "初期化する", "キャンセル").then(ok => {
           if (ok) {
-            db.ref("chat/official").remove().then(() => {
-              db.ref("chat/official").push({
+            remove(ref(db, "chat/official")).then(() => {
+              push(ref(db, "chat/official"), {
                 u: "system", n: "システム", p: "", c: "#f43f5e",
                 m: "[SYS]::📢 [お知らせ] 管理者によってチャットログがすべて初期化されました",
-                t: getFirebaseTimestamp()
+                t: serverTimestamp()
               });
               showToast("ログを全消去しました。");
               closeAdminModal();
@@ -2413,7 +2394,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         e.preventDefault(); scale = Math.max(1, Math.min(5, scale * (e.deltaY > 0 ? 0.9 : 1.1))); clampPan(); updateTransform();
       }, { passive: false });
 
-      // 【最適化】画像の外（背景）をタップした場合に拡大画面を閉じる
       overlay.addEventListener("click", (e) => { 
         if (e.target === overlay && D.imgViewMod) {
           D.imgViewMod.classList.remove("show"); 
@@ -2424,23 +2404,25 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     function handleVisibilityChange() {
       if (document.visibilityState === "visible") {
-        if (db) db.goOnline(); 
+        goOnline(db); 
         if (shouldBindListeners()) queueSetupFirebaseListeners();
       }
     }
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // 【ガタツキ防止】スクロール時等の不要なリサイズ再計算を完全に排除
     if (window.visualViewport) {
-      let resizeTimeout;
       const resizeViewport = () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-          document.documentElement.style.setProperty('--app-viewport-height', `${window.visualViewport.height}px`);
-          scBottom(true);
-        }, 100); 
+        const vv = window.visualViewport;
+        const appContainer = $("app");
+        if (appContainer) {
+          appContainer.style.height = `${vv.height}px`;
+          appContainer.style.transform = `translateY(${vv.offsetTop}px)`;
+        }
+        scBottom(true);
       };
+      
       window.visualViewport.addEventListener('resize', resizeViewport);
+      window.visualViewport.addEventListener('scroll', resizeViewport);
     }
 
     window.addEventListener("keydown", (e) => { if (e.key === "Escape") closePlayer(); });
