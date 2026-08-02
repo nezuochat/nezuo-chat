@@ -253,14 +253,23 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   justify-content: center;
 }
 
-/* ホスト管理パネル用特別スタイル: 開いても背後のログやチャットがクリアに見えるように調整 */
+/* ホスト管理パネル用特別スタイル: 開いても背後のログやチャットが透過してクリアに見えるように調整（ぼかしなし） */
 #adminMod {
   background: rgba(5, 7, 10, 0.35) !important;
   backdrop-filter: none !important;
 }
 
+/* 汎用ダイアログ (z-indexを300000に設定して管理パネルの上に完全に重ねる) */
+#confirmMod {
+  z-index: 300000 !important;
+}
+
 #approvalScreen {
   display: none; flex: 1; flex-direction: column; justify-content: center; align-items: center; padding: 20px; background: #0d1117;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 @media (max-width:580px){#hdr{padding-right:0!important}#ib{padding-right:0!important}}
@@ -412,6 +421,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   </div>
 </div>
 
+<!-- グローバル接続ローディング (FOUC・状態判定中のチラつきを完全にシャットアウト) -->
+<div id="appSpinner" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0d1117; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; transition: opacity 0.2s ease, visibility 0.2s ease;">
+  <div style="width: 32px; height: 32px; border: 3px solid rgba(255,255,255,0.05); border-top-color: var(--in); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+  <div style="font-size: 13px; font-weight: bold; color: var(--mu); letter-spacing: 0.5px;">接続中...</div>
+</div>
+
 <!-- トースト表示用 -->
 <div id="toastContainer" style="display:none;"></div>
 
@@ -513,7 +528,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- 閉じるボタン -->
+    <!-- 保存ボタンを廃止し、フル幅の閉じるボタンに変更 -->
     <div class="clr-btns" style="margin-top: 20px; border-top: 1px solid var(--bd); padding-top: 12px; display: block;">
       <button class="clr-cancel" id="admCancel" style="width: 100%;">閉じる</button>
     </div>
@@ -982,7 +997,7 @@ function toggleAcc(id) {
 
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
 
-  // 生存中に1分ごとに打刻して自動退室タイマーとPresenceのタイムスタンプを維持する
+  // 生存中に1分ごとに打刻して自動退室タイマーとPresence的タイムスタンプを維持する
   function startPresenceHeartbeat() {
     stopPresenceHeartbeat();
     presenceHeartbeatInterval = setInterval(() => {
@@ -1326,6 +1341,7 @@ function toggleAcc(id) {
     // パスワード必須化の二重ガード
     if (lobbyRoomId !== "official" && !lobbyRoomPass) {
       alert("部屋パスワードを入力してください。");
+      hideAppSpinner();
       return;
     }
 
@@ -1346,6 +1362,7 @@ function toggleAcc(id) {
             );
             if (!goNext) {
               switchScreen("lobby");
+              hideAppSpinner();
               return;
             }
             await db.ref(`presence/${oldActiveRoom}/${myUid}`).remove().catch(()=>{});
@@ -1375,6 +1392,7 @@ function toggleAcc(id) {
     if (isBanned) {
       alert("この部屋の管理者により、アクセスが制限されています。");
       switchScreen("lobby");
+      hideAppSpinner();
       return;
     }
 
@@ -1396,6 +1414,7 @@ function toggleAcc(id) {
       console.error("Database settings load failed:", e);
       alert("データベース接続、またはセキュリティ権限エラーです。");
       switchScreen("lobby");
+      hideAppSpinner();
       return;
     }
 
@@ -1424,6 +1443,7 @@ function toggleAcc(id) {
         console.error("Failed to create room settings:", e);
         alert("新規設定の保存権限がありませんでした。");
         switchScreen("lobby");
+        hideAppSpinner();
         return;
       }
     }
@@ -1446,6 +1466,7 @@ function toggleAcc(id) {
         if (isTripExists) {
           alert("このユーザーID（トリップ）はすでに部屋に入室中です。");
           switchScreen("lobby");
+          hideAppSpinner();
           return;
         }
       } catch (e) {
@@ -1456,6 +1477,7 @@ function toggleAcc(id) {
     if (!silent && roomSettings.newEntriesDisabled && !hasApprovedTrip && !isOwner) {
       alert("現在、新規の入室が制限されています。");
       switchScreen("lobby");
+      hideAppSpinner();
       return;
     }
 
@@ -1464,6 +1486,7 @@ function toggleAcc(id) {
       if (userPass !== roomSettings.passcode) {
         alert("合言葉が一致しません。");
         switchScreen("lobby");
+        hideAppSpinner();
         return;
       }
     }
@@ -1482,6 +1505,7 @@ function toggleAcc(id) {
         console.error("Submission of request failed:", e);
         alert("入室申請の送信権限がありませんでした。");
         switchScreen("lobby");
+        hideAppSpinner();
       }
       return;
     }
@@ -1529,6 +1553,7 @@ function toggleAcc(id) {
     applyRoomSettingsUI();
     initSettingsListener(); 
     scBottom(true);
+    hideAppSpinner(); // 部屋への入室が完全に確定した時点で、ローディング画面を除去
   }
 
   let latestDisplayedTs = 0;
@@ -2093,6 +2118,7 @@ function toggleAcc(id) {
                 safeLS.remove("nz_pending_room_id");
                 safeLS.remove("nz_pending_room_pass");
                 switchScreen("lobby");
+                hideAppSpinner();
                 showToast("⚠️ 入室申請の期限が切れたか、削除されました。");
               } else {
                 const reqData = reqSnap.val();
@@ -2103,12 +2129,14 @@ function toggleAcc(id) {
                   safeLS.remove("nz_is_pending");
                   db.ref(`requests/${pendingRoomId}/${myUid}`).remove().catch(()=>{});
                   switchScreen("lobby");
+                  hideAppSpinner();
                   showToast("❌ 申請は却下されました。");
                 } else {
                   currentRoomId = pendingRoomId;
                   currentRoomPass = pendingRoomPass;
                   activeKey = await E2EE.deriveKey(pendingRoomPass);
                   await switchToApprovalScreen(pendingRoomId);
+                  hideAppSpinner();
                 }
               }
             } catch (e) {
@@ -2127,6 +2155,7 @@ function toggleAcc(id) {
             } else {
               switchScreen("lobby");
               performSelfZombieCleanup(); 
+              hideAppSpinner();
             }
           }
 
@@ -2150,6 +2179,15 @@ function toggleAcc(id) {
         isOffsetLoaded = true;
       });
       isConnectedBound = true;
+    }
+  };
+
+  const hideAppSpinner = () => {
+    const spinner = $("appSpinner");
+    if (spinner) {
+      spinner.style.opacity = "0";
+      spinner.style.visibility = "hidden";
+      setTimeout(() => { if (spinner.parentNode) spinner.remove(); }, 200);
     }
   };
 
@@ -2446,9 +2484,15 @@ function toggleAcc(id) {
     const wasPending = (safeLS.get("nz_is_pending") === "true");
     const lastRoomId = safeLS.get("nz_last_room_id");
     const pendingRoomId = safeLS.get("nz_pending_room_id");
+    const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
+    const nowLocal = Date.now();
 
-    if (wasJoined && lastRoomId) {
+    // 接続判定中にお知らせ画面がチラつくのを防ぐため、30分以上の期限切れ時は初期レンダリングからロビーを表示する
+    if (wasJoined && lastRoomId && (nowLocal - lastPost < 1800000)) {
       switchScreen("chat", lastRoomId);
+      if (D.tli) {
+        D.tli.innerHTML = `<div id="loadingPlaceholder" style="text-align:center; padding:40px; color:var(--mu); font-size:14px; font-weight:bold;">⏳ メッセージを読込中...</div>`;
+      }
     } else if (wasPending && pendingRoomId) {
       switchScreen("approval", pendingRoomId);
     } else {
