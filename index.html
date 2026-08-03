@@ -10,10 +10,6 @@
 <link rel="preconnect" href="https://nezuochat-default-rtdb.asia-southeast1.firebasedatabase.app" crossorigin>
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin>
-<link rel="preconnect" href="https://www.youtube-nocookie.com" crossorigin>
-<link rel="preconnect" href="https://embed.nicovideo.jp" crossorigin>
-<link rel="preconnect" href="https://i.ytimg.com" crossorigin>
-<link rel="preconnect" href="https://img.cdn.nimg.jp" crossorigin>
 
 <!-- Firebase SDK v10 Compat -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -47,55 +43,40 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   display:flex;flex-direction:column;z-index:50;background:#05070a;will-change: transform, height;
 }
 #cp{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;background:#0d1117;position:relative;max-width:900px;width:100%;margin:0 auto;border-left:1px solid var(--bd);border-right:1px solid var(--bd)}
-#hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:6px 12px;flex-shrink:0;z-index:100}
-.hr{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.pcnt{font-size:11px;font-weight:900;background:rgba(255,255,255,.08);padding:4px 8px;border-radius:6px;border:1px solid rgba(255,255,255,.05)}
-.hbs{display:flex;gap:8px;align-items:center}
-.hbs button{padding:6px 14px;height:34px;border-radius:8px;font-size:12px;font-weight:700;background:var(--bg);border:1px solid var(--bd);color:var(--tx);display:flex;align-items:center;gap:6px}
+
+/* ヘッダーの2段レイアウト：1段目にタイトル・部屋名・人数・バッジ、2段目にボタン群 */
+#hdr{background:var(--sf);border-bottom:1px solid var(--bd);padding:8px 12px;flex-shrink:0;z-index:100}
+.hr{display:flex;flex-direction:column;gap:6px;}
+.hr-top{display:flex;align-items:center;gap:6px;width:100%;overflow:hidden;white-space:nowrap;}
+.hr-bottom{display:flex;align-items:center;justify-content:flex-end;gap:5px;width:100%;}
+
+.logo { font-weight: 900; font-size: 13.5px; letter-spacing: 0.5px; flex-shrink: 0; }
+.logo span.sub-room { font-size: 11px; font-weight: bold; color: var(--mu); background: rgba(0,0,0,0.25); padding: 1px 5px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.04); margin-left: 4px; }
+
+.pcnt{font-size:10.5px;font-weight:900;background:rgba(255,255,255,.09);padding:2px 6px;border-radius:4px;border:1px solid rgba(255,255,255,.06);flex-shrink:0;}
+
+.hbs{display:flex;gap:5px;align-items:center;flex-shrink:0;margin-left:auto;}
+.hbs button{padding:4px 9px;height:28px;border-radius:6px;font-size:11px;font-weight:700;background:var(--bg);border:1px solid var(--bd);color:var(--tx);display:flex;align-items:center;gap:4px}
 .bclr{border-color:var(--usr-color)!important}
-.bclr-dot{width:11px;height:10px;border-radius:50%;background:var(--usr-color)!important}
+.bclr-dot{width:9px;height:9px;border-radius:50%;background:var(--usr-color)!important}
 
-.logo {
-  font-weight: 900; 
-  font-size: 15px; 
-  letter-spacing: 0.5px; 
-  flex-shrink: 0;
-  line-height: 1.2;
-}
-.logo span.sub-room {
-  font-size: 11.5px;
-  font-weight: bold;
-  color: var(--mu);
-  display: block;
-  margin-top: 1px;
-}
+#lobbyScreen { display: flex; flex: 1; overflow-y: auto; padding: 10px 12px; background: #0d1117; flex-direction: column; gap: 10px; }
+.lobby-sec { background: var(--sf); border: 1px solid var(--bd); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.lobby-sec h2 { font-size: 12px; font-weight: 800; color: var(--tx); border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 4px; }
+.lobby-row { display: flex; flex-direction: column; gap: 4px; }
+.lobby-row label { font-size: 10px; font-weight: bold; color: var(--mu); }
+.grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#lobbyTripPrev { font-size: 11px; font-weight: bold; color: var(--usr-color); text-align: center; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-#lobbyScreen {
-  display: flex; flex: 1; overflow-y: auto; padding: 10px 12px; background: #0d1117; flex-direction: column; gap: 10px;
-}
-.lobby-sec {
-  background: var(--sf);border: 1px solid var(--bd);border-radius: 10px;padding: 10px 12px;display: flex;flex-direction: column;gap: 8px;
-}
-.lobby-sec h2 {
-  font-size: 12px;font-weight: 800;color: var(--tx);border-bottom: 1px solid rgba(255,255,255,0.05);padding-bottom: 4px;
-}
-.lobby-row {display: flex;flex-direction: column;gap: 4px;}
-.lobby-row label {font-size: 10px;font-weight: bold;color: var(--mu);}
-.grid-2col {display: grid;grid-template-columns: 1fr 1fr;gap: 8px;}
-#lobbyTripPrev {
-  font-size: 11px;font-weight: bold;color: var(--usr-color);text-align: center;background: rgba(0,0,0,0.2);padding: 6px;border-radius: 6px;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;
-}
+#chatScreen { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 
-#chatScreen {display: none; flex-direction: column;flex: 1;min-height: 0;overflow: hidden;}
+/* メンバーリスト（入室者リスト） */
+#pl{display:none;gap:6px;padding:6px 12px;background:var(--s2);border-bottom:1px solid var(--bd);overflow-x:auto;white-space:nowrap;min-height:38px;max-height:38px;flex-shrink:0;align-items:center;}
+.chip{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--bg);border:1px solid rgba(255,255,255,.06);display:inline-flex;align-items:center;color:var(--tx);height:26px}
 
-#pl{display:none;gap:6px;padding:6px 12px;background:var(--s2);border-bottom:1px solid rgba(255,255,255,.02);overflow-x:auto;white-space:nowrap;min-height:40px;max-height:40px}
-.chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--bg);border:1px solid rgba(255,255,255,.06);display:inline-flex;align-items:center;color:var(--tx);height:28px}
 #fixedPlayer{display:none;flex-direction:column;background:var(--s2);border-bottom:1px solid var(--bd);width:100%}
 #playerHeader{background:var(--sf);padding:10px 14px;font-size:13px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bd)}
-#playerContent{
-  width:100%;max-width:480px;background:#000;display:flex;justify-content:center;align-items:center;position:relative;margin:0 auto;overflow:hidden;
-  transition: aspect-ratio 0.12s ease, height 0.12s ease, width 0.12s ease;
-}
+#playerContent{ width:100%;max-width:480px;background:#000;display:flex;justify-content:center;align-items:center;position:relative;margin:0 auto;overflow:hidden; }
 #playerCloseBtn{background:rgba(244, 63, 94, 0.15) !important;border:1px solid rgba(244, 63, 94, 0.4) !important;color: #fda4af !important;font-weight: 900 !important;padding: 5px 14px !important;font-size: 13px !important;border-radius: 6px;}
 
 #tl{flex:1;min-height:0;overflow-y:scroll;padding:12px;background-color:#0d1117;will-change:scroll-position;-webkit-overflow-scrolling:touch;}
@@ -103,7 +84,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 .mw{position:relative;display:flex;flex-direction:column;width:100%;padding:12px 14px;border-bottom:1px solid rgba(51,65,85,.18);}
 .mw.new-msg-anim{animation:slideInUp .06s ease-out forwards}
-.mw.pending{opacity:0.6;}
 .mm{display:flex;align-items:center;gap:6px;font-size:12.5px;margin-bottom:6px;width:100%;overflow:hidden;white-space:nowrap}
 .mm-name{font-weight:bold;overflow:hidden;text-overflow:ellipsis}
 .mm-trip{font-size:11px;margin-left:2px;overflow:hidden;text-overflow:ellipsis}
@@ -177,7 +157,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #toastContainer {
   position: fixed;bottom: 70px;left: 50%;transform: translateX(-50%) translateY(20px);
   background: rgba(15, 23, 42, 0.95);border: 1px solid var(--bd);color: var(--tx);padding: 8px 16px;
-  border-radius: 8px;font-size: 12.5px;font-weight: bold;z-index: 100000;box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+  border-radius: 8px;font-size: 12.5px;font-weight: bold;z-index: 10000;box-shadow: 0 4px 16px rgba(0,0,0,0.5);
   pointer-events: none;opacity: 0;transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.15s ease;display: none;align-items: center;gap: 8px;
 }
 #toastContainer.show {opacity: 1;transform: translateX(-50%) translateY(0);}
@@ -239,6 +219,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   display: flex;
   align-items: center;
   justify-content: center;
+  order: 1;
 }
 .clr-cancel {
   background: var(--s2);
@@ -253,11 +234,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   display: flex;
   align-items: center;
   justify-content: center;
-}
-
-#adminMod {
-  background: rgba(5, 7, 10, 0.35) !important;
-  backdrop-filter: none !important;
+  order: 2;
 }
 
 #confirmMod {
@@ -274,6 +251,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 <body>
 <div id="toastContainer"></div>
 
+<!-- 🎨 カラー設定モーダル -->
 <div id="clrmod" class="mod-overlay">
   <div class="gc" style="max-width: 320px;">
     <div class="clrmc">
@@ -283,6 +261,61 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       <div class="clr-btns">
         <button class="clr-cancel" id="clrCancel">キャンセル</button>
         <button class="clr-ok" id="clrOk">適用</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ⚙️ ホスト設定モーダル -->
+<div id="adminModal" class="mod-overlay">
+  <div class="gc" style="max-width: 420px; gap: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bd); padding-bottom: 8px;">
+      <span style="font-size: 14px; font-weight: bold;">⚙️ ホスト設定パネル</span>
+      <button class="btn" id="adminModCloseBtn" style="background: rgba(255,255,255,0.08); width: 28px; height: 28px; border-radius: 50%; font-size: 13px;">✕</button>
+    </div>
+
+    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 11px; font-weight: bold;">
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <input type="checkbox" id="admApprovalMode" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
+        <label for="admApprovalMode" style="color: var(--tx); cursor: pointer; user-select: none;">承認制</label>
+      </div>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <input type="checkbox" id="admStopJoin" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
+        <label for="admStopJoin" style="color: var(--tx); cursor: pointer; user-select: none;">新規制限</label>
+      </div>
+      <div style="display: flex; align-items: center; gap: 4px;">
+        <input type="checkbox" id="admPassToggle" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
+        <label for="admPassToggle" style="color: var(--tx); cursor: pointer; user-select: none;">合言葉あり</label>
+      </div>
+    </div>
+
+    <div id="admPassContainer" style="display: none; align-items: center; gap: 6px; width: 100%;">
+      <input type="text" id="admPass" class="inp" placeholder="合言葉を入力..." autocomplete="off" style="height:32px; font-size:12px; flex: 1; padding: 4px 8px;">
+      <button class="btn" id="admPassSaveBtn" style="background: var(--in); color: #fff; font-size: 11px; height: 32px; width: 56px; font-weight: bold; border-radius: 4px;">適用</button>
+    </div>
+
+    <div id="admRequestListContainer" style="display: none; flex-direction: column; gap: 4px; background: var(--s2); border: 1px solid var(--bd); border-radius: 6px; padding: 6px; width: 100%;">
+      <label style="font-size:10px; font-weight:bold; color: var(--ro);">📋 入室申請（審査待ち）</label>
+      <div id="admRequestList" style="display: flex; flex-direction: column; gap: 4px; max-height: 80px; overflow-y: auto;"></div>
+    </div>
+
+    <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+      <button class="btn" id="admClearBtn" style="background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.25); color: #fda4af; font-size: 11px; height: 32px; flex: 1; font-weight: bold; border-radius: 4px;">🚨 ログ初期化</button>
+      <button class="btn" id="admMembersToggleBtn" style="background: var(--s2); border: 1px solid var(--bd); color: var(--tx); font-size: 11px; height: 32px; flex: 1; font-weight: bold; border-radius: 4px;">👥 メンバー管理</button>
+    </div>
+
+    <div id="admMembersDrawer" style="display: none; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 8px; width: 100%;">
+      <div>
+        <label style="font-size:10px; font-weight:bold; color: var(--mu); display:block; margin-bottom:4px;">📋 事前承認トリップ追加</label>
+        <div style="display: flex; gap: 6px;">
+          <input type="text" id="admTripInput" class="inp" placeholder="例: ◆AbCdEf" autocomplete="off" style="height:32px; font-size:12px; flex: 1; padding: 4px 8px;">
+          <button class="btn" id="admTripAddBtn" style="background: var(--in); color: #fff; font-size: 11px; height: 32px; width: 56px; font-weight: bold; border-radius: 4px;">追加</button>
+        </div>
+        <div id="admTripList" style="background:var(--s2); border:1px solid var(--bd); border-radius:6px; max-height:60px; overflow-y:auto; padding:4px; font-size:11px; display:flex; flex-direction:column; gap:4px; font-family: monospace; margin-top: 4px;"></div>
+      </div>
+      <div>
+        <label style="font-size:10px; font-weight:bold; color: var(--mu); display:block; margin-bottom:4px;">🚫 追放（BAN）リスト</label>
+        <div id="admBanList" style="background:var(--s2); border:1px solid var(--bd); border-radius:6px; max-height:60px; overflow-y:auto; padding:4px; font-size:11px; display:flex; flex-direction:column; gap:4px;"></div>
       </div>
     </div>
   </div>
@@ -320,76 +353,31 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 <div id="app">
   <div id="cp">
+    <!-- ヘルシーに収まる2段レイアウトヘッダー -->
     <div id="hdr">
       <div class="hr">
-        <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1;">
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow: hidden; white-space: nowrap; width: 100%;">
-            <span class="logo" id="logoTitle" style="font-weight: 900; font-size: 15px; letter-spacing: 0.5px; white-space: nowrap; flex-shrink: 0;">NEZUO CHAT</span>
-            <span class="pcnt" id="pcnt" style="display: none; white-space: nowrap; flex-shrink: 0;"></span>
-          </div>
-          <div id="roomStatusBadges" style="display: none; gap: 4px; align-items: center; flex-wrap: nowrap; overflow: hidden; width: 100%;"></div>
-          <div id="adminBtnContainer" style="display: none; align-items: center; width: 100%;">
-            <button class="btn" id="admBtn" style="background: var(--in); border-color: var(--in); color: #fff; height: 22px; padding: 0 8px; font-size: 10px; border-radius: 4px; font-weight: bold; width: auto; display: inline-flex; align-items: center; gap: 4px;">
-              <span class="bclr-dot" style="background:#fff!important; width: 6px; height: 6px;"></span> ⚙️ ホスト設定
-            </button>
-          </div>
+        <div class="hr-top">
+          <span class="logo" id="logoTitle">NEZUO CHAT</span>
         </div>
-        <div class="hbs">
-          <button class="bclr" id="clrBtn" title="色設定"><span class="bclr-dot" id="clrDot"></span> 色設定</button>
-          <button class="btn" id="inviteBtn" style="background: var(--sf); border: 1px solid var(--bd); font-size: 11.5px; height: 34px; display: none;">🔗 招待コピー</button>
-          <button class="btn" id="exBtn" style="background: rgba(244,63,94,0.15); border: 1px solid rgba(244,63,94,0.3); color: #fda4af; height: 34px; display: none;">退室</button>
+        <div class="hr-bottom">
+          <span class="pcnt" id="pcnt" style="display: none;"></span>
+          <div id="roomStatusBadges" style="display: none; gap: 3px; align-items: center;"></div>
+          <div class="hbs">
+            <div id="adminBtnContainer" style="display: none; align-items: center;">
+              <button class="btn" id="admBtn" style="background: var(--in); border: 1px solid var(--in); color: #fff; height: 28px; padding: 0 8px; font-size: 11px; border-radius: 6px; font-weight: bold; display: inline-flex; align-items: center; gap: 3px;">
+                ⚙️ ホスト
+              </button>
+            </div>
+            <button class="bclr" id="clrBtn" title="色設定"><span class="bclr-dot" id="clrDot"></span> 色</button>
+            <button class="btn" id="inviteBtn" style="display: none;">🔗 招待</button>
+            <button class="btn" id="exBtn" style="background: rgba(244,63,94,0.15); border: 1px solid rgba(244,63,94,0.3); color: #fda4af; display: none;">退室</button>
+          </div>
         </div>
       </div>
     </div>
 
     <div id="chatScreen">
-      <div id="adminMod" style="display: none; background: var(--sf); border-bottom: 1px solid var(--bd); padding: 12px 14px; flex-shrink: 0; flex-direction: column; gap: 8px;">
-        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 11px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <input type="checkbox" id="admApprovalMode" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
-            <label for="admApprovalMode" style="color: var(--tx); cursor: pointer; user-select: none;">承認制</label>
-          </div>
-          <div style="display: flex; align-items: center; gap: 4px; border-left: 1px solid var(--bd); padding-left: 8px;">
-            <input type="checkbox" id="admStopJoin" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
-            <label for="admStopJoin" style="color: var(--tx); cursor: pointer; user-select: none;">新規制限</label>
-          </div>
-          <div style="display: flex; align-items: center; gap: 4px; border-left: 1px solid var(--bd); padding-left: 8px;">
-            <input type="checkbox" id="admPassToggle" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
-            <label for="admPassToggle" style="color: var(--tx); cursor: pointer; user-select: none;">合言葉あり</label>
-          </div>
-        </div>
-
-        <div id="admPassContainer" style="display: none; align-items: center; gap: 6px; width: 100%;">
-          <input type="text" id="admPass" class="inp" placeholder="合言葉を入力..." autocomplete="off" style="height:32px; font-size:12px; flex: 1; padding: 4px 8px;">
-          <button class="btn" id="admPassSaveBtn" style="background: var(--in); color: #fff; font-size: 11px; height: 32px; width: 56px; font-weight: bold; border-radius: 4px;">適用</button>
-        </div>
-
-        <div id="admRequestListContainer" style="display: none; flex-direction: column; gap: 4px; background: var(--s2); border: 1px solid var(--bd); border-radius: 6px; padding: 6px; width: 100%;">
-          <label style="font-size:10px; font-weight:bold; color: var(--ro);">📋 入室申請（審査待ち）</label>
-          <div id="admRequestList" style="display: flex; flex-direction: column; gap: 4px; max-height: 80px; overflow-y: auto;"></div>
-        </div>
-
-        <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
-          <button class="btn" id="admClearBtn" style="background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.25); color: #fda4af; font-size: 11px; height: 32px; flex: 1; font-weight: bold; border-radius: 4px;">🚨 ログ初期化</button>
-          <button class="btn" id="admMembersToggleBtn" style="background: var(--s2); border: 1px solid var(--bd); color: var(--tx); font-size: 11px; height: 32px; flex: 1; font-weight: bold; border-radius: 4px;">👥 メンバー管理</button>
-        </div>
-
-        <div id="admMembersDrawer" style="display: none; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 8px; width: 100%;">
-          <div>
-            <label style="font-size:10px; font-weight:bold; color: var(--mu); display:block; margin-bottom:4px;">📋 事前承認トリップ追加</label>
-            <div style="display: flex; gap: 6px;">
-              <input type="text" id="admTripInput" class="inp" placeholder="例: ◆AbCdEf" autocomplete="off" style="height:32px; font-size:12px; flex: 1; padding: 4px 8px;">
-              <button class="btn" id="admTripAddBtn" style="background: var(--in); color: #fff; font-size: 11px; height: 32px; width: 56px; font-weight: bold; border-radius: 4px;">追加</button>
-            </div>
-            <div id="admTripList" style="background:var(--s2); border:1px solid var(--bd); border-radius:6px; max-height:60px; overflow-y:auto; padding:4px; font-size:11px; display:flex; flex-direction:column; gap:4px; font-family: monospace; margin-top: 4px;"></div>
-          </div>
-          <div>
-            <label style="font-size:10px; font-weight:bold; color: var(--mu); display:block; margin-bottom:4px;">🚫 追放（BAN）リスト</label>
-            <div id="admBanList" style="background:var(--s2); border:1px solid var(--bd); border-radius:6px; max-height:60px; overflow-y:auto; padding:4px; font-size:11px; display:flex; flex-direction:column; gap:4px;"></div>
-          </div>
-        </div>
-      </div>
-
+      <!-- 入室者リスト -->
       <div id="pl"></div>
 
       <div id="fixedPlayer">
@@ -404,11 +392,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         <div id="tl-inner"></div>
       </div>
 
+      <!-- スクロールバー上部：左端にキーボード固定チェックボックス -->
       <div id="ibTopBar" style="background: var(--sf); border-top: 1px solid var(--bd); padding: 8px 12px; display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0;">
         <div style="display: flex; align-items: center; gap: 6px; height: 34px;">
-          <div id="kbKeepOpenContainer" style="display: none; align-items: center; gap: 6px;">
+          <div id="kbKeepOpenContainer" style="display: flex; align-items: center; gap: 5px;">
             <input type="checkbox" id="kbKeepOpenChk" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
-            <label for="kbKeepOpenChk" style="font-size: 11.5px; font-weight: bold; color: var(--tx); cursor: pointer; user-select: none; white-space: nowrap;">キーボードを開いたままにする</label>
+            <label for="kbKeepOpenChk" style="font-size: 10.5px; font-weight: bold; color: var(--mu); cursor: pointer; user-select: none; white-space: nowrap;">発言後にキーボードを開いたままにする</label>
           </div>
         </div>
         <div class="jump-btns">
@@ -466,8 +455,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
         <div class="grid-2col">
           <div class="lobby-row">
-            <label for="lobbyRoomId">部屋ID</label>
-            <input type="text" id="lobbyRoomId" class="inp" placeholder="例: room-xyz" autocomplete="off">
+            <label for="lobbyRoomId">部屋ID (全角20文字まで)</label>
+            <input type="text" id="lobbyRoomId" class="inp" placeholder="例: room-xyz" maxlength="20" autocomplete="off">
           </div>
           <div class="lobby-row">
             <label for="lobbyRoomPass">部屋パスワード</label>
@@ -516,27 +505,23 @@ function toggleAcc(id) {
     appId: "1:154725381397:web:8742ccd957e20cee8ce51c"
   };
 
-  let db = null;
-
-  const initFirebase = () => {
-    if (typeof firebase !== 'undefined') {
-      try {
-        if (!firebase.apps || firebase.apps.length === 0) {
-          firebase.initializeApp(firebaseConfig);
-        }
-        if (typeof firebase.database === 'function') {
-          db = firebase.database();
-          return true;
-        }
-      } catch (e) {
-        console.error("Firebase SDK init error:", e);
-      }
-    }
-    return false;
-  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const auth = firebase.auth();
 
   const $ = id => document.getElementById(id);
   let D = {};
+
+  function updateUnreadBadge() {
+    if (!D.unreadBadge) return;
+    const count = unreadMsgIds.size;
+    if (count > 0) {
+      D.unreadBadge.textContent = count > 99 ? "99+" : count;
+      D.unreadBadge.style.display = "inline-flex";
+    } else {
+      D.unreadBadge.style.display = "none";
+    }
+  }
 
   function showToast(text, duration = 3000) {
     const container = $("toastContainer");
@@ -558,7 +543,7 @@ function toggleAcc(id) {
     }, duration);
   }
 
-  function customConfirm(title, message, okText = "OK", cancelText = "キャンセル") {
+  function customConfirm(title, message, okText = "OK", cancelText = "キャンセル", isDanger = false) {
     return new Promise((resolve) => {
       const mod = $("confirmMod");
       const titleEl = $("confirmTitle");
@@ -576,6 +561,7 @@ function toggleAcc(id) {
       okBtn.textContent = okText;
       cancelBtn.textContent = cancelText;
 
+      okBtn.style.background = isDanger ? "var(--ro)" : "var(--in)";
       mod.classList.add("show");
 
       const cleanup = (result) => {
@@ -668,31 +654,27 @@ function toggleAcc(id) {
   let myName = safeLS.get("nz_ni") || "";
   let myTrip = ""; 
   let curColor = safeLS.get("nz_color") || "#94a3b8";
+  let tmpColor = curColor;
   let activeKey = null; 
 
   let currentRoomId = ""; 
   let currentRoomPass = "";
   let isJoined = false; 
 
-  let keepKbOpen = safeLS.get("nz_keep_kb_open") === "true";
   let isAutoScroll = true; 
   const unreadMsgIds = new Set(); 
-  let _scPending = false; 
   let autoExitTimeoutId = null; 
   let serverTimeOffset = 0; 
   let isOffsetLoaded = false;
   const displayedMsgIds = new Set();
-  let tmpColor = curColor;
-  let lastSendTime = 0;
   let isFirstLoad = true; 
   let isFirebaseListenersBound = false; 
   let isPresenceInitialized = false;
   let isSending = false;
+  let lastSendTime = 0;
 
   const maxLimit = 100;
   let scale = 1, panX = 0, panY = 0;
-  let lastPanX = 0, lastPanY = 0, isPanning = false;
-  let initialDistance = 0;
 
   let currentPresenceMap = {}; 
   let isConnectedBound = false;
@@ -720,17 +702,9 @@ function toggleAcc(id) {
   ];
 
   const renderedMwNodes = new Map();
-  const pendingMsgs = new Map();
 
   const setGlobalColor = c => document.documentElement.style.setProperty("--usr-color", c);
   setGlobalColor(curColor);
-
-  const getFirebaseTimestamp = () => {
-    if (typeof firebase !== 'undefined' && firebase.database && firebase.database.ServerValue) {
-      return firebase.database.ServerValue.TIMESTAMP;
-    }
-    return Date.now();
-  };
 
   const getTrueTime = () => {
     const t = Date.now() + serverTimeOffset;
@@ -815,32 +789,7 @@ function toggleAcc(id) {
 
   const resetZoom = () => {
     scale = 1; panX = 0; panY = 0;
-    updateTransform();
-  };
-
-  const clampPan = () => {
-    if (scale <= 1) { 
-      panX = 0; 
-      panY = 0; 
-    } else {
-      const img = D.imgViewSrc;
-      const vp = $("zoomViewport");
-      if (img && vp) {
-        const rect = img.getBoundingClientRect();
-        const vpW = vp.clientWidth || window.innerWidth;
-        const vpH = vp.clientHeight || (window.innerHeight - 100);
-        const maxPanX = Math.max(0, (rect.width - vpW) / 2);
-        const maxPanY = Math.max(0, (rect.height - vpH) / 2);
-        panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
-        panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
-      }
-    }
-  };
-
-  const updateTransform = () => {
-    if (D.imgViewSrc) {
-      D.imgViewSrc.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
-    }
+    if (D.imgViewSrc) D.imgViewSrc.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
   };
 
   const updateClrMsgBtnVisibility = () => {
@@ -850,8 +799,8 @@ function toggleAcc(id) {
 
   const validateLobbyInputs = () => {
     if (!myUid) {
-      $("btnJoin").disabled = true;
-      $("btnJoinOfficial").disabled = true;
+      if ($("btnJoin")) $("btnJoin").disabled = true;
+      if ($("btnJoinOfficial")) $("btnJoinOfficial").disabled = true;
       return;
     }
     const name = ($("lobbyName") ? $("lobbyName").value.trim() : "");
@@ -861,8 +810,8 @@ function toggleAcc(id) {
     const isNameEmpty = (!name);
     const isJoinCustomDisabled = (isNameEmpty || !roomId || !roomPass);
 
-    $("btnJoin").disabled = isJoinCustomDisabled;
-    $("btnJoinOfficial").disabled = isNameEmpty;
+    if ($("btnJoin")) $("btnJoin").disabled = isJoinCustomDisabled;
+    if ($("btnJoinOfficial")) $("btnJoinOfficial").disabled = isNameEmpty;
   };
 
   const syncProfileValues = async () => {
@@ -873,6 +822,7 @@ function toggleAcc(id) {
     
     myName = nameVal;
     curColor = colorVal;
+    tmpColor = curColor;
     setGlobalColor(curColor);
 
     const trimmedNi = nameVal.trim();
@@ -888,32 +838,51 @@ function toggleAcc(id) {
     validateLobbyInputs();
   };
 
+  function buildPicker(container, selectedColor, btnClass, onSelect) {
+    if (!container) return;
+    container.innerHTML = "";
+    COLORS.forEach(c => {
+      const btn = document.createElement("button");
+      btn.className = btnClass;
+      btn.style.backgroundColor = c.v;
+      btn.dataset.color = c.v;
+      btn.title = c.n;
+      if (c.v === selectedColor) btn.classList.add("sel");
+      btn.addEventListener("click", (e) => {
+        e.preventDefault(); onSelect(c.v);
+      });
+      container.appendChild(btn);
+    });
+  }
+
   function switchScreen(state, rawRoomId = "") {
     const logoTitle = $("logoTitle") || document.querySelector(".logo");
     
-    $("lobbyScreen").style.display = "none";
-    $("chatScreen").style.display = "none";
-    $("approvalScreen").style.display = "none";
-    $("exBtn").style.display = "none";
-    $("inviteBtn").style.display = "none";
-    $("pl").style.display = "none";
-    $("pcnt").style.display = "none";
+    if ($("lobbyScreen")) $("lobbyScreen").style.display = "none";
+    if ($("chatScreen")) $("chatScreen").style.display = "none";
+    if ($("approvalScreen")) $("approvalScreen").style.display = "none";
+    if ($("exBtn")) $("exBtn").style.display = "none";
+    if ($("inviteBtn")) $("inviteBtn").style.display = "none";
+    if ($("pl")) $("pl").style.display = "none";
+    if ($("pcnt")) $("pcnt").style.display = "none";
 
     if (state === "chat") {
-      $("chatScreen").style.display = "flex";
-      $("exBtn").style.display = "inline-flex";
-      $("inviteBtn").style.display = "inline-flex";
-      $("pl").style.display = "flex"; 
-    } else if (state === "approval") {
-      $("approvalScreen").style.display = "flex";
-      $("exBtn").style.display = "none";
+      if ($("chatScreen")) $("chatScreen").style.display = "flex";
+      if ($("exBtn")) $("exBtn").style.display = "inline-flex";
+      if ($("inviteBtn")) $("inviteBtn").style.display = "inline-flex";
+      if ($("pl")) $("pl").style.display = "flex"; 
       if (logoTitle && rawRoomId) {
-        logoTitle.innerHTML = `NEZUO CHAT <span class="sub-room">${rawRoomId === "official" ? "常設公式部屋" : rawRoomId}</span>`;
+        logoTitle.innerHTML = `NEZUO CHAT<span class="sub-room">${rawRoomId === "official" ? "常設公式部屋" : rawRoomId}</span>`;
+      }
+    } else if (state === "approval") {
+      if ($("approvalScreen")) $("approvalScreen").style.display = "flex";
+      if (logoTitle && rawRoomId) {
+        logoTitle.innerHTML = `NEZUO CHAT<span class="sub-room">${rawRoomId === "official" ? "常設公式部屋" : rawRoomId} (審査待ち)</span>`;
       }
     } else {
-      $("lobbyScreen").style.display = "flex";
-      $("roomStatusBadges").style.display = "none";
-      $("adminBtnContainer").style.display = "none";
+      if ($("lobbyScreen")) $("lobbyScreen").style.display = "flex";
+      if ($("roomStatusBadges")) $("roomStatusBadges").style.display = "none";
+      if ($("adminBtnContainer")) $("adminBtnContainer").style.display = "none";
       if (logoTitle) {
         logoTitle.textContent = "NEZUO CHAT";
       }
@@ -984,7 +953,7 @@ function toggleAcc(id) {
         p: "",
         c: "#f43f5e",
         m: encLog,
-        t: getFirebaseTimestamp()
+        t: firebase.database.ServerValue.TIMESTAMP
       }).then(() => {
         finishExit();
       }).catch(() => {
@@ -1119,7 +1088,7 @@ function toggleAcc(id) {
         p: "",
         c: "#f43f5e",
         m: logText,
-        t: getFirebaseTimestamp()
+        t: firebase.database.ServerValue.TIMESTAMP
       }).then(() => {
         finishAndClean();
       }).catch(() => {
@@ -1160,7 +1129,7 @@ function toggleAcc(id) {
     if (approvalHeartbeatTimer) clearInterval(approvalHeartbeatTimer);
     approvalHeartbeatTimer = setInterval(() => {
       if (db && isJoined === false && safeLS.get("nz_is_pending") === "true") {
-        db.ref(`requests/${currentRoomId}/${myUid}/last_active`).set(getFirebaseTimestamp());
+        db.ref(`requests/${currentRoomId}/${myUid}/last_active`).set(firebase.database.ServerValue.TIMESTAMP);
       }
     }, 30000);
 
@@ -1186,7 +1155,7 @@ function toggleAcc(id) {
           n: myName || "名無し",
           p: myTrip,
           c: curColor,
-          t: getFirebaseTimestamp()
+          t: firebase.database.ServerValue.TIMESTAMP
         }).catch(()=>{});
 
         startAutoExitChecker();
@@ -1200,7 +1169,7 @@ function toggleAcc(id) {
             p: "", 
             c: curColor, 
             m: enterText, 
-            t: getFirebaseTimestamp()
+            t: firebase.database.ServerValue.TIMESTAMP
           }).catch(()=>{});
         }
         showToast("🎉 入室申請がホストに承認されました！");
@@ -1253,9 +1222,7 @@ function toggleAcc(id) {
             await db.ref(`requests/${oldActiveRoom}/${myUid}`).remove().catch(()=>{});
           }
         }
-      } catch (e) {
-        console.warn("Old presence check bypassed:", e);
-      }
+      } catch (e) {}
     }
 
     removeFirebaseListeners();
@@ -1269,9 +1236,7 @@ function toggleAcc(id) {
     let isBanned = false;
     try {
       await db.ref(`banlist/${currentRoomId}/${myUid}`).once("value").then(s => { if (s.val()) isBanned = true; });
-    } catch (e) {
-      console.warn("Banlist check bypassed:", e);
-    }
+    } catch (e) {}
 
     if (isBanned) {
       alert("この部屋の管理者により、アクセスが制限されています。");
@@ -1286,15 +1251,12 @@ function toggleAcc(id) {
           doExit();
         }
       });
-    } catch (e) {
-      console.warn("Banlist realtime monitor bypassed:", e);
-    }
+    } catch (e) {}
 
     let settingsSnap = null;
     try {
       settingsSnap = await db.ref(`settings/${currentRoomId}`).once("value");
     } catch (e) {
-      console.error("Database settings load failed:", e);
       alert("データベース接続、またはセキュリティ権限エラーです。");
       switchScreen("lobby");
       return;
@@ -1325,7 +1287,6 @@ function toggleAcc(id) {
           safeLS.set("nz_my_created_room_id", currentRoomId);
         }
       } catch (e) {
-        console.error("Failed to create room settings:", e);
         alert("新規設定の保存権限がありませんでした。");
         switchScreen("lobby");
         return;
@@ -1352,9 +1313,7 @@ function toggleAcc(id) {
           switchScreen("lobby");
           return;
         }
-      } catch (e) {
-        console.warn("Presence check failed, proceeding:", e);
-      }
+      } catch (e) {}
     }
 
     if (!silent && roomSettings.newEntriesDisabled && !hasApprovedTrip && !isOwner) {
@@ -1378,12 +1337,11 @@ function toggleAcc(id) {
         await db.ref(`requests/${currentRoomId}/${myUid}`).set({
           n: encName,
           p: myTrip,
-          last_active: getFirebaseTimestamp(),
+          last_active: firebase.database.ServerValue.TIMESTAMP,
           status: "pending"
         });
         await switchToApprovalScreen(lobbyRoomId);
       } catch (e) {
-        console.error("Submission of request failed:", e);
         alert("入室申請の送信権限がありませんでした。");
         switchScreen("lobby");
       }
@@ -1408,11 +1366,9 @@ function toggleAcc(id) {
         n: myName || "名無し",
         p: myTrip,
         c: curColor,
-        t: getFirebaseTimestamp()
+        t: firebase.database.ServerValue.TIMESTAMP
       });
-    } catch (e) {
-      console.warn("Failed to set presence node:", e);
-    }
+    } catch (e) {}
 
     startAutoExitChecker(); 
 
@@ -1425,7 +1381,7 @@ function toggleAcc(id) {
         p: "", 
         c: curColor, 
         m: enterText, 
-        t: getFirebaseTimestamp()
+        t: firebase.database.ServerValue.TIMESTAMP
       }).catch(()=>{});
     }
 
@@ -1434,38 +1390,59 @@ function toggleAcc(id) {
     scBottom(true);
   }
 
+  function scBottom(force = false) {
+    if (!D.tl) return;
+    const isAtBottom = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40;
+    const isFocused = document.activeElement === D.mi;
+    
+    if (force || isAutoScroll || isAtBottom || isFocused) {
+      D.tl.scrollTop = D.tl.scrollHeight;
+    }
+  }
+
+  function scBottomOnImgLoad() {
+    if (isAutoScroll) scBottom(true);
+  }
+
+  function updateJumpBtns() {
+    if (!D.tl || !D.jumpUpBtn || !D.jumpDownBtn) return;
+    const { scrollTop, scrollHeight, clientHeight } = D.tl;
+    const isTop = scrollTop <= 20;
+    const isBottom = scrollHeight - (scrollTop + clientHeight) <= 40;
+    D.jumpUpBtn.disabled = isTop;
+    D.jumpDownBtn.disabled = isBottom;
+  }
+
+  function parseTxtSplit(text) {
+    if (!text) return [];
+    const container = document.createElement("span");
+    container.textContent = text;
+    return [container];
+  }
+
+  function insertMessageInOrder(el) {
+    if (!D.tli) return;
+    const ts = parseInt(el.dataset.ts || "0", 10);
+    const children = D.tli.children;
+    let inserted = false;
+    
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      const childTs = parseInt(child.dataset.ts || "0", 10);
+      if (ts < childTs) {
+        D.tli.insertBefore(el, child);
+        inserted = true;
+        break;
+      }
+    }
+    if (!inserted) {
+      D.tli.appendChild(el);
+    }
+  }
+
   let latestDisplayedTs = 0;
 
   async function syncSingleMessage(m, isNewIncoming = false) {
-    if (m.pnd && pendingMsgs.has(m.pnd)) {
-      pendingMsgs.delete(m.pnd);
-      const node = renderedMwNodes.get(m.pnd);
-      if (node) {
-        node.setAttribute("data-mid", m.id); 
-        node.classList.remove("pending");
-        
-        const isGlobalAdmin = checkIsGlobalAdmin();
-        const isDeletable = (m.u === myUid && m.u !== "") || (myUid === roomSettings.creatorUid) || isGlobalAdmin;
-        if (isDeletable && !node.querySelector(".msg-del-btn")) {
-          const delBtn = document.createElement("button");
-          delBtn.className = "msg-del-btn";
-          delBtn.textContent = "削除";
-          node.appendChild(delBtn);
-        }
-        
-        renderedMwNodes.delete(m.pnd);
-        renderedMwNodes.set(m.id, node);
-        displayedMsgIds.delete(m.pnd);
-        displayedMsgIds.add(m.id);
-        
-        const msgTime = getMsgTime(m);
-        if (msgTime > latestDisplayedTs) {
-          latestDisplayedTs = msgTime;
-        }
-        return; 
-      }
-    }
-
     if (displayedMsgIds.has(m.id)) return;
 
     m.m = await E2EE.decrypt(m.m, activeKey);
@@ -1488,20 +1465,39 @@ function toggleAcc(id) {
     }
 
     updateUnreadBadge();
-    scBottom();
+    
+    const isAtBottom = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 80;
+    const isFocused = document.activeElement === D.mi;
+    if (m.u === myUid || isAtBottom || isFocused) {
+      scBottom(true);
+    }
     updateJumpBtns();
   }
 
-  const deleteMessage = (msgId) => {
+  const deleteMessage = async (msgId) => {
     if (!db || !msgId) return;
+
+    const ok = await customConfirm(
+      "メッセージ削除の確認",
+      "このメッセージを本当に削除しますか？",
+      "削除する",
+      "キャンセル",
+      true
+    );
+
+    if (!ok) return;
 
     const el = renderedMwNodes.get(msgId);
     if (el) {
       el.remove();
       renderedMwNodes.delete(msgId);
       displayedMsgIds.delete(msgId);
-      unreadMsgIds.delete(msgId);
-      updateUnreadBadge();
+      
+      if (unreadMsgIds.has(msgId)) {
+        unreadMsgIds.delete(msgId);
+        updateUnreadBadge();
+      }
+
       updateJumpBtns();
     }
 
@@ -1512,11 +1508,9 @@ function toggleAcc(id) {
 
   function cMsg(m, isNewIncoming = false) {
     const el = document.createElement("div");
+    el.className = "mw" + (isNewIncoming ? " new-msg-anim" : "");
     
-    const isPendingNow = m.pnd && pendingMsgs.has(m.pnd);
-    el.className = "mw" + (isNewIncoming ? " new-msg-anim" : "") + (isPendingNow ? " pending" : "");
-    
-    const uniqueId = m.id || m.pnd; 
+    const uniqueId = m.id; 
     el.setAttribute("data-mid", uniqueId); 
     const msgTime = getMsgTime(m);
     el.dataset.ts = msgTime;
@@ -1527,7 +1521,7 @@ function toggleAcc(id) {
       el.addEventListener("animationend", () => { el.classList.remove("new-msg-anim"); }, { once: true });
     }
 
-    const isSys = m.sys === true || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
+    const isSys = m.sys === true || m.u === "system" || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
     if (isSys) {
       let display = m.m.startsWith("[SYS]::") ? m.m.substring(7) : m.m;
       el.innerHTML = `<div class="sys-msg">${escapeHtml(display)}<span class="sys-ts">[${fDT(msgTime)}]</span></div>`;
@@ -1539,7 +1533,6 @@ function toggleAcc(id) {
     const name = m.n || "名無し", trip = m.p || "", color = m.c || "#94a3b8";
     const isGlobalAdmin = checkIsGlobalAdmin();
     const isDeletable = (m.u === myUid && m.u !== "") || (myUid === roomSettings.creatorUid) || isGlobalAdmin;
-    const delBtnHtml = isDeletable ? `<button class="msg-del-btn">削除</button>` : "";
 
     el.innerHTML = `
       <div class="mm" style="color: ${color}">
@@ -1548,7 +1541,6 @@ function toggleAcc(id) {
         <span class="ts">${fDT(msgTime)}</span>
       </div>
       <div class="mb" style="border-left: 2px solid ${color}; padding-left: 8px;"></div>
-      ${delBtnHtml}
     `;
 
     const mb = el.querySelector(".mb");
@@ -1563,6 +1555,14 @@ function toggleAcc(id) {
       }
     }
 
+    if (isDeletable) {
+      const delBtn = document.createElement("button");
+      delBtn.className = "msg-del-btn";
+      delBtn.textContent = "削除";
+      delBtn.addEventListener("click", () => deleteMessage(uniqueId));
+      el.appendChild(delBtn);
+    }
+
     renderedMwNodes.set(uniqueId, el);
     displayedMsgIds.add(uniqueId);
     return el;
@@ -1575,14 +1575,6 @@ function toggleAcc(id) {
     const isAudio = /\.(mp3|wav|ogg|m4a|flac)$/i.test(cleanUrl);
 
     if (!ytId && !nicoId && !isImg && !isAudio) return null;
-
-    const container = document.createElement("div");
-    container.className = "media-link-container";
-    const row = document.createElement("div");
-    row.className = "media-inline-row";
-
-    const badge = document.createElement("span");
-    badge.className = "media-badge";
 
     if (isImg) {
       const wrapper = document.createElement("div");
@@ -1603,6 +1595,12 @@ function toggleAcc(id) {
       return wrapper; 
     }
 
+    const container = document.createElement("div");
+    container.className = "media-link-container";
+    const row = document.createElement("div");
+    row.className = "media-inline-row";
+    const badge = document.createElement("span");
+    badge.className = "media-badge";
     const playBtn = document.createElement("button");
     playBtn.className = "open-player-btn";
     playBtn.textContent = "▶ 再生";
@@ -1660,7 +1658,7 @@ function toggleAcc(id) {
       D.playerContent.style.background = "var(--s2)";
       D.playerContent.innerHTML = `
         <div class="audio-player-container" style="padding: 16px; width: 100%; display: flex; flex-direction: column; gap: 8px; background: var(--s2);">
-          <div style="font-size: 13px; font-weight: bold; word-break: break-all; color: var(--tx);" id="audioFileName">音声ファイル</div>
+          <div style="font-size: 13px; font-weight: bold; word-break: break-all; color: var(--tx);">音声ファイル</div>
           <audio id="audioElement" controls style="width: 100%; height: 40px; margin-top: 4px; outline: none;"></audio>
         </div>
       `;
@@ -1717,7 +1715,7 @@ function toggleAcc(id) {
           chip.title = "このユーザーを追放(BAN)";
           chip.style.cursor = "pointer";
           chip.addEventListener("click", () => {
-            customConfirm("メンバーのBAN", `ユーザー「${m.n}」を本当にこの部屋からBAN（追放）しますか？`, "BANする", "キャンセル").then(ok => {
+            customConfirm("メンバーのBAN", `ユーザー「${m.n}」を本当にこの部屋からBAN（追放）しますか？`, "BANする", "キャンセル", true).then(ok => {
               if (ok) banUser(m.id, m.n, m.p || "");
             });
           });
@@ -1739,7 +1737,7 @@ function toggleAcc(id) {
     db.ref(`banlist/${currentRoomId}/${targetUid}`).set({
       n: targetName,
       p: targetTrip,
-      t: getFirebaseTimestamp()
+      t: firebase.database.ServerValue.TIMESTAMP
     }).then(() => {
       showToast(`${targetName} をBANしました。`);
       db.ref(`presence/${currentRoomId}/${targetUid}`).remove().catch(()=>{});
@@ -1759,6 +1757,8 @@ function toggleAcc(id) {
     chatRef.off(); presenceRef.off();
 
     if (D.tli) D.tli.innerHTML = ""; 
+    displayedMsgIds.clear();
+    renderedMwNodes.clear();
 
     chatRef.limitToLast(maxLimit).once("value").then(async snap => {
       const fragment = document.createDocumentFragment();
@@ -1773,6 +1773,7 @@ function toggleAcc(id) {
       });
 
       for (const m of msgs) {
+        if (displayedMsgIds.has(m.id)) continue;
         m.m = await E2EE.decrypt(m.m, activeKey);
         m.n = await E2EE.decrypt(m.n, activeKey);
         m.p = await E2EE.decrypt(m.p, activeKey);
@@ -1810,14 +1811,16 @@ function toggleAcc(id) {
           el.remove();
           renderedMwNodes.delete(key);
           displayedMsgIds.delete(key);
-          unreadMsgIds.delete(key);
-          updateUnreadBadge();
+          
+          if (unreadMsgIds.has(key)) {
+            unreadMsgIds.delete(key);
+            updateUnreadBadge();
+          }
+
           updateJumpBtns();
         }
       });
-    }).catch(e => {
-      console.error("Failed to fetch messages:", e);
-    });
+    }).catch(e => {});
 
     presenceRef.on("value", s => {
       const list = s.val() || {};
@@ -1881,15 +1884,15 @@ function toggleAcc(id) {
       badgesContainer.innerHTML = "";
       let count = 0;
       if (roomSettings.passcode) {
-        badgesContainer.innerHTML += `<span style="font-size:10px; font-weight:900; background:#fb923c; color:#fff; padding:2px 6px; border-radius:4px; letter-spacing:0.5px; box-shadow:0 1px 3px rgba(0,0,0,0.2); white-space: nowrap;">🔑合言葉</span>`;
+        badgesContainer.innerHTML += `<span style="font-size:9.5px; font-weight:900; background:#fb923c; color:#fff; padding:1.5px 5px; border-radius:3px; white-space: nowrap;">🔑合言葉</span>`;
         count++;
       }
       if (roomSettings.approvalMode) {
-        badgesContainer.innerHTML += `<span style="font-size:10px; font-weight:900; background:#ef4444; color:#fff; padding:2px 6px; border-radius:4px; letter-spacing:0.5px; box-shadow:0 1px 3px rgba(0,0,0,0.2); white-space: nowrap;">🔒承認モード</span>`;
+        badgesContainer.innerHTML += `<span style="font-size:9.5px; font-weight:900; background:#ef4444; color:#fff; padding:1.5px 5px; border-radius:3px; white-space: nowrap;">🔒承認</span>`;
         count++;
       }
       if (roomSettings.newEntriesDisabled) {
-        badgesContainer.innerHTML += `<span style="font-size:10px; font-weight:900; background:#64748b; color:#fff; padding:2px 6px; border-radius:4px; letter-spacing:0.5px; box-shadow:0 1px 3px rgba(0,0,0,0.2); white-space: nowrap;">🚫入室制限</span>`;
+        badgesContainer.innerHTML += `<span style="font-size:9.5px; font-weight:900; background:#64748b; color:#fff; padding:1.5px 5px; border-radius:3px; white-space: nowrap;">🚫制限</span>`;
         count++;
       }
       badgesContainer.style.display = count > 0 ? "flex" : "none";
@@ -1897,6 +1900,14 @@ function toggleAcc(id) {
 
     const isGlobalAdmin = checkIsGlobalAdmin();
     $("adminBtnContainer").style.display = (myUid === roomSettings.creatorUid || isGlobalAdmin) ? "inline-flex" : "none";
+  }
+
+  function updateAdminModalFields() {
+    if ($("admApprovalMode")) $("admApprovalMode").checked = roomSettings.approvalMode;
+    if ($("admStopJoin")) $("admStopJoin").checked = roomSettings.newEntriesDisabled;
+    if ($("admPassToggle")) $("admPassToggle").checked = !!roomSettings.passcode;
+    if ($("admPass")) $("admPass").value = roomSettings.passcode || "";
+    if ($("admPassContainer")) $("admPassContainer").style.display = roomSettings.passcode ? "flex" : "none";
   }
 
   function initSettingsListener() {
@@ -2021,81 +2032,127 @@ function toggleAcc(id) {
     }
   }
 
-  // --- 🔒 初回確実に匿名認証を完遂する高速処理 ---
+  async function sendMessage() {
+    if (!isJoined || !db || isSending) return;
+    const text = D.mi.value.trim();
+    if (!text) return;
+
+    if (Date.now() - lastSendTime < 300) {
+      showToast("⚠️ 送信間隔が短すぎます。");
+      return;
+    }
+    lastSendTime = Date.now();
+    isSending = true;
+
+    try {
+      const encText = await E2EE.encrypt(text, activeKey);
+      const encName = await E2EE.encrypt(myName || "名無し", activeKey);
+      const encTrip = await E2EE.encrypt(myTrip, activeKey);
+
+      const keepOpen = D.kbKeepOpenChk && D.kbKeepOpenChk.checked;
+
+      D.mi.value = "";
+      updateClrMsgBtnVisibility();
+      if (D.mi.style) D.mi.style.height = "auto";
+
+      if (keepOpen) {
+        D.mi.focus();
+      } else {
+        D.mi.blur();
+      }
+
+      updateLastPostTime(getTrueTime());
+
+      await db.ref(`chat/${currentRoomId}`).push({
+        u: myUid,
+        n: encName,
+        p: encTrip,
+        c: curColor,
+        m: encText,
+        t: firebase.database.ServerValue.TIMESTAMP
+      });
+
+      if (myPresenceRef) {
+        myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
+      }
+    } catch (e) {
+      showToast("❌ メッセージの送信に失敗しました。");
+    } finally {
+      isSending = false;
+    }
+  }
+
   const initDirectDatabaseProcess = async () => {
-    initFirebase(); 
+    try {
+      const cachedUid = safeLS.get("nz_permanent_uid");
+      if (cachedUid) {
+        myUid = cachedUid;
+        await syncProfileValues();
+      }
 
-    if (typeof firebase !== 'undefined' && firebase.auth && db) {
-      try {
-        // すでにキャッシュにあるか、あるいは匿名認証を実行して確実にUIDを取得
-        let user = firebase.auth().currentUser;
-        if (!user) {
-          const cred = await firebase.auth().signInAnonymously();
-          user = cred.user;
-        }
+      let user = auth.currentUser;
+      if (!user) {
+        const cred = await auth.signInAnonymously();
+        user = cred.user;
+      }
 
-        if (user) {
-          myUid = user.uid;
-          safeLS.set("nz_permanent_uid", myUid);
-          await syncProfileValues();
+      if (user) {
+        myUid = user.uid;
+        safeLS.set("nz_permanent_uid", myUid);
+        await syncProfileValues();
 
-          const isGlobalAdmin = checkIsGlobalAdmin();
-          performPresenceCleanups(isGlobalAdmin);
+        const isGlobalAdmin = checkIsGlobalAdmin();
+        performPresenceCleanups(isGlobalAdmin);
 
-          const wasPending = (safeLS.get("nz_is_pending") === "true");
-          const pendingRoomId = safeLS.get("nz_pending_room_id");
-          const pendingRoomPass = safeLS.get("nz_pending_room_pass");
-          
-          if (wasPending && pendingRoomId && pendingRoomPass) {
-            try {
-              const reqSnap = await db.ref(`requests/${pendingRoomId}/${myUid}`).once("value");
-              if (!reqSnap.exists()) {
+        const wasPending = (safeLS.get("nz_is_pending") === "true");
+        const pendingRoomId = safeLS.get("nz_pending_room_id");
+        const pendingRoomPass = safeLS.get("nz_pending_room_pass");
+        
+        if (wasPending && pendingRoomId && pendingRoomPass) {
+          try {
+            const reqSnap = await db.ref(`requests/${pendingRoomId}/${myUid}`).once("value");
+            if (!reqSnap.exists()) {
+              safeLS.remove("nz_is_pending");
+              safeLS.remove("nz_pending_room_id");
+              safeLS.remove("nz_pending_room_pass");
+              switchScreen("lobby");
+            } else {
+              const reqData = reqSnap.val();
+              if (reqData.status === "approved") {
                 safeLS.remove("nz_is_pending");
-                safeLS.remove("nz_pending_room_id");
-                safeLS.remove("nz_pending_room_pass");
+                await joinRoom({ roomId: pendingRoomId, roomPass: pendingRoomPass, silent: true });
+              } else if (reqData.status === "rejected") {
+                safeLS.remove("nz_is_pending");
+                db.ref(`requests/${pendingRoomId}/${myUid}`).remove().catch(()=>{});
                 switchScreen("lobby");
               } else {
-                const reqData = reqSnap.val();
-                if (reqData.status === "approved") {
-                  safeLS.remove("nz_is_pending");
-                  await joinRoom({ roomId: pendingRoomId, roomPass: pendingRoomPass, silent: true });
-                } else if (reqData.status === "rejected") {
-                  safeLS.remove("nz_is_pending");
-                  db.ref(`requests/${pendingRoomId}/${myUid}`).remove().catch(()=>{});
-                  switchScreen("lobby");
-                } else {
-                  currentRoomId = pendingRoomId;
-                  currentRoomPass = pendingRoomPass;
-                  activeKey = await E2EE.deriveKey(pendingRoomPass);
-                  await switchToApprovalScreen(pendingRoomId);
-                }
+                currentRoomId = pendingRoomId;
+                currentRoomPass = pendingRoomPass;
+                activeKey = await E2EE.deriveKey(pendingRoomPass);
+                await switchToApprovalScreen(pendingRoomId);
               }
-            } catch (e) {
-              switchScreen("lobby");
             }
-          } else {
-            const wasJoined = (safeLS.get("nz_is_joined") === "true");
-            const lastRoomId = safeLS.get("nz_last_room_id");
-            const lastRoomPass = safeLS.get("nz_last_room_pass");
-            const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
-            const nowTrue = getTrueTime();
-
-            if (wasJoined && lastRoomId && lastRoomPass && (nowTrue - lastPost < 1800000)) {
-              await joinRoom({ roomId: lastRoomId, roomPass: lastRoomPass, silent: true });
-            } else {
-              switchScreen("lobby");
-              performSelfZombieCleanup(); 
-            }
+          } catch (e) {
+            switchScreen("lobby");
           }
+        } else {
+          const wasJoined = (safeLS.get("nz_is_joined") === "true");
+          const lastRoomId = safeLS.get("nz_last_room_id");
+          const lastRoomPass = safeLS.get("nz_last_room_pass");
+          const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
+          const nowTrue = getTrueTime();
 
-          validateLobbyInputs();
+          if (wasJoined && lastRoomId && lastRoomPass && (nowTrue - lastPost < 1800000)) {
+            await joinRoom({ roomId: lastRoomId, roomPass: lastRoomPass, silent: true });
+          } else {
+            switchScreen("lobby");
+            performSelfZombieCleanup(); 
+          }
         }
-      } catch (err) {
-        console.error("Auth process error:", err);
-        switchScreen("lobby");
+
+        validateLobbyInputs();
       }
-    } else {
-      validateLobbyInputs();
+    } catch (err) {
       switchScreen("lobby");
     }
 
@@ -2110,283 +2167,6 @@ function toggleAcc(id) {
     }
   };
 
-  function insertMessageInOrder(newEl) {
-    if (!D.tli || !newEl) return;
-    const newTs = parseInt(newEl.dataset.ts, 10);
-    const children = Array.from(D.tli.children);
-    
-    let inserted = false;
-    for (let i = children.length - 1; i >= 0; i--) {
-      const childTs = parseInt(children[i].dataset.ts, 10);
-      if (newTs >= childTs) {
-        children[i].after(newEl); inserted = true; break;
-      }
-    }
-    if (!inserted) D.tli.prepend(newEl);
-  }
-
-  function scBottom(force = false) {
-    if (!D.tl) return;
-    if (isAutoScroll || force) {
-      _scPending = true;
-      requestAnimationFrame(() => {
-        D.tl.scrollTop = D.tl.scrollHeight;
-        _scPending = false;
-      });
-    }
-  }
-
-  function scBottomOnImgLoad() {
-    if (isAutoScroll) scBottom(true);
-  }
-
-  function buildPicker(container, selectedColor, btnClass, onSelect) {
-    if (!container) return;
-    container.innerHTML = "";
-    COLORS.forEach(c => {
-      const btn = document.createElement("button");
-      btn.className = btnClass;
-      btn.style.backgroundColor = c.v;
-      btn.dataset.color = c.v;
-      btn.title = c.n;
-      if (c.v === selectedColor) btn.classList.add("sel");
-      btn.addEventListener("click", (e) => {
-        e.preventDefault(); onSelect(c.v);
-      });
-      container.appendChild(btn);
-    });
-  }
-
-  function parseTxtSplit(text) {
-    if (typeof text !== "string") return [];
-    const parts = text.split(UR);
-    const nodes = [];
-    parts.forEach((part) => {
-      if (part.match(UR)) {
-        const cleanUrl = part.split(/[?#]/)[0];
-        if (/\.(jpe?g|png|gif|webp|svg|bmp)$/i.test(cleanUrl)) return;
-        const a = document.createElement("a");
-        a.href = part; a.target = "_blank"; a.rel = "noopener noreferrer"; a.textContent = part;
-        a.style.color = "#38bdf8"; a.style.textDecoration = "underline";
-        nodes.push(a);
-      } else if (part) {
-        nodes.push(document.createTextNode(part));
-      }
-    });
-    return nodes;
-  }
-
-  function updateUnreadBadge() {
-    if (!D.unreadBadge) return;
-    const count = unreadMsgIds.size;
-    if (count > 0) {
-      D.unreadBadge.textContent = count > 99 ? "99+" : count;
-      D.unreadBadge.style.display = "inline-flex";
-    } else {
-      D.unreadBadge.style.display = "none";
-    }
-  }
-
-  async function sendMsg() {
-    if (!isJoined || !db || !D.mi || isSending) return;
-    const val = D.mi.value;
-    if (!val || !val.trim()) return;
-
-    const now = Date.now();
-    if (now - lastSendTime < 1000) {
-      showToast("送信が早すぎます。1秒以上あけてください。"); return;
-    }
-    lastSendTime = now;
-    isSending = true;
-    if (D.sdBtn) D.sdBtn.disabled = true;
-
-    const rawMsg = val;
-    D.mi.value = "";
-    D.mi.style.height = "auto";
-    D.mi.dispatchEvent(new Event("input"));
-    updateClrMsgBtnVisibility();
-
-    const timestampNow = getTrueTime();
-    updateLastPostTime(timestampNow);
-    startAutoExitChecker(); 
-
-    try {
-      db.ref(`presence/${currentRoomId}/${myUid}`).update({ t: getFirebaseTimestamp() }).catch(()=>{});
-    } catch(e) {}
-
-    const encMsg = await E2EE.encrypt(rawMsg, activeKey);
-    const encName = await E2EE.encrypt(myName || "名無し", activeKey);
-    const encTrip = await E2EE.encrypt(myTrip, activeKey);
-
-    const tempId = "pnd_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-    const tempObj = {
-      pnd: tempId, 
-      u: myUid, n: myName || "名無し", p: myTrip, c: curColor,
-      m: rawMsg, t: timestampNow
-    };
-
-    pendingMsgs.set(tempId, tempObj);
-    const tempEl = cMsg(tempObj, true);
-    insertMessageInOrder(tempEl);
-    scBottom(true);
-
-    db.ref(`chat/${currentRoomId}`).push({
-      pnd: tempId, 
-      u: myUid, n: encName, p: encTrip, c: curColor,
-      m: encMsg, t: getFirebaseTimestamp()
-    }).then(() => {
-      isSending = false;
-      if (D.sdBtn) D.sdBtn.disabled = false;
-    }).catch(err => {
-      isSending = false;
-      if (D.sdBtn) D.sdBtn.disabled = false;
-      pendingMsgs.delete(tempId);
-      const node = renderedMwNodes.get(tempId);
-      if (node) node.remove();
-      showToast("データベースへの送信が拒否されました。書き込み権限がありません。");
-    });
-
-    if (keepKbOpen) { D.mi.focus(); } else { D.mi.blur(); }
-    isAutoScroll = true;
-    scBottom(true);
-  }
-
-  function updateJumpBtns() {
-    if (!D.tl) return;
-    const scrollTop = D.tl.scrollTop;
-    const scrollHeight = D.tl.scrollHeight;
-    const clientHeight = D.tl.clientHeight;
-    if (D.jumpUpBtn) D.jumpUpBtn.disabled = (scrollTop <= 5);
-    if (D.jumpDownBtn) D.jumpDownBtn.disabled = (scrollTop + clientHeight >= scrollHeight - 10);
-  }
-
-  let banlistListener = null;
-
-  function updateAdminModalFields() {
-    $("admApprovalMode").checked = roomSettings.approvalMode;
-    $("admStopJoin").checked = roomSettings.newEntriesDisabled;
-    
-    const hasPasscode = !!roomSettings.passcode;
-    $("admPassToggle").checked = hasPasscode;
-    $("admPass").value = roomSettings.passcode;
-    $("admPassContainer").style.display = hasPasscode ? "flex" : "none";
-
-    const container = $("admTripList");
-    container.innerHTML = "";
-    const list = roomSettings.approvedTrips || {};
-    Object.entries(list).forEach(([key, val]) => {
-      const div = document.createElement("div");
-      div.style.display = "flex"; div.style.justifyContent = "space-between"; div.style.alignItems = "center";
-      div.style.padding = "2px 4px"; div.style.background = "rgba(255,255,255,0.03)"; div.style.borderRadius = "4px";
-      div.innerHTML = `<span>${escapeHtml(val)}</span><button class="bclrm show" style="position:static; width:18px; height:18px; font-size:11px;">×</button>`;
-      div.querySelector("button").onclick = () => {
-        customConfirm("承認IDの削除", `ID「${val}」を削除しますか？`, "削除", "キャンセル").then(ok => {
-          if (ok) db.ref(`settings/${currentRoomId}/approvedTrips/${key}`).remove().catch(()=>{});
-        });
-      };
-      container.appendChild(div);
-    });
-
-    if (!banlistListener) {
-      banlistListener = db.ref(`banlist/${currentRoomId}`).on("value", snap => {
-        const banContainer = $("admBanList");
-        if (!banContainer) return;
-        banContainer.innerHTML = "";
-        const val = snap.val() || {};
-        Object.entries(val).forEach(([uid, info]) => {
-          const name = info?.n || "不明";
-          const trip = info?.p || "";
-          const displayStr = trip ? `${name} ${trip}` : name;
-          const div = document.createElement("div");
-          div.style.display = "flex"; div.style.justifyContent = "space-between"; div.style.alignItems = "center";
-          div.style.padding = "4px 6px"; div.style.background = "rgba(244,63,94,0.06)"; div.style.borderRadius = "4px";
-          div.innerHTML = `
-            <span style="color:#fda4af; font-weight:bold; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px; font-size:11px;">${escapeHtml(displayStr)}</span>
-            <button class="btn" style="background:#ef4444; color:#fff; font-size:9px; padding:2px 8px; border-radius:4px; height:22px; width:auto; font-weight:bold;">解除</button>
-          `;
-          div.querySelector("button").onclick = () => {
-            customConfirm("BAN解除", `ユーザー「${displayStr}」のBANを解除しますか？`, "解除", "キャンセル").then(ok => {
-              if (ok) {
-                db.ref(`banlist/${currentRoomId}/${uid}`).remove().then(() => { showToast("BANを解除しました。"); }).catch(()=>{});
-              }
-            });
-          };
-          banContainer.appendChild(div);
-        });
-      });
-    }
-
-    if (requestListenerRef) requestListenerRef.off();
-    requestListenerRef = db.ref(`requests/${currentRoomId}`);
-    requestListenerRef.on("value", snap => {
-      const listEl = $("admRequestList");
-      const containerEl = $("admRequestListContainer");
-      if (!listEl || !containerEl) return;
-      listEl.innerHTML = "";
-      
-      const requests = snap.val() || {};
-      const now = getTrueTime();
-      let pendingCount = 0;
-
-      Object.entries(requests).forEach(async ([uid, req]) => {
-        if (!req || req.status !== "pending") return;
-
-        const lastActive = req.last_active || 0;
-        if (now - lastActive > 180000) {
-          db.ref(`requests/${currentRoomId}/${uid}`).remove().catch(()=>{});
-          return;
-        }
-
-        pendingCount++;
-        const decName = await E2EE.decrypt(req.n, activeKey);
-        const userTrip = req.p || "";
-
-        const item = document.createElement("div");
-        item.style.display = "flex"; item.style.justifyContent = "space-between"; item.style.alignItems = "center";
-        item.style.padding = "4px 6px"; item.style.background = "rgba(255,255,255,0.03)"; item.style.borderRadius = "4px";
-        item.innerHTML = `
-          <div style="display:flex; flex-direction:column; gap:2px; min-width:0; flex:1;">
-            <span style="font-weight:bold; color:var(--tx); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px;">${escapeHtml(decName)}</span>
-            <span style="font-size:9px; color:var(--usr-color); font-family:monospace;">${escapeHtml(userTrip)}</span>
-          </div>
-          <div style="display:flex; gap:4px; flex-shrink:0;">
-            <button class="btn btn-approve" style="background:var(--em); color:#fff; font-size:9px; height:22px; padding:0 6px; border-radius:4px; font-weight:bold; width:auto;">許可</button>
-            <button class="btn btn-reject" style="background:var(--ro); color:#fff; font-size:9px; height:22px; padding:0 6px; border-radius:4px; font-weight:bold; width:auto;">却下</button>
-          </div>
-        `;
-
-        item.querySelector(".btn-approve").onclick = () => {
-          db.ref(`requests/${currentRoomId}/${uid}/status`).set("approved").then(() => {
-            db.ref(`settings/${currentRoomId}/approvedTrips`).push(userTrip);
-            showToast(`${decName} の入室を承認しました。`);
-          }).catch(()=>{});
-        };
-
-        item.querySelector(".btn-reject").onclick = () => {
-          db.ref(`requests/${currentRoomId}/${uid}/status`).set("rejected").catch(()=>{});
-        };
-
-        listEl.appendChild(item);
-      });
-
-      containerEl.style.display = (pendingCount > 0) ? "flex" : "none";
-    });
-  }
-
-  function closeAdminModal() {
-    $("adminMod").style.display = "none";
-    $("admMembersDrawer").style.display = "none";
-    $("admMembersToggleBtn").textContent = "👥 メンバー管理";
-    if (banlistListener && db) {
-      db.ref(`banlist/${currentRoomId}`).off("value", banlistListener);
-      banlistListener = null;
-    }
-    if (requestListenerRef) {
-      requestListenerRef.off();
-      requestListenerRef = null;
-    }
-  }
-
   function initApp() {
     D = {
       joinBtn: $("btnJoin"), sdBtn: $("sdBtn"), ib: $("ib"), exBtn: $("exBtn"),
@@ -2396,7 +2176,8 @@ function toggleAcc(id) {
       clrmod: $("clrmod"), imgViewMod: $("imgViewMod"), imgViewSrc: $("imgViewSrc"),
       imgViewCloseBtn: $("imgViewCloseBtn"), clrCancel: $("clrCancel"), clrOk: $("clrOk"),
       clrPick2: $("clrPick2"), clrPrev: $("clrPrev"), pcnt: $("pcnt"), pl: $("pl"),
-      mi: $("mi"), kbKeepOpenChk: $("kbKeepOpenChk"), clrDot: $("clrDot")
+      mi: $("mi"), kbKeepOpenChk: $("kbKeepOpenChk"), clrDot: $("clrDot"),
+      adminModal: $("adminModal"), admBtn: $("admBtn"), adminModCloseBtn: $("adminModCloseBtn")
     };
 
     const wasJoined = (safeLS.get("nz_is_joined") === "true");
@@ -2408,9 +2189,6 @@ function toggleAcc(id) {
 
     if (wasJoined && lastRoomId && (nowLocal - lastPost < 1800000)) {
       switchScreen("chat", lastRoomId);
-      if (D.tli) {
-        D.tli.innerHTML = `<div id="loadingPlaceholder" style="text-align:center; padding:40px; color:var(--mu); font-size:14px; font-weight:bold;">⏳ メッセージを読込中...</div>`;
-      }
     } else if (wasPending && pendingRoomId) {
       switchScreen("approval", pendingRoomId);
     } else {
@@ -2422,7 +2200,247 @@ function toggleAcc(id) {
       $("lobbyColorGrid").querySelectorAll("button").forEach(b => b.classList.toggle("sel", b.dataset.color === v));
       syncProfileValues();
     });
-    
+
+    buildPicker(D.clrPick2, tmpColor, "clrc2", (v) => {
+      tmpColor = v;
+      D.clrPick2.querySelectorAll("button").forEach(b => b.classList.toggle("sel", b.dataset.color === v));
+      updateModalColorPreview(v);
+    });
+
+    if (D.clrBtn) {
+      D.clrBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        tmpColor = curColor;
+        buildPicker(D.clrPick2, tmpColor, "clrc2", (v) => {
+          tmpColor = v;
+          D.clrPick2.querySelectorAll("button").forEach(b => b.classList.toggle("sel", b.dataset.color === v));
+          updateModalColorPreview(v);
+        });
+        updateModalColorPreview(tmpColor);
+        D.clrmod.classList.add("show");
+      });
+    }
+
+    if (D.clrCancel) {
+      D.clrCancel.addEventListener("click", (e) => {
+        e.preventDefault();
+        D.clrmod.classList.remove("show");
+      });
+    }
+
+    if (D.clrOk) {
+      D.clrOk.addEventListener("click", (e) => {
+        e.preventDefault();
+        curColor = tmpColor;
+        setGlobalColor(curColor);
+        safeLS.set("nz_color", curColor);
+        if (D.clrDot) D.clrDot.style.background = curColor;
+        D.clrmod.classList.remove("show");
+
+        if (isJoined && db && myUid && currentRoomId) {
+          db.ref(`presence/${currentRoomId}/${myUid}/c`).set(curColor).catch(()=>{});
+        }
+      });
+    }
+
+    if (D.exBtn) {
+      D.exBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        customConfirm("退室確認", "本当にこの部屋から退室しますか？", "退室する", "キャンセル", true).then(ok => {
+          if (ok) doExit(false);
+        });
+      });
+    }
+
+    if (D.sdBtn) {
+      D.sdBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        sendMessage();
+      });
+    }
+
+    if (D.mi) {
+      D.mi.addEventListener("input", () => {
+        updateClrMsgBtnVisibility();
+        D.mi.style.height = "auto";
+        D.mi.style.height = Math.min(D.mi.scrollHeight, 120) + "px";
+      });
+      
+      D.mi.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+          
+          if (isMobile) {
+            if (!e.shiftKey) {
+              e.preventDefault();
+              sendMessage();
+            }
+          } else {
+            if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+              e.preventDefault();
+              sendMessage();
+            }
+          }
+        }
+      });
+    }
+
+    if (D.clrMsgBtn && D.mi) {
+      D.clrMsgBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        D.mi.value = "";
+        updateClrMsgBtnVisibility();
+        D.mi.style.height = "auto";
+        D.mi.focus();
+      });
+    }
+
+    if (D.playerCloseBtn) {
+      D.playerCloseBtn.addEventListener("click", (e) => { e.preventDefault(); closePlayer(); });
+    }
+
+    if (D.tl) {
+      D.tl.addEventListener("scroll", () => {
+        const { scrollTop, scrollHeight, clientHeight } = D.tl;
+        const isBottom = scrollHeight - (scrollTop + clientHeight) <= 40;
+        isAutoScroll = isBottom;
+        if (isBottom) {
+          unreadMsgIds.clear();
+          updateUnreadBadge();
+        }
+        updateJumpBtns();
+      });
+    }
+
+    if (D.jumpUpBtn) {
+      D.jumpUpBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (D.tl) D.tl.scrollTo({ top: 0, behavior: "smooth" });
+      });
+    }
+
+    if (D.jumpDownBtn) {
+      D.jumpDownBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (D.tl) D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" });
+        isAutoScroll = true;
+        unreadMsgIds.clear();
+        updateUnreadBadge();
+      });
+    }
+
+    if (D.imgViewCloseBtn && D.imgViewMod) {
+      D.imgViewCloseBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        D.imgViewMod.classList.remove("show");
+      });
+    }
+
+    if (D.admBtn && D.adminModal) {
+      D.admBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        updateAdminModalFields();
+        D.adminModal.classList.add("show");
+      });
+    }
+    if (D.adminModCloseBtn && D.adminModal) {
+      D.adminModCloseBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        D.adminModal.classList.remove("show");
+      });
+    }
+
+    const admApprovalMode = $("admApprovalMode");
+    if (admApprovalMode) {
+      admApprovalMode.addEventListener("change", () => {
+        if (!db || !currentRoomId) return;
+        db.ref(`settings/${currentRoomId}/approvalMode`).set(admApprovalMode.checked);
+      });
+    }
+
+    const admStopJoin = $("admStopJoin");
+    if (admStopJoin) {
+      admStopJoin.addEventListener("change", () => {
+        if (!db || !currentRoomId) return;
+        db.ref(`settings/${currentRoomId}/newEntriesDisabled`).set(admStopJoin.checked);
+      });
+    }
+
+    const admPassToggle = $("admPassToggle");
+    const admPassContainer = $("admPassContainer");
+    if (admPassToggle && admPassContainer) {
+      admPassToggle.addEventListener("change", () => {
+        admPassContainer.style.display = admPassToggle.checked ? "flex" : "none";
+        if (!admPassToggle.checked) {
+          if (db && currentRoomId) db.ref(`settings/${currentRoomId}/passcode`).set("");
+        }
+      });
+    }
+
+    const admPassSaveBtn = $("admPassSaveBtn");
+    if (admPassSaveBtn) {
+      admPassSaveBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const passVal = $("admPass").value.trim();
+        if (!db || !currentRoomId) return;
+        db.ref(`settings/${currentRoomId}/passcode`).set(passVal).then(() => {
+          showToast("🔑 合言葉を更新しました。");
+        });
+      });
+    }
+
+    const admClearBtn = $("admClearBtn");
+    if (admClearBtn) {
+      admClearBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        customConfirm("ログの初期化", "この部屋のすべてのチャットログを消去しますか？", "消去する", "キャンセル", true).then(async ok => {
+          if (!ok || !db || !currentRoomId) return;
+          
+          if (D.adminModal) D.adminModal.classList.remove("show");
+
+          const nowTs = firebase.database.ServerValue.TIMESTAMP;
+          await db.ref(`chat/${currentRoomId}`).remove();
+          await db.ref(`settings/${currentRoomId}/last_cleared_at`).set(nowTs);
+          
+          const clearLogText = "[SYS]::🚨 [お知らせ] 管理者によってログが初期化されました";
+          await db.ref(`chat/${currentRoomId}`).push({
+            u: "system",
+            n: "システム",
+            p: "",
+            c: "#f43f5e",
+            m: clearLogText,
+            t: firebase.database.ServerValue.TIMESTAMP
+          });
+
+          showToast("🚨 チャットログを初期化しました。");
+        });
+      });
+    }
+
+    const admMembersToggleBtn = $("admMembersToggleBtn");
+    const admMembersDrawer = $("admMembersDrawer");
+    if (admMembersToggleBtn && admMembersDrawer) {
+      admMembersToggleBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const isShow = admMembersDrawer.style.display === "flex";
+        admMembersDrawer.style.display = isShow ? "none" : "flex";
+      });
+    }
+
+    const admTripAddBtn = $("admTripAddBtn");
+    if (admTripAddBtn) {
+      admTripAddBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const tripVal = $("admTripInput").value.trim();
+        if (!tripVal || !db || !currentRoomId) return;
+        const newKey = db.ref(`settings/${currentRoomId}/approvedTrips`).push().key;
+        db.ref(`settings/${currentRoomId}/approvedTrips/${newKey}`).set(tripVal).then(() => {
+          $("admTripInput").value = "";
+          showToast("事前承認トリップを追加しました。");
+        });
+      });
+    }
+
     $("btnCopyTrip").addEventListener("click", async (e) => {
       e.preventDefault();
       if (!myTrip) {
@@ -2449,7 +2467,7 @@ function toggleAcc(id) {
 
     $("btnCancelApproval").addEventListener("click", (e) => {
       e.preventDefault();
-      customConfirm("申請の取り消し", "入室申請を取り消してロビーに戻りますか？", "取り消す", "キャンセル").then(ok => {
+      customConfirm("申請の取り消し", "入室申請を取り消してロビーに戻りますか？", "取り消す", "キャンセル", true).then(ok => {
         if (ok) {
           stopApprovalSystem();
           if (db && currentRoomId) {
@@ -2467,7 +2485,6 @@ function toggleAcc(id) {
     $("btnGen").addEventListener("click", (e) => {
       e.preventDefault();
       const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-      
       let randId = "rm-";
       if (typeof window !== 'undefined' && window.crypto) {
         const randVals = new Uint8Array(8);
@@ -2492,7 +2509,6 @@ function toggleAcc(id) {
       }
       $("lobbyRoomPass").value = randPass;
       showToast("🎲 新しい英数字の部屋IDとパスワードを生成しました。");
-      
       validateLobbyInputs();
     });
 
@@ -2525,312 +2541,13 @@ function toggleAcc(id) {
     $("lobbyRoomId").addEventListener("input", validateLobbyInputs);
     $("lobbyRoomPass").addEventListener("input", validateLobbyInputs);
 
-    $("tl-inner").addEventListener("click", (e) => {
-      const target = e.target;
-      if (target && target.classList.contains("msg-del-btn")) {
-        e.preventDefault(); e.stopPropagation();
-        const mwNode = target.closest(".mw");
-        if (mwNode) {
-          const currentId = mwNode.getAttribute("data-mid"); 
-          customConfirm("メッセージの削除", "このメッセージを削除しますか？", "削除する", "キャンセル").then(ok => {
-            if (ok) deleteMessage(currentId);
-          });
-        }
-      }
-    });
-
-    if (D.playerCloseBtn) {
-      D.playerCloseBtn.addEventListener("click", (e) => { e.preventDefault(); closePlayer(); });
+    if ($("lobbyName")) {
+      $("lobbyName").value = safeLS.get("nz_ni") || "";
     }
+    syncProfileValues();
 
-    if (D.exBtn) {
-      D.exBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        if (isJoined) {
-          customConfirm("退室確認", "退室してロビーに戻りますか？", "退室する", "キャンセル").then(ok => {
-            if (ok) doExit();
-          });
-        }
-      });
-    }
-
-    if (D.sdBtn) {
-      D.sdBtn.addEventListener("click", (e) => { e.preventDefault(); sendMsg(); });
-    }
-
-    if (D.clrBtn) {
-      D.clrBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        tmpColor = curColor; updateModalColorPreview(tmpColor);
-        buildPicker(D.clrPick2, tmpColor, "clrc2", (v) => {
-          tmpColor = v; updateModalColorPreview(v);
-          if (D.clrPick2) D.clrPick2.querySelectorAll("button").forEach(b => b.classList.toggle("sel", b.dataset.color === v));
-        });
-        if (D.clrmod) D.clrmod.classList.add("show");
-      });
-    }
-
-    if (D.clrCancel) {
-      D.clrCancel.addEventListener("click", (e) => { e.preventDefault(); if (D.clrmod) D.clrmod.classList.remove("show"); });
-    }
-
-    if (D.clrOk) {
-      D.clrOk.addEventListener("click", async (e) => {
-        e.preventDefault();
-        curColor = tmpColor; setGlobalColor(curColor); safeLS.set("nz_color", curColor);
-        if (D.clrmod) D.clrmod.classList.remove("show"); 
-        await syncProfileValues();
-        if (isJoined && db) {
-          db.ref(`presence/${currentRoomId}/${myUid}`).update({ c: curColor }).catch(()=>{});
-        }
-      });
-    }
-
-    if (D.clrMsgBtn) {
-      D.clrMsgBtn.addEventListener("click", (e) => {
-        e.preventDefault(); 
-        if (D.mi) { D.mi.value = ""; D.mi.style.height = "auto"; D.mi.dispatchEvent(new Event("input")); updateClrMsgBtnVisibility(); }
-      });
-    }
-
-    if (D.jumpUpBtn) {
-      D.jumpUpBtn.addEventListener("click", (e) => { e.preventDefault(); if (D.tl) D.tl.scrollTo({ top: 0, behavior: "smooth" }); });
-    }
-    if (D.jumpDownBtn) {
-      D.jumpDownBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); if (D.tl) D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" });
-      });
-    }
-
-    if (D.tl) {
-      D.tl.addEventListener("scroll", () => {
-        if (_scPending) return;
-
-        const scrollTop = D.tl.scrollTop;
-        const scrollHeight = D.tl.scrollHeight;
-        const clientHeight = D.tl.clientHeight;
-
-        isAutoScroll = (scrollTop + clientHeight >= scrollHeight - 30);
-
-        if (isAutoScroll) {
-          unreadMsgIds.clear();
-          updateUnreadBadge();
-        }
-        updateJumpBtns();
-      }, { passive: true });
-    }
-
-    let isComposing = false;
-    if (D.mi) {
-      D.mi.addEventListener("compositionstart", () => { isComposing = true; });
-      D.mi.addEventListener("compositionend", () => { isComposing = false; });
-      
-      const forceScrollBottom = () => {
-        if (!D.tl) return; D.tl.scrollTop = D.tl.scrollHeight; isAutoScroll = true;
-      };
-
-      D.mi.addEventListener("focus", () => { 
-        isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); 
-        forceScrollBottom(); setTimeout(forceScrollBottom, 50); setTimeout(forceScrollBottom, 150);
-      });
-      D.mi.addEventListener("input", () => {
-        D.mi.style.height = "auto";
-        D.mi.style.height = Math.min(120, D.mi.scrollHeight) + "px";
-        scBottom(true);
-        updateClrMsgBtnVisibility(); 
-      });
-      D.mi.addEventListener("keydown", e => {
-        if (e.key === "Enter" && !e.shiftKey) {
-          if (isComposing) return; e.preventDefault(); sendMsg();
-        }
-      });
-    }
-
-    if (D.imgViewCloseBtn) {
-      D.imgViewCloseBtn.addEventListener("click", (e) => { e.preventDefault(); if (D.imgViewMod) D.imgViewMod.classList.remove("show"); });
-    }
-
-    if (D.kbKeepOpenChk) {
-      D.kbKeepOpenChk.checked = keepKbOpen;
-      D.kbKeepOpenChk.addEventListener("change", () => {
-        keepKbOpen = D.kbKeepOpenChk.checked;
-        safeLS.set("nz_keep_kb_open", keepKbOpen ? "true" : "false");
-      });
-    }
-
-    $("admApprovalMode").addEventListener("change", () => {
-      if (!db || !currentRoomId) return;
-      db.ref(`settings/${currentRoomId}`).update({
-        approvalMode: $("admApprovalMode").checked
-      }).then(() => { showToast("入室承認モードを更新しました。"); }).catch(()=>{});
-    });
-
-    $("admStopJoin").addEventListener("change", () => {
-      if (!db || !currentRoomId) return;
-      db.ref(`settings/${currentRoomId}`).update({
-        newEntriesDisabled: $("admStopJoin").checked
-      }).then(() => { showToast("新規入室制限を更新しました。"); }).catch(()=>{});
-    });
-
-    $("admPassToggle").addEventListener("change", () => {
-      if (!db || !currentRoomId) return;
-      const isChecked = $("admPassToggle").checked;
-      
-      if (isChecked) {
-        $("admPassContainer").style.display = "flex";
-        $("admPass").focus();
-      } else {
-        $("admPassContainer").style.display = "none";
-        $("admPass").value = "";
-        db.ref(`settings/${currentRoomId}`).update({
-          passcode: ""
-        }).then(() => { showToast("入室合言葉を「なし」に設定しました。"); }).catch(()=>{});
-      }
-    });
-
-    $("admPassSaveBtn").addEventListener("click", (e) => {
-      e.preventDefault();
-      const passVal = $("admPass").value.trim();
-      if (!db || !currentRoomId) return;
-      db.ref(`settings/${currentRoomId}`).update({
-        passcode: passVal
-      }).then(() => { 
-        if (passVal) {
-          showToast(`入室合言葉を「${passVal}」に設定しました。`); 
-        } else {
-          showToast("入室合言葉を「なし」に設定しました。"); 
-        }
-      }).catch(()=>{});
-    });
-
-    $("admMembersToggleBtn").addEventListener("click", (e) => {
-      e.preventDefault();
-      const drawer = $("admMembersDrawer");
-      if (!drawer) return;
-      const isHidden = (drawer.style.display === "none");
-      drawer.style.display = isHidden ? "flex" : "none";
-      $("admMembersToggleBtn").textContent = isHidden ? "👥 閉じる" : "👥 メンバー管理";
-    });
-
-    const adminBtn = $("admBtn");
-    const adminMod = $("adminMod");
-    if (adminBtn && adminMod) {
-      adminBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const isShown = (adminMod.style.display === "flex");
-        if (isShown) {
-          closeAdminModal();
-        } else {
-          updateAdminModalFields();
-          adminMod.style.display = "flex";
-        }
-      });
-      $("admCancel").addEventListener("click", (e) => { e.preventDefault(); closeAdminModal(); });
-      
-      $("admTripAddBtn").addEventListener("click", (e) => {
-        e.preventDefault();
-        const inp = $("admTripInput"); const val = inp.value.trim();
-        if (!val || !val.startsWith("◆")) { alert("「◆」から始まる正しいユーザーIDを入力してください。"); return; }
-        db.ref(`settings/${currentRoomId}/approvedTrips`).push(val).then(() => { inp.value = ""; showToast("事前承認ユーザーIDを追加しました。"); }).catch(()=>{});
-      });
-
-      $("admClearBtn").addEventListener("click", (e) => {
-        e.preventDefault();
-        customConfirm("🚨 チャットログの全初期化", "警告：この部屋の全ログを完全消去します。\n実行しますか？", "初期化", "キャンセル").then(ok => {
-          if (ok) {
-            db.ref(`chat/${currentRoomId}`).remove().then(() => {
-              db.ref(`settings/${currentRoomId}`).update({
-                last_cleared_at: getFirebaseTimestamp()
-              }).then(() => {
-                db.ref(`chat/${currentRoomId}`).push({
-                  u: "system", n: "システム", p: "", c: "#f43f5e",
-                  m: "[SYS]::📢 [お知らせ] ホストによってチャットログが初期化されました",
-                  t: getFirebaseTimestamp()
-                }).catch(()=>{});
-                showToast("ログを消去しました。");
-              }).catch(()=>{});
-            }).catch(()=>{});
-          }
-        });
-      });
-    }
-
-    const overlay = $("zoomViewport");
-    let isMouseDown = false, startX, startY;
-
-    if (overlay) {
-      overlay.addEventListener('touchstart', (e) => {
-        if (e.target === D.imgViewCloseBtn) return;
-        if (e.touches.length === 2) { isPanning = false; initialDistance = getDistance(e.touches[0], e.touches[1]); }
-        else if (e.touches.length === 1 && scale > 1) { isPanning = true; lastPanX = e.touches[0].clientX; lastPanY = e.touches[0].clientY; }
-      }, { passive: true });
-
-      overlay.addEventListener('touchmove', (e) => {
-        if (e.target === D.imgViewCloseBtn) return;
-        if (e.touches.length === 2) {
-          const dist = getDistance(e.touches[0], e.touches[1]); 
-          scale = Math.max(1, Math.min(5, scale * (dist / initialDistance)));
-          initialDistance = dist; clampPan(); updateTransform();
-        } else if (e.touches.length === 1 && isPanning) {
-          panX += e.touches[0].clientX - lastPanX; 
-          panY += e.touches[0].clientY - lastPanY;
-          lastPanX = e.touches[0].clientX; lastPanY = e.touches[0].clientY; 
-          clampPan(); updateTransform();
-        }
-      }, { passive: true });
-
-      overlay.addEventListener('mousedown', (e) => {
-        if (e.target === D.imgViewCloseBtn || scale <= 1) return;
-        isMouseDown = true; startX = e.clientX - panX; startY = e.clientY - panY;
-      });
-
-      window.addEventListener('mousemove', (e) => {
-        if (!isMouseDown) return;
-        panX = e.clientX - startX; panY = e.clientY - startY;
-        clampPan(); updateTransform();
-      });
-
-      window.addEventListener('mouseup', () => { isMouseDown = false; });
-      overlay.addEventListener('wheel', (e) => {
-        e.preventDefault(); scale = Math.max(1, Math.min(5, scale * (e.deltaY > 0 ? 0.9 : 1.1))); clampPan(); updateTransform();
-      }, { passive: false });
-
-      overlay.addEventListener("click", (e) => { 
-        if (e.target === overlay && D.imgViewMod) { D.imgViewMod.classList.remove("show"); }
-      });
-      overlay.addEventListener("dblclick", () => { resetZoom(); });
-    }
-
-    function handleVisibilityChange() {
-      if (document.visibilityState === "visible") {
-        if (db) db.goOnline(); 
-        if (isJoined) setupFirebaseListeners();
-      }
-    }
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    if (window.visualViewport) {
-      const resizeViewport = () => {
-        const vv = window.visualViewport;
-        const appContainer = $("app");
-        if (appContainer) {
-          appContainer.style.height = `${vv.height}px`;
-          appContainer.style.transform = `translateY(${vv.offsetTop}px)`;
-        }
-        scBottom(true);
-      };
-      window.visualViewport.addEventListener('resize', resizeViewport);
-      window.visualViewport.addEventListener('scroll', resizeViewport);
-    }
-
-    window.addEventListener("keydown", (e) => { if (e.key === "Escape") closePlayer(); });
-    
-    // 💡 起動時に認証を非同期バックグラウンドでシームレスに実行
     initDirectDatabaseProcess();
   }
-
-  function getDistance(t1, t2) { return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY); }
 
   initApp();
 })();
