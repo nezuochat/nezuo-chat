@@ -7,7 +7,6 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#090d16">
 <title>NEZUO CHAT</title>
-<!-- 爆速化1: FirebaseデータベースおよびGoogle認証のエンドポイントと事前に接続を確立する -->
 <link rel="preconnect" href="https://nezuochat-default-rtdb.asia-southeast1.firebasedatabase.app" crossorigin>
 <link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin>
@@ -56,7 +55,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .bclr{border-color:var(--usr-color)!important}
 .bclr-dot{width:11px;height:10px;border-radius:50%;background:var(--usr-color)!important}
 
-/* ヘッダーの部屋ID表示を見切れ防止のために美しく改行（2行）表示 */
 .logo {
   font-weight: 900; 
   font-size: 15px; 
@@ -73,7 +71,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 }
 
 #lobbyScreen {
-  display: none;flex: 1;overflow-y: auto;padding: 10px 12px;background: #0d1117;flex-direction: column;gap: 10px;
+  display: flex; flex: 1; overflow-y: auto; padding: 10px 12px; background: #0d1117; flex-direction: column; gap: 10px;
 }
 .lobby-sec {
   background: var(--sf);border: 1px solid var(--bd);border-radius: 10px;padding: 10px 12px;display: flex;flex-direction: column;gap: 8px;
@@ -90,7 +88,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 #chatScreen {display: none; flex-direction: column;flex: 1;min-height: 0;overflow: hidden;}
 
-/* 💡 改善: 接続人数の枠（pl）は、データ取得前は枠線や背景も含めて完全に非表示（display: none）に設定 */
 #pl{display:none;gap:6px;padding:6px 12px;background:var(--s2);border-bottom:1px solid rgba(255,255,255,.02);overflow-x:auto;white-space:nowrap;min-height:40px;max-height:40px}
 .chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--bg);border:1px solid rgba(255,255,255,.06);display:inline-flex;align-items:center;color:var(--tx);height:28px}
 #fixedPlayer{display:none;flex-direction:column;background:var(--s2);border-bottom:1px solid var(--bd);width:100%}
@@ -185,7 +182,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 }
 #toastContainer.show {opacity: 1;transform: translateX(-50%) translateY(0);}
 
-/* モーダル・ダイアログ用のオーバーレイスタイル */
 .mod-overlay {
   display: none;
   position: fixed;
@@ -259,13 +255,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   justify-content: center;
 }
 
-/* ホスト設定カード用特別スタイル: 開いても背後のログやチャットが透過してクリアに見えるように調整（ぼかしなし） */
 #adminMod {
   background: rgba(5, 7, 10, 0.35) !important;
   backdrop-filter: none !important;
 }
 
-/* 汎用ダイアログ (z-indexを300000に設定してホスト設定の上に完全に重ねる) */
 #confirmMod {
   z-index: 300000 !important;
 }
@@ -274,22 +268,58 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   display: none; flex: 1; flex-direction: column; justify-content: center; align-items: center; padding: 20px; background: #0d1117;
 }
 
-/* グローバル接続ローディング (FOUC・状態判定中のチラつきを完全にシャットアウト) */
-#appSpinner {
-  position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: #0d1117; z-index: 999999; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; transition: opacity 0.2s ease, visibility 0.2s ease;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 @media (max-width:580px){#hdr{padding-right:0!important}#ib{padding-right:0!important}}
 </style>
 </head>
 <body>
+<div id="toastContainer"></div>
+
+<div id="clrmod" class="mod-overlay">
+  <div class="gc" style="max-width: 320px;">
+    <div class="clrmc">
+      <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">🎨 表示カラー設定</div>
+      <div class="clr-prev" id="clrPrev">プレビュー</div>
+      <div class="clrpick-grid" id="clrPick2" style="margin: 12px 0;"></div>
+      <div class="clr-btns">
+        <button class="clr-cancel" id="clrCancel">キャンセル</button>
+        <button class="clr-ok" id="clrOk">適用</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="confirmMod" class="mod-overlay">
+  <div class="gc" style="max-width: 320px;">
+    <div id="confirmTitle" style="font-size: 14px; font-weight: bold; margin-bottom: 8px;">確認</div>
+    <div id="confirmMessage" style="font-size: 12.5px; color: var(--mu); margin-bottom: 16px; line-height: 1.5;"></div>
+    <div class="clr-btns">
+      <button class="clr-cancel" id="confirmCancelBtn">キャンセル</button>
+      <button class="clr-ok" id="confirmOkBtn">OK</button>
+    </div>
+  </div>
+</div>
+
+<div id="imgViewMod" class="mod-overlay">
+  <button class="modal-top-close" id="imgViewCloseBtn">✕</button>
+  <div id="zoomViewport">
+    <img id="imgViewSrc" src="" alt="拡大画像">
+  </div>
+</div>
+
+<div id="approvalScreen">
+  <div class="gc" style="max-width: 380px; text-align: center; gap: 12px;">
+    <div style="font-size: 16px; font-weight: bold; color: var(--tx);">🔒 入室審査待ち</div>
+    <div style="font-size: 12.5px; color: var(--mu); line-height: 1.6;">この部屋は現在「承認制」です。<br>ホストがあなたの入室を許可するまでお待ちください。</div>
+    <div id="approvalMyInfo" style="font-size: 12px; font-weight: bold; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; color: var(--usr-color);"></div>
+    <div style="display: flex; gap: 8px; margin-top: 4px;">
+      <button class="btn" id="btnCopyTripInApproval" style="background: #0ea5e9; color: #fff; flex: 1; font-size: 11px;">📋 トリップコピー</button>
+      <button class="btn" id="btnCancelApproval" style="background: var(--ro); color: #fff; flex: 1; font-size: 11px;">申請を取り消す</button>
+    </div>
+  </div>
+</div>
+
 <div id="app">
   <div id="cp">
-    <!-- ヘッダー -->
     <div id="hdr">
       <div class="hr">
         <div style="display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1;">
@@ -312,11 +342,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- 2. チャット画面エリア -->
     <div id="chatScreen">
-      <!-- ⚙️ ホスト設定カード (インライン・極薄フラット設計) -->
       <div id="adminMod" style="display: none; background: var(--sf); border-bottom: 1px solid var(--bd); padding: 12px 14px; flex-shrink: 0; flex-direction: column; gap: 8px;">
-        <!-- Row 1: スイッチトグル群の横並び -->
         <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 11px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.03); padding-bottom: 6px;">
           <div style="display: flex; align-items: center; gap: 4px;">
             <input type="checkbox" id="admApprovalMode" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
@@ -332,25 +359,21 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           </div>
         </div>
 
-        <!-- Row 2: 合言葉設定 (トグルON時のみスッと出現) -->
         <div id="admPassContainer" style="display: none; align-items: center; gap: 6px; width: 100%;">
           <input type="text" id="admPass" class="inp" placeholder="合言葉を入力..." autocomplete="off" style="height:32px; font-size:12px; flex: 1; padding: 4px 8px;">
           <button class="btn" id="admPassSaveBtn" style="background: var(--in); color: #fff; font-size: 11px; height: 32px; width: 56px; font-weight: bold; border-radius: 4px;">適用</button>
         </div>
 
-        <!-- Row 2.5: 承認申請通知リスト (申請がある時のみ動的に自動出現。普段は高さ0pxの完全非表示) -->
         <div id="admRequestListContainer" style="display: none; flex-direction: column; gap: 4px; background: var(--s2); border: 1px solid var(--bd); border-radius: 6px; padding: 6px; width: 100%;">
           <label style="font-size:10px; font-weight:bold; color: var(--ro);">📋 入室申請（審査待ち）</label>
           <div id="admRequestList" style="display: flex; flex-direction: column; gap: 4px; max-height: 80px; overflow-y: auto;"></div>
         </div>
 
-        <!-- Row 3: コマンドボタンとメンバー管理引き出しトリガー -->
         <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
           <button class="btn" id="admClearBtn" style="background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.25); color: #fda4af; font-size: 11px; height: 32px; flex: 1; font-weight: bold; border-radius: 4px;">🚨 ログ初期化</button>
           <button class="btn" id="admMembersToggleBtn" style="background: var(--s2); border: 1px solid var(--bd); color: var(--tx); font-size: 11px; height: 32px; flex: 1; font-weight: bold; border-radius: 4px;">👥 メンバー管理</button>
         </div>
 
-        <!-- Row 4: メンバー管理引き出し (タップ時のみすっと展開) -->
         <div id="admMembersDrawer" style="display: none; flex-direction: column; gap: 8px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 8px; width: 100%;">
           <div>
             <label style="font-size:10px; font-weight:bold; color: var(--mu); display:block; margin-bottom:4px;">📋 事前承認トリップ追加</label>
@@ -412,9 +435,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- 1. ロビー画面 (チャットの下に配置) -->
     <div id="lobbyScreen">
-      <!-- ユーザー設定セクション -->
       <div class="lobby-sec">
         <h2>👤 ユーザー設定 (必須入力)</h2>
         <div style="display:flex; flex-direction:column; gap:4px; width:100%;">
@@ -422,7 +443,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           <input type="text" id="lobbyName" class="inp" placeholder="名前を入力..." maxlength="10" autocomplete="off">
         </div>
         
-        <!-- 折りたたみ式表示カラー設定 -->
         <div class="acc-item" style="border-bottom: none; padding-bottom: 0;">
           <div class="acc-hdr" onclick="toggleAcc('lobbyColorAcc')" style="font-size: 10px; font-weight: bold; color: var(--mu); padding: 0 0 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
             🎨 表示カラー設定を開く <span class="acc-icon">▶</span>
@@ -432,7 +452,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           </div>
         </div>
 
-        <!-- IDコピー機能付きプレビューエリア (1行配置) -->
         <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; width: 100%;">
           <div id="lobbyTripPrev" style="flex: 1; font-size: 11px; font-weight: bold; color: var(--usr-color); text-align: center; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
             プレビュー: 名前を入力して識別ID生成
@@ -441,7 +460,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         </div>
       </div>
 
-      <!-- 部屋作成・入室セクション -->
       <div class="lobby-sec">
         <h2>🔑 部屋作成 / パスワード入室</h2>
         <button class="btn" id="btnGen" style="width: 100%; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; font-weight: bold; font-size: 12px; height: 36px; border-radius: 6px; box-shadow: 0 3px 10px rgba(79,70,229,0.25); border: 1px solid rgba(255,255,255,0.08);">🎲 部屋IDとパスワードを自動生成する</button>
@@ -462,7 +480,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         </div>
       </div>
 
-      <!-- 公式部屋セクション -->
       <div class="lobby-sec" style="border-color: #fb923c;">
         <h2 style="color: #fdba74; font-size: 11px;">🏢 常設公式部屋</h2>
         <button class="btn" id="btnJoinOfficial" style="background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; font-size: 13px; font-weight: 900; height: 38px; width: 100%; border-radius: 6px;" disabled>🏢 常設公式部屋に入る</button>
@@ -473,7 +490,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 </div>
 
 <script>
-// アコーディオンの開閉用ヘルパー
 function toggleAcc(id) {
   const el = document.getElementById(id);
   const isShow = el.classList.toggle('show');
@@ -482,8 +498,6 @@ function toggleAcc(id) {
 
 (function() {
   const ADMIN_UID = "J64MocsPo0QD7hSwZpQgEeDdO6X2";
-  
-  // 💡 【超簡単・安全な管理者設定】ご自身の2つの ◆6桁 トリップを入力してください
   const ADMIN_TRIPS = ["◆L5NYox", "◆ZJBSxz"];
 
   const safeLS = {
@@ -504,11 +518,12 @@ function toggleAcc(id) {
 
   let db = null;
 
-  // Firebaseの安全な初期化関数 (存在しない場合のチェックを強化)
   const initFirebase = () => {
     if (typeof firebase !== 'undefined') {
       try {
-        if (!firebase.apps || firebase.apps.length === 0) firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps || firebase.apps.length === 0) {
+          firebase.initializeApp(firebaseConfig);
+        }
         if (typeof firebase.database === 'function') {
           db = firebase.database();
           return true;
@@ -523,13 +538,12 @@ function toggleAcc(id) {
   const $ = id => document.getElementById(id);
   let D = {};
 
-  // --- トースト通知機能 ---
   function showToast(text, duration = 3000) {
     const container = $("toastContainer");
     if (!container) return;
     container.textContent = text;
     container.style.display = "flex";
-    container.offsetHeight; // リフローを強制してアニメーションを有効化
+    container.offsetHeight;
     container.classList.add("show");
 
     if (container.timeoutId) clearTimeout(container.timeoutId);
@@ -544,7 +558,6 @@ function toggleAcc(id) {
     }, duration);
   }
 
-  // --- 自作モーダル確認ダイアログ機能 ---
   function customConfirm(title, message, okText = "OK", cancelText = "キャンセル") {
     return new Promise((resolve) => {
       const mod = $("confirmMod");
@@ -554,7 +567,6 @@ function toggleAcc(id) {
       const cancelBtn = $("confirmCancelBtn");
 
       if (!mod || !titleEl || !msgEl || !okBtn || !cancelBtn) {
-        // フォールバック
         resolve(window.confirm(message));
         return;
       }
@@ -581,7 +593,6 @@ function toggleAcc(id) {
     });
   }
 
-  // E2EE (Web Crypto API AES-GCM) 高信頼性互換ラッパー
   const E2EE = {
     hasCrypto: (typeof window !== 'undefined' && window.crypto && window.crypto.subtle),
     async deriveKey(passcode) {
@@ -654,9 +665,8 @@ function toggleAcc(id) {
   };
 
   let myUid = ""; 
-
   let myName = safeLS.get("nz_ni") || "";
-  let myTrip = ""; // UIDから自動生成された ◆6桁システム識別IDを格納
+  let myTrip = ""; 
   let curColor = safeLS.get("nz_color") || "#94a3b8";
   let activeKey = null; 
 
@@ -838,26 +848,6 @@ function toggleAcc(id) {
     D.clrMsgBtn.classList.toggle("show", D.mi.value.length > 0);
   };
 
-  const checkInvitationUrl = () => {
-    try {
-      const hash = window.location.hash;
-      if (hash && hash.length > 1) {
-        const base64Str = hash.substring(1);
-        const decodedParam = decodeURIComponent(escape(atob(base64Str)));
-        const params = new URLSearchParams(decodedParam);
-        const r = params.get("r");
-        const p = params.get("p");
-        if (r && p) {
-          $("lobbyRoomId").value = r;
-          $("lobbyRoomPass").value = p;
-          showToast("🔑 招待URLから部屋IDとパスワードを読み込みました。");
-          window.location.hash = "";
-          validateLobbyInputs();
-        }
-      }
-    } catch(e) {}
-  };
-
   const validateLobbyInputs = () => {
     if (!myUid) {
       $("btnJoin").disabled = true;
@@ -869,7 +859,6 @@ function toggleAcc(id) {
     const roomPass = ($("lobbyRoomPass") ? $("lobbyRoomPass").value.trim() : "");
 
     const isNameEmpty = (!name);
-    // 独自部屋の入室/作成には、名前・部屋ID・部屋パスワードの3つすべてが必要です
     const isJoinCustomDisabled = (isNameEmpty || !roomId || !roomPass);
 
     $("btnJoin").disabled = isJoinCustomDisabled;
@@ -915,7 +904,6 @@ function toggleAcc(id) {
       $("exBtn").style.display = "inline-flex";
       $("inviteBtn").style.display = "inline-flex";
       $("pl").style.display = "flex"; 
-      // 💡 改善：入室人数の枠（pcnt）は、データベースからの描画（renderPresence）完了まで非表示を維持
     } else if (state === "approval") {
       $("approvalScreen").style.display = "flex";
       $("exBtn").style.display = "none";
@@ -934,14 +922,11 @@ function toggleAcc(id) {
 
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
 
-  // 💡 【仕様B】自動退室処理の判定を、端末が閉じられていても完全に「最後の発言/入室から30分」に統一
-  // (5分おき等の生存打刻ハートビート処理は完全に廃止され、一切の余計なバックグラウンド通信を行いません)
-
   function startAutoExitChecker() {
     stopAutoExitTimer(); 
     if (!isJoined) return;
     
-    const limit = 1800000; // 30分
+    const limit = 1800000;
     const deadline = parseInt(safeLS.get("nz_last_post_time") || "0") + limit;
     const remaining = deadline - getTrueTime();
 
@@ -961,26 +946,21 @@ function toggleAcc(id) {
     }
   }
 
-  // オンラインのアクティブメンバーの中からシステムレポーター（代表者1名）を特定する
-  // (自動退室などのシステムログの重複書き込みを防ぐため)
   function isSystemReporter() {
     if (!isJoined || !currentRoomId) return false;
     const activeUids = Object.keys(currentPresenceMap).sort();
     if (activeUids.length === 0) return false;
     
-    // 部屋のオーナーがオンラインならオーナーが担当。オフラインならUIDが最小のユーザーが担当。
     if (roomSettings.creatorUid && activeUids.includes(roomSettings.creatorUid)) {
       return myUid === roomSettings.creatorUid;
     }
     return myUid === activeUids[0];
   }
 
-  // クライアント側で他の管理権限チェックを動的に実施するヘルパー
   const checkIsGlobalAdmin = () => {
     return (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
   };
 
-  // 他のアクティブでなくなった(30分放置された)ユーザーを自動退室させる処理
   function triggerOtherExit(targetId, targetUser) {
     if (targetUser.exiting || !db) return;
     targetUser.exiting = true;
@@ -989,7 +969,6 @@ function toggleAcc(id) {
     const targetTrip = targetUser.p || "";
 
     const finishExit = () => {
-      // 重複削除リクエストを防ぐため、代表者（レポーター）のみがデータベースから削除
       if (isSystemReporter()) {
         db.ref(`presence/${currentRoomId}/${targetId}`).remove().then(() => {
           checkRoomSelfDestruct();
@@ -997,7 +976,6 @@ function toggleAcc(id) {
       }
     };
 
-    // 代表者（レポーター）のみが退室お知らせログをデータベースに書き込む
     if (isSystemReporter() && targetName) {
       const encLog = "[SYS]::📢 [お知らせ] " + `${targetName} ${targetTrip}`.trim() + " が自動退室しました (30分間発言がなかったため)";
       db.ref(`chat/${currentRoomId}`).push({
@@ -1035,9 +1013,7 @@ function toggleAcc(id) {
     }
   }
 
-  // 生存メンバーが0人になった部屋の、猶予なし即時データベース完全消去処理
   function checkRoomSelfDestruct() {
-    // 💡 改善: サーバーの時刻補正がロードされる前の不具合を防ぐため、isOffsetLoadedチェックを追記
     if (!db || !currentRoomId || currentRoomId === "official" || !isOffsetLoaded) return;
 
     db.ref(`presence/${currentRoomId}`).once("value", snap => {
@@ -1051,7 +1027,6 @@ function toggleAcc(id) {
         }
       }
 
-      // 生存アクティブが0人の場合、即座にすべての関連ノードを完全に消去
       if (activeCount === 0) {
         const paths = [
           `chat/${currentRoomId}`,
@@ -1089,7 +1064,6 @@ function toggleAcc(id) {
       db.ref(`requests/${oldRoomId}/${cleanUid}`).remove().catch(()=>{});
     }
 
-    // 非同期処理を安全にまとめるコールバック
     const finishAndClean = () => {
       removeFirebaseListeners(); 
       switchScreen("lobby");
@@ -1102,9 +1076,7 @@ function toggleAcc(id) {
       }
 
       if (cleanUid && oldRoomId && db) {
-        // 退室したユーザーをpresenceから消去
         db.ref(`presence/${oldRoomId}/${cleanUid}`).remove().then(() => {
-          // 部屋が常設公式（official）以外であり、アクティブ生存者が0人の場合は、猶予なしで即座に完全消去
           if (oldRoomId !== "official") {
             db.ref(`presence/${oldRoomId}`).once("value", snap => {
               const list = snap.val() || {};
@@ -1139,7 +1111,6 @@ function toggleAcc(id) {
       }
     };
 
-    // 退室ログを書き込んだ後に、非同期処理の連動で画面切り替え＆完全消去を走らせる
     if (wasJoinedBeforeExit && cleanName && db) {
       const logText = "[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が自動退室しました (30分間発言がなかったため)" : " が退室しました");
       db.ref(`chat/${oldRoomId}`).push({
@@ -1159,22 +1130,13 @@ function toggleAcc(id) {
     }
   }
 
-  function showLocalSystemMessage(text) {
-    const tempId = "err_sys_" + Date.now() + "_" + Math.random().toString(36).slice(2, 6);
-    const tempObj = { id: tempId, u: "system", n: "システムエラー", p: "", c: "#f43f5e", m: "[SYS]::📢 [システムエラー] " + text, t: getTrueTime(), sys: true };
-    if (!displayedMsgIds.has(tempId)) {
-      const tempEl = cMsg(tempObj, false);
-      insertMessageInOrder(tempEl);
-      scBottom(true);
-    }
-  }
-
   function checkIsTripApproved(tripStr) {
     if (!tripStr || !roomSettings.approvedTrips) return false;
     return Object.values(roomSettings.approvedTrips).includes(tripStr);
   }
 
-  // 申請の停止
+  let approvalHeartbeatTimer = null;
+
   function stopApprovalSystem() {
     if (approvalStateListener) {
       approvalStateListener.off();
@@ -1186,7 +1148,6 @@ function toggleAcc(id) {
     }
   }
 
-  // 申請画面への遷移
   async function switchToApprovalScreen(lobbyRoomId) {
     switchScreen("approval", lobbyRoomId);
     safeLS.set("nz_is_pending", "true");
@@ -1255,7 +1216,6 @@ function toggleAcc(id) {
     });
   }
 
-  // 部屋への入室
   async function joinRoom(options = {}) {
     if (!db) { alert("データベースが準備できていません。"); return; }
     const silent = options.silent || false;
@@ -1265,10 +1225,8 @@ function toggleAcc(id) {
 
     if (!lobbyRoomId) { alert("部屋IDを入力してください。"); return; }
     
-    // パスワード必須化の二重ガード
     if (lobbyRoomId !== "official" && !lobbyRoomPass) {
       alert("部屋パスワードを入力してください。");
-      hideAppSpinner();
       return;
     }
 
@@ -1289,7 +1247,6 @@ function toggleAcc(id) {
             );
             if (!goNext) {
               switchScreen("lobby");
-              hideAppSpinner();
               return;
             }
             await db.ref(`presence/${oldActiveRoom}/${myUid}`).remove().catch(()=>{});
@@ -1319,7 +1276,6 @@ function toggleAcc(id) {
     if (isBanned) {
       alert("この部屋の管理者により、アクセスが制限されています。");
       switchScreen("lobby");
-      hideAppSpinner();
       return;
     }
 
@@ -1341,7 +1297,6 @@ function toggleAcc(id) {
       console.error("Database settings load failed:", e);
       alert("データベース接続、またはセキュリティ権限エラーです。");
       switchScreen("lobby");
-      hideAppSpinner();
       return;
     }
 
@@ -1352,7 +1307,6 @@ function toggleAcc(id) {
     roomSettings.approvedTrips = val.approvedTrips || {};
     roomSettings.creatorUid = val.creatorUid || "";
 
-    // 改善: 公式部屋（official）でもsettingsが存在しない場合は自動作成する
     if (!settingsSnap || !settingsSnap.exists()) {
       const isGlobalAdmin = (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
       roomSettings.creatorUid = (currentRoomId === "official") ? (isGlobalAdmin ? myUid : ADMIN_UID) : myUid;
@@ -1374,7 +1328,6 @@ function toggleAcc(id) {
         console.error("Failed to create room settings:", e);
         alert("新規設定の保存権限がありませんでした。");
         switchScreen("lobby");
-        hideAppSpinner();
         return;
       }
     }
@@ -1389,7 +1342,6 @@ function toggleAcc(id) {
         const presenceList = presenceSnap.val() || {};
         let isTripExists = false;
         for (const [id, user] of Object.entries(presenceList)) {
-          // 生存中（30分以内）の同一トリップチェック
           if (id !== myUid && user && user.p === myTrip && (getTrueTime() - (user.t || 0) < 1800000)) {
             isTripExists = true;
             break;
@@ -1398,7 +1350,6 @@ function toggleAcc(id) {
         if (isTripExists) {
           alert("このユーザーID（トリップ）はすでに部屋に入室中です。");
           switchScreen("lobby");
-          hideAppSpinner();
           return;
         }
       } catch (e) {
@@ -1409,7 +1360,6 @@ function toggleAcc(id) {
     if (!silent && roomSettings.newEntriesDisabled && !hasApprovedTrip && !isOwner) {
       alert("現在、新規の入室が制限されています。");
       switchScreen("lobby");
-      hideAppSpinner();
       return;
     }
 
@@ -1418,7 +1368,6 @@ function toggleAcc(id) {
       if (userPass !== roomSettings.passcode) {
         alert("合言葉が一致しません。");
         switchScreen("lobby");
-        hideAppSpinner();
         return;
       }
     }
@@ -1437,7 +1386,6 @@ function toggleAcc(id) {
         console.error("Submission of request failed:", e);
         alert("入室申請の送信権限がありませんでした。");
         switchScreen("lobby");
-        hideAppSpinner();
       }
       return;
     }
@@ -1484,7 +1432,6 @@ function toggleAcc(id) {
     applyRoomSettingsUI();
     initSettingsListener(); 
     scBottom(true);
-    hideAppSpinner(); // 部屋への入室が完全に確定した時点で、ローディング画面を除去
   }
 
   let latestDisplayedTs = 0;
@@ -1781,7 +1728,7 @@ function toggleAcc(id) {
 
     if ($("pcnt")) {
       $("pcnt").textContent = `${sorted.length}人`;
-      $("pcnt").style.display = "inline-block"; // 💡 改善：データ受信が確定したこのタイミングで初めて枠を表示
+      $("pcnt").style.display = "inline-block";
     }
     updateJumpBtns();
   }
@@ -1845,7 +1792,7 @@ function toggleAcc(id) {
       D.tli.appendChild(fragment);
       isFirstLoad = false;
       scBottom(true); 
-      updateJumpBtns(); // ロード時の初期ボタン状態を更新
+      updateJumpBtns();
 
       chatQuery = chatRef.orderByChild("t").startAt(latestDisplayedTs + 1);
       chatQuery.on("child_added", async child => {
@@ -1856,7 +1803,6 @@ function toggleAcc(id) {
         }
       });
 
-      // 💡 改善: 削除監視を「新着メッセージクエリ」から「チャットノード全体（過去ログ含む）」に引き上げる
       chatRef.on("child_removed", child => {
         const key = child.key;
         const el = renderedMwNodes.get(key);
@@ -1870,7 +1816,7 @@ function toggleAcc(id) {
         }
       });
     }).catch(e => {
-      console.error("Failed to fetch messages. Check Firebase rules:", e);
+      console.error("Failed to fetch messages:", e);
     });
 
     presenceRef.on("value", s => {
@@ -1891,10 +1837,9 @@ function toggleAcc(id) {
       currentPresenceMap = members;
       isPresenceInitialized = true; 
       renderPresence(members);
-      checkRoomSelfDestruct(); // 参加者変更の都度、0人消滅チェックを走らせる
+      checkRoomSelfDestruct();
     });
 
-    // 💡 改善: 他のメンバーによって部屋が解散されたり、BAN等で自身の存在が消えた場合に、即時ロビーに戻すリアルタイム同期監視
     myPresenceRef = db.ref(`presence/${currentRoomId}/${myUid}`);
     myPresenceRef.on("value", s => {
       if (isJoined && !s.exists()) {
@@ -1911,7 +1856,6 @@ function toggleAcc(id) {
     if (chatQuery) {
       chatQuery.off("child_added");
     }
-    // 💡 改善: 削除監視・存在監視リスナーを安全に解除
     if (db && currentRoomId) {
       db.ref(`chat/${currentRoomId}`).off("child_removed");
     }
@@ -1928,7 +1872,7 @@ function toggleAcc(id) {
     updateUnreadBadge();
     if (D.tli) D.tli.innerHTML = "";
     if (D.pl) D.pl.innerHTML = ""; 
-    if ($("pcnt")) $("pcnt").style.display = "none"; // 💡 改善: 退室時に枠を非表示にリセット
+    if ($("pcnt")) $("pcnt").style.display = "none";
   }
 
   function applyRoomSettingsUI() {
@@ -1965,22 +1909,19 @@ function toggleAcc(id) {
       roomSettings.approvedTrips = val.approvedTrips || {};
       roomSettings.creatorUid = val.creatorUid || "";
       
-      // ーーー 追記：リアルタイム・ログ全初期化の検知 ーーー
       const serverClearTime = val.last_cleared_at || 0;
       if (serverClearTime && serverClearTime > localLastClearedTime) {
         localLastClearedTime = serverClearTime;
         
-        // 画面上のメッセージを全消去
         if (D.tli) D.tli.innerHTML = "";
         displayedMsgIds.clear();
         renderedMwNodes.clear();
         unreadMsgIds.clear();
         updateUnreadBadge();
         
-        // チャットログの監視を、初期化時刻以降に書き込まれたメッセージだけに切り替える
         if (chatQuery) {
           chatQuery.off();
-          db.ref(`chat/${currentRoomId}`).off("child_removed"); // 古い削除監視を停止
+          db.ref(`chat/${currentRoomId}`).off("child_removed");
           
           chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(serverClearTime + 1);
           chatQuery.on("child_added", async child => {
@@ -1991,7 +1932,6 @@ function toggleAcc(id) {
             }
           });
           
-          // 削除監視を全体（過去ログ含む）で再バインド
           db.ref(`chat/${currentRoomId}`).on("child_removed", child => {
             const key = child.key;
             const el = renderedMwNodes.get(key);
@@ -2006,7 +1946,6 @@ function toggleAcc(id) {
           });
         }
       }
-      // ーーーーーーーーーーーーーーーーーーーーーーーー
       
       applyRoomSettingsUI();
       const isGlobalAdmin = checkIsGlobalAdmin();
@@ -2019,7 +1958,6 @@ function toggleAcc(id) {
     const now = getTrueTime();
 
     if (isGlobalAdmin) {
-      // 1. 全体管理者の一括クリーンアップ
       db.ref("presence").once("value", snap => {
         const roomsPresence = snap.val() || {};
         for (const [roomId, users] of Object.entries(roomsPresence)) {
@@ -2033,7 +1971,6 @@ function toggleAcc(id) {
               updates[`presence/${roomId}/${uid}`] = null;
             }
           }
-          // 生存者が完全に0人である場合は、即時消滅を実行
           if (activeCount === 0) {
             db.ref(`chat/${roomId}`).remove();
             db.ref(`settings/${roomId}`).remove();
@@ -2046,7 +1983,6 @@ function toggleAcc(id) {
         }
       });
     } else {
-      // 2. ホスト自身の「作成した部屋」限定クリーンアップ
       const myCreatedRoom = safeLS.get("nz_my_created_room_id");
       if (myCreatedRoom && myCreatedRoom !== "official") {
         db.ref(`presence/${myCreatedRoom}`).once("value", snap => {
@@ -2085,15 +2021,21 @@ function toggleAcc(id) {
     }
   }
 
+  // --- 🔒 初回確実に匿名認証を完遂する高速処理 ---
   const initDirectDatabaseProcess = async () => {
     initFirebase(); 
-    
-    // 💡 匿名認証（Auth）が確実に通るよう、セッションを待ち合わせて完璧な同期を行います
-    if (typeof firebase !== 'undefined' && firebase.auth) {
-      // 💡 超高速化: IndexedDBに保存されている本物の匿名アカウント情報をサーバーに問い合わせずにローカルキャッシュから即座にロードします
-      firebase.auth().onAuthStateChanged(async (user) => {
+
+    if (typeof firebase !== 'undefined' && firebase.auth && db) {
+      try {
+        // すでにキャッシュにあるか、あるいは匿名認証を実行して確実にUIDを取得
+        let user = firebase.auth().currentUser;
+        if (!user) {
+          const cred = await firebase.auth().signInAnonymously();
+          user = cred.user;
+        }
+
         if (user) {
-          myUid = user.uid; 
+          myUid = user.uid;
           safeLS.set("nz_permanent_uid", myUid);
           await syncProfileValues();
 
@@ -2112,8 +2054,6 @@ function toggleAcc(id) {
                 safeLS.remove("nz_pending_room_id");
                 safeLS.remove("nz_pending_room_pass");
                 switchScreen("lobby");
-                hideAppSpinner();
-                showToast("⚠️ 入室申請の期限が切れたか、削除されました。");
               } else {
                 const reqData = reqSnap.val();
                 if (reqData.status === "approved") {
@@ -2123,20 +2063,15 @@ function toggleAcc(id) {
                   safeLS.remove("nz_is_pending");
                   db.ref(`requests/${pendingRoomId}/${myUid}`).remove().catch(()=>{});
                   switchScreen("lobby");
-                  hideAppSpinner();
-                  showToast("❌ 申請は却下されました。");
                 } else {
                   currentRoomId = pendingRoomId;
                   currentRoomPass = pendingRoomPass;
                   activeKey = await E2EE.deriveKey(pendingRoomPass);
                   await switchToApprovalScreen(pendingRoomId);
-                  hideAppSpinner();
                 }
               }
             } catch (e) {
-              console.warn("Requests read error during startup:", e);
               switchScreen("lobby");
-              hideAppSpinner();
             }
           } else {
             const wasJoined = (safeLS.get("nz_is_joined") === "true");
@@ -2145,39 +2080,23 @@ function toggleAcc(id) {
             const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
             const nowTrue = getTrueTime();
 
-            // 30分以内の最後の活動であれば自動接続を確立して部屋に復帰
             if (wasJoined && lastRoomId && lastRoomPass && (nowTrue - lastPost < 1800000)) {
               await joinRoom({ roomId: lastRoomId, roomPass: lastRoomPass, silent: true });
             } else {
               switchScreen("lobby");
               performSelfZombieCleanup(); 
-              hideAppSpinner();
             }
           }
 
           validateLobbyInputs();
-        } else {
-          // キャッシュが何もない初めての接続時は、安全に匿名アカウントをその場で新規作成します
-          firebase.auth().signInAnonymously()
-            .then(async (cred) => {
-              myUid = cred.user.uid;
-              safeLS.set("nz_permanent_uid", myUid);
-              await syncProfileValues();
-              switchScreen("lobby");
-              hideAppSpinner();
-            })
-            .catch((e) => {
-              console.warn("Anonymous sign-in error, falling back to offline mode:", e);
-              showToast("⚠️ 認証サーバーに接続できませんでした。一時的に制限モードで動作します。");
-              switchScreen("lobby");
-              hideAppSpinner();
-            });
         }
-      });
+      } catch (err) {
+        console.error("Auth process error:", err);
+        switchScreen("lobby");
+      }
     } else {
       validateLobbyInputs();
       switchScreen("lobby");
-      hideAppSpinner();
     }
 
     if (db) db.goOnline();
@@ -2188,15 +2107,6 @@ function toggleAcc(id) {
         isOffsetLoaded = true;
       });
       isConnectedBound = true;
-    }
-  };
-
-  const hideAppSpinner = () => {
-    const spinner = $("appSpinner");
-    if (spinner) {
-      spinner.style.opacity = "0";
-      spinner.style.visibility = "hidden";
-      setTimeout(() => { if (spinner.parentNode) spinner.remove(); }, 200);
     }
   };
 
@@ -2266,7 +2176,6 @@ function toggleAcc(id) {
     return nodes;
   }
 
-  // バッジ描画
   function updateUnreadBadge() {
     if (!D.unreadBadge) return;
     const count = unreadMsgIds.size;
@@ -2460,7 +2369,6 @@ function toggleAcc(id) {
         listEl.appendChild(item);
       });
 
-      // 申請が1件でもあれば動的にドロワーを出現させて知らせる（省スペース設計）
       containerEl.style.display = (pendingCount > 0) ? "flex" : "none";
     });
   }
@@ -2498,7 +2406,6 @@ function toggleAcc(id) {
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
     const nowLocal = Date.now();
 
-    // 接続判定中にお知らせ画面がチラつくのを防ぐため、30分以上の期限切れ時は初期レンダリングからロビーを表示する
     if (wasJoined && lastRoomId && (nowLocal - lastPost < 1800000)) {
       switchScreen("chat", lastRoomId);
       if (D.tli) {
@@ -2615,7 +2522,6 @@ function toggleAcc(id) {
       syncProfileValues(); 
     });
 
-    // 入室情報の入力時に活性化バリデーションを実行する
     $("lobbyRoomId").addEventListener("input", validateLobbyInputs);
     $("lobbyRoomPass").addEventListener("input", validateLobbyInputs);
 
@@ -2697,19 +2603,16 @@ function toggleAcc(id) {
       });
     }
 
-    // タイムラインをスクロールした時にジャンプボタンの有効状態と新着バッジ未読を更新するリスナー
     if (D.tl) {
       D.tl.addEventListener("scroll", () => {
-        if (_scPending) return; // プログラム上のスクロール移動時は判定処理をバイパスする
+        if (_scPending) return;
 
         const scrollTop = D.tl.scrollTop;
         const scrollHeight = D.tl.scrollHeight;
         const clientHeight = D.tl.clientHeight;
 
-        // 一番下から30px以内の範囲にいる場合はオートスクロール対象とする
         isAutoScroll = (scrollTop + clientHeight >= scrollHeight - 30);
 
-        // 一番下に戻った（見終わった）ら自動で未読状態と新着バッジをリセット
         if (isAutoScroll) {
           unreadMsgIds.clear();
           updateUnreadBadge();
@@ -2756,7 +2659,6 @@ function toggleAcc(id) {
       });
     }
 
-    // --- 管理パネル：トグルは変更があった瞬間に自動的にDBへリアルタイム保存 ---
     $("admApprovalMode").addEventListener("change", () => {
       if (!db || !currentRoomId) return;
       db.ref(`settings/${currentRoomId}`).update({
@@ -2771,17 +2673,14 @@ function toggleAcc(id) {
       }).then(() => { showToast("新規入室制限を更新しました。"); }).catch(()=>{});
     });
 
-    // --- 管理パネル：合言葉の使用（トグルON/OFF）の切り替え処理 ---
     $("admPassToggle").addEventListener("change", () => {
       if (!db || !currentRoomId) return;
       const isChecked = $("admPassToggle").checked;
       
       if (isChecked) {
-        // あり（ON）にした場合：入力エリアをスッと表示
         $("admPassContainer").style.display = "flex";
         $("admPass").focus();
       } else {
-        // なし（OFF）にした場合：入力エリアを隠し、合言葉設定を即座に消去して自動保存
         $("admPassContainer").style.display = "none";
         $("admPass").value = "";
         db.ref(`settings/${currentRoomId}`).update({
@@ -2790,7 +2689,6 @@ function toggleAcc(id) {
       }
     });
 
-    // --- 管理パネル：合言葉は「適用」ボタンをクリックして明示的に適用するフロー ---
     $("admPassSaveBtn").addEventListener("click", (e) => {
       e.preventDefault();
       const passVal = $("admPass").value.trim();
@@ -2806,7 +2704,6 @@ function toggleAcc(id) {
       }).catch(()=>{});
     });
 
-    // --- 管理パネル：メンバー管理ドロワーの開閉トグル ---
     $("admMembersToggleBtn").addEventListener("click", (e) => {
       e.preventDefault();
       const drawer = $("admMembersDrawer");
@@ -2838,18 +2735,14 @@ function toggleAcc(id) {
         db.ref(`settings/${currentRoomId}/approvedTrips`).push(val).then(() => { inp.value = ""; showToast("事前承認ユーザーIDを追加しました。"); }).catch(()=>{});
       });
 
-      // ログの初期化は押した瞬間に即座に実行されます（ダイアログが正しく手前に重なります）
       $("admClearBtn").addEventListener("click", (e) => {
         e.preventDefault();
         customConfirm("🚨 チャットログの全初期化", "警告：この部屋の全ログを完全消去します。\n実行しますか？", "初期化", "キャンセル").then(ok => {
           if (ok) {
-            // 1. チャットログを削除
             db.ref(`chat/${currentRoomId}`).remove().then(() => {
-              // 2. 設定ノードに「最終初期化時刻」を打刻（これによって他メンバーにリアルタイム消去が伝播します）
               db.ref(`settings/${currentRoomId}`).update({
                 last_cleared_at: getFirebaseTimestamp()
               }).then(() => {
-                // 3. 初期化完了のお知らせシステムログをプッシュ
                 db.ref(`chat/${currentRoomId}`).push({
                   u: "system", n: "システム", p: "", c: "#f43f5e",
                   m: "[SYS]::📢 [お知らせ] ホストによってチャットログが初期化されました",
@@ -2933,13 +2826,12 @@ function toggleAcc(id) {
 
     window.addEventListener("keydown", (e) => { if (e.key === "Escape") closePlayer(); });
     
-    // 💡 爆速化2: 通信とアプリの起動処理を並列化（初期化時に呼び出し）
+    // 💡 起動時に認証を非同期バックグラウンドでシームレスに実行
     initDirectDatabaseProcess();
   }
 
   function getDistance(t1, t2) { return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY); }
 
-  // 💡 爆速化3: DOMContentLoadedを廃止し、パースとFirebase通信を完全並列化
   initApp();
 })();
 </script>
