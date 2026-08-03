@@ -7,8 +7,10 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#090d16">
 <title>NEZUO CHAT</title>
-<!-- 爆速化: FirebaseデータベースサーバーとDNS・TLSハンドシェイクを事前に確立する -->
+<!-- 爆速化1: FirebaseデータベースおよびGoogle認証のエンドポイントと事前に接続を確立する -->
 <link rel="preconnect" href="https://nezuochat-default-rtdb.asia-southeast1.firebasedatabase.app" crossorigin>
+<link rel="preconnect" href="https://identitytoolkit.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://securetoken.googleapis.com" crossorigin>
 <link rel="preconnect" href="https://www.youtube-nocookie.com" crossorigin>
 <link rel="preconnect" href="https://embed.nicovideo.jp" crossorigin>
 <link rel="preconnect" href="https://i.ytimg.com" crossorigin>
@@ -88,7 +90,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 #chatScreen {display: none; flex-direction: column;flex: 1;min-height: 0;overflow: hidden;}
 
-/* 💡 改善: 接続人数の枠（pl）は、データ取得前は枠線や背景も含めて完全に非表示（display: none）にリセット */
+/* 💡 改善: 接続人数の枠（pl）は、データ取得前は枠線や背景も含めて完全に非表示（display: none）に設定 */
 #pl{display:none;gap:6px;padding:6px 12px;background:var(--s2);border-bottom:1px solid rgba(255,255,255,.02);overflow-x:auto;white-space:nowrap;min-height:40px;max-height:40px}
 .chip{font-size:11px;font-weight:700;padding:4px 10px;border-radius:6px;background:var(--bg);border:1px solid rgba(255,255,255,.06);display:inline-flex;align-items:center;color:var(--tx);height:28px}
 #fixedPlayer{display:none;flex-direction:column;background:var(--s2);border-bottom:1px solid var(--bd);width:100%}
@@ -263,7 +265,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   backdrop-filter: none !important;
 }
 
-/* 汎用ダイアログ (z-indexを300000に設定して管理パネルの上に完全に重ねる) */
+/* 汎用ダイアログ (z-indexを300000に設定してホスト設定の上に完全に重ねる) */
 #confirmMod {
   z-index: 300000 !important;
 }
@@ -306,76 +308,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           <button class="bclr" id="clrBtn" title="色設定"><span class="bclr-dot" id="clrDot"></span> 色設定</button>
           <button class="btn" id="inviteBtn" style="background: var(--sf); border: 1px solid var(--bd); font-size: 11.5px; height: 34px; display: none;">🔗 招待コピー</button>
           <button class="btn" id="exBtn" style="background: rgba(244,63,94,0.15); border: 1px solid rgba(244,63,94,0.3); color: #fda4af; height: 34px; display: none;">退室</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 1. ロビー画面 -->
-    <div id="lobbyScreen">
-      <!-- ユーザー設定セクション -->
-      <div class="lobby-sec">
-        <h2>👤 ユーザー設定 (必須入力)</h2>
-        <div style="display:flex; flex-direction:column; gap:4px; width:100%;">
-          <label for="lobbyName" style="font-size: 10px; font-weight: bold; color: var(--mu);">名前</label>
-          <input type="text" id="lobbyName" class="inp" placeholder="名前を入力..." maxlength="10" autocomplete="off">
-        </div>
-        
-        <!-- 折りたたみ式表示カラー設定 -->
-        <div class="acc-item" style="border-bottom: none; padding-bottom: 0;">
-          <div class="acc-hdr" onclick="toggleAcc('lobbyColorAcc')" style="font-size: 10px; font-weight: bold; color: var(--mu); padding: 0 0 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
-            🎨 表示カラー設定を開く <span class="acc-icon">▶</span>
-          </div>
-          <div class="acc-bdy" id="lobbyColorAcc">
-            <div class="clrpick-grid" id="lobbyColorGrid"></div>
-          </div>
-        </div>
-
-        <!-- IDコピー機能付きプレビューエリア (1行配置) -->
-        <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; width: 100%;">
-          <div id="lobbyTripPrev" style="flex: 1; font-size: 11px; font-weight: bold; color: var(--usr-color); text-align: center; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            プレビュー: 名前を入力して識別ID生成
-          </div>
-          <button class="btn" id="btnCopyTrip" style="background: #0ea5e9; color: #fff; font-size: 11px; height: 28px; width: 80px; font-weight: bold; flex-shrink: 0; display: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(14,165,233,0.3);">📋 コピー</button>
-        </div>
-      </div>
-
-      <!-- 部屋作成・入室セクション -->
-      <div class="lobby-sec">
-        <h2>🔑 部屋作成 / パスワード入室</h2>
-        <button class="btn" id="btnGen" style="width: 100%; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; font-weight: bold; font-size: 12px; height: 36px; border-radius: 6px; box-shadow: 0 3px 10px rgba(79,70,229,0.25); border: 1px solid rgba(255,255,255,0.08);">🎲 部屋IDとパスワードを自動生成する</button>
-
-        <div class="grid-2col">
-          <div class="lobby-row">
-            <label for="lobbyRoomId">部屋ID</label>
-            <input type="text" id="lobbyRoomId" class="inp" placeholder="例: room-xyz" autocomplete="off">
-          </div>
-          <div class="lobby-row">
-            <label for="lobbyRoomPass">部屋パスワード</label>
-            <input type="text" id="lobbyRoomPass" class="inp" placeholder="パスワード..." autocomplete="off">
-          </div>
-        </div>
-
-        <div style="margin-top: 4px;">
-          <button class="btn" id="btnJoin" style="width: 100%; background: var(--in); color: #fff; font-size: 13px; font-weight: bold; height: 38px; border-radius: 6px; box-shadow: 0 3px 10px rgba(79,70,229,0.2);" disabled>部屋に入る / 部屋を作る</button>
-        </div>
-      </div>
-
-      <!-- 公式部屋セクション -->
-      <div class="lobby-sec" style="border-color: #fb923c;">
-        <h2 style="color: #fdba74; font-size: 11px;">🏢 常設公式部屋</h2>
-        <button class="btn" id="btnJoinOfficial" style="background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; font-size: 13px; font-weight: 900; height: 38px; width: 100%; border-radius: 6px;" disabled>🏢 常設公式部屋に入る</button>
-      </div>
-    </div>
-
-    <!-- 1.5. 入室申請中（待機審査）画面 -->
-    <div id="approvalScreen">
-      <div class="gc" style="max-width:360px; text-align:center; gap:16px;">
-        <h2 style="font-size:16px; color:var(--tx); font-weight:800;">🔒 入室申請中...</h2>
-        <p style="font-size:13px; color:var(--mu); line-height:1.6;">この部屋はホストによる承認が必要です。<br>許可されるまでしばらくお待ちください。</p>
-        <div style="font-size:14px; color:var(--usr-color); font-weight:bold; background:rgba(0,0,0,0.2); padding:10px; border-radius:8px;" id="approvalMyInfo"></div>
-        <div style="display:flex; flex-direction:column; gap:8px; width:100%;">
-          <button class="btn" id="btnCopyTripInApproval" style="background:#0ea5e9; color:#fff; font-weight:bold; height:38px; border-radius:6px; box-shadow:0 2px 6px rgba(14,165,233,0.3);">📋 ユーザーIDをコピー</button>
-          <button class="btn" id="btnCancelApproval" style="background:rgba(244, 63, 94, 0.15) !important; border:1px solid rgba(244, 63, 94, 0.3) !important; color:#fda4af; height:38px; border-radius:6px;">申請を取り消してロビーに戻る</button>
         </div>
       </div>
     </div>
@@ -480,48 +412,74 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-  </div>
-</div>
+    <!-- 1. ロビー画面 (チャットの下に配置) -->
+    <div id="lobbyScreen">
+      <!-- ユーザー設定セクション -->
+      <div class="lobby-sec">
+        <h2>👤 ユーザー設定 (必須入力)</h2>
+        <div style="display:flex; flex-direction:column; gap:4px; width:100%;">
+          <label for="lobbyName" style="font-size: 10px; font-weight: bold; color: var(--mu);">名前</label>
+          <input type="text" id="lobbyName" class="inp" placeholder="名前を入力..." maxlength="10" autocomplete="off">
+        </div>
+        
+        <!-- 折りたたみ式表示カラー設定 -->
+        <div class="acc-item" style="border-bottom: none; padding-bottom: 0;">
+          <div class="acc-hdr" onclick="toggleAcc('lobbyColorAcc')" style="font-size: 10px; font-weight: bold; color: var(--mu); padding: 0 0 4px 0; border-bottom: 1px solid rgba(255,255,255,0.03);">
+            🎨 表示カラー設定を開く <span class="acc-icon">▶</span>
+          </div>
+          <div class="acc-bdy" id="lobbyColorAcc">
+            <div class="clrpick-grid" id="lobbyColorGrid"></div>
+          </div>
+        </div>
 
-<!-- トースト表示用 -->
-<div id="toastContainer" style="display:none;"></div>
+        <!-- IDコピー機能付きプレビューエリア (1行配置) -->
+        <div style="display: flex; gap: 6px; align-items: center; margin-top: 4px; width: 100%;">
+          <div id="lobbyTripPrev" style="flex: 1; font-size: 11px; font-weight: bold; color: var(--usr-color); text-align: center; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            プレビュー: 名前を入力して識別ID生成
+          </div>
+          <button class="btn" id="btnCopyTrip" style="background: #0ea5e9; color: #fff; font-size: 11px; height: 28px; width: 80px; font-weight: bold; flex-shrink: 0; display: none; border-radius: 6px; box-shadow: 0 2px 6px rgba(14,165,233,0.3);">📋 コピー</button>
+        </div>
+      </div>
 
-<!-- 色設定モーダル -->
-<div id="clrmod" class="mod-overlay">
-  <div class="clrmc gc" style="max-width:320px;">
-    <h3 style="font-size:13px; color:var(--tx); border-bottom:1px solid var(--bd); padding-bottom:6px; font-weight:bold;">🎨 色設定</h3>
-    <div id="clrPrev" class="clr-prev" style="margin:8px 0; min-height:48px;"></div>
-    <div class="clrbox" style="margin-bottom:10px;">
-      <div class="clrpick-grid" id="clrPick2"></div>
+      <!-- 部屋作成・入室セクション -->
+      <div class="lobby-sec">
+        <h2>🔑 部屋作成 / パスワード入室</h2>
+        <button class="btn" id="btnGen" style="width: 100%; background: linear-gradient(135deg, #6366f1, #4f46e5); color: #fff; font-weight: bold; font-size: 12px; height: 36px; border-radius: 6px; box-shadow: 0 3px 10px rgba(79,70,229,0.25); border: 1px solid rgba(255,255,255,0.08);">🎲 部屋IDとパスワードを自動生成する</button>
+
+        <div class="grid-2col">
+          <div class="lobby-row">
+            <label for="lobbyRoomId">部屋ID</label>
+            <input type="text" id="lobbyRoomId" class="inp" placeholder="例: room-xyz" autocomplete="off">
+          </div>
+          <div class="lobby-row">
+            <label for="lobbyRoomPass">部屋パスワード</label>
+            <input type="text" id="lobbyRoomPass" class="inp" placeholder="パスワード..." autocomplete="off">
+          </div>
+        </div>
+
+        <div style="margin-top: 4px;">
+          <button class="btn" id="btnJoin" style="width: 100%; background: var(--in); color: #fff; font-size: 13px; font-weight: bold; height: 38px; border-radius: 6px; box-shadow: 0 3px 10px rgba(79,70,229,0.2);" disabled>部屋に入る / 部屋を作る</button>
+        </div>
+      </div>
+
+      <!-- 公式部屋セクション -->
+      <div class="lobby-sec" style="border-color: #fb923c;">
+        <h2 style="color: #fdba74; font-size: 11px;">🏢 常設公式部屋</h2>
+        <button class="btn" id="btnJoinOfficial" style="background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; font-size: 13px; font-weight: 900; height: 38px; width: 100%; border-radius: 6px;" disabled>🏢 常設公式部屋に入る</button>
+      </div>
     </div>
-    <div class="clr-btns">
-      <button class="clr-ok" id="clrOk">適用</button>
-      <button class="clr-cancel" id="clrCancel">キャンセル</button>
-    </div>
-  </div>
-</div>
 
-<!-- 画像拡大ビューアー -->
-<div id="imgViewMod" class="mod-overlay">
-  <button class="modal-top-close" id="imgViewCloseBtn" title="閉じる">✕</button>
-  <div id="zoomViewport">
-    <img id="imgViewSrc" alt="拡大画像">
-  </div>
-</div>
-
-<!-- 汎用ダイアログ (z-indexを300000に設定してホスト設定の上に完全に重ねる) -->
-<div id="confirmMod" class="mod-overlay" style="z-index: 300000;">
-  <div class="clrmc gc" style="max-width:320px; border-color: rgba(244,63,94,0.3);">
-    <h3 id="confirmTitle" style="font-size:14px; color:var(--tx); border-bottom:1px solid var(--bd); padding-bottom:6px; font-weight:bold;">確認</h3>
-    <p id="confirmMessage" style="font-size:13px; color:var(--mu); line-height:1.5; margin:10px 0; white-space:pre-wrap;"></p>
-    <div class="clr-btns">
-      <button class="clr-ok" id="confirmOkBtn" style="background:var(--in);">OK</button>
-      <button class="clr-cancel" id="confirmCancelBtn">キャンセル</button>
-    </div>
   </div>
 </div>
 
 <script>
+// アコーディオンの開閉用ヘルパー
+function toggleAcc(id) {
+  const el = document.getElementById(id);
+  const isShow = el.classList.toggle('show');
+  el.previousElementSibling.querySelector('.acc-icon').textContent = isShow ? '▼' : '▶';
+}
+
 (function() {
   const ADMIN_UID = "J64MocsPo0QD7hSwZpQgEeDdO6X2";
   
@@ -596,7 +554,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       const cancelBtn = $("confirmCancelBtn");
 
       if (!mod || !titleEl || !msgEl || !okBtn || !cancelBtn) {
-        // フォールバック（要素がない場合は標準ブラウザ confirm を使用）
+        // フォールバック
         resolve(window.confirm(message));
         return;
       }
@@ -930,7 +888,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     const trimmedNi = nameVal.trim();
     if (myUid) {
-      myTrip = await makeTripFromUid(myUid);
+      myTrip = await window.makeTripFromUid(myUid);
       if ($("lobbyTripPrev")) $("lobbyTripPrev").textContent = `プレビュー: ${trimmedNi || "名無し"} ${myTrip}`;
       if ($("btnCopyTrip")) $("btnCopyTrip").style.display = "inline-flex"; 
     } else {
@@ -1396,7 +1354,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     // 改善: 公式部屋（official）でもsettingsが存在しない場合は自動作成する
     if (!settingsSnap || !settingsSnap.exists()) {
-      const isGlobalAdmin = checkIsGlobalAdmin();
+      const isGlobalAdmin = (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
       roomSettings.creatorUid = (currentRoomId === "official") ? (isGlobalAdmin ? myUid : ADMIN_UID) : myUid;
       roomSettings.approvalMode = false;
       roomSettings.newEntriesDisabled = false;
@@ -2130,17 +2088,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   const initDirectDatabaseProcess = async () => {
     initFirebase(); 
     
-    let fallbackUid = safeLS.get("nz_permanent_uid");
-    if (!fallbackUid) {
-      fallbackUid = "anon_" + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
-      safeLS.set("nz_permanent_uid", fallbackUid);
-    }
-    myUid = fallbackUid;
-    await syncProfileValues();
-
-    checkInvitationUrl();
-
+    // 💡 匿名認証（Auth）が確実に通るよう、セッションを待ち合わせて完璧な同期を行います
     if (typeof firebase !== 'undefined' && firebase.auth) {
+      // 💡 超高速化: IndexedDBに保存されている本物の匿名アカウント情報をサーバーに問い合わせずにローカルキャッシュから即座にロードします
       firebase.auth().onAuthStateChanged(async (user) => {
         if (user) {
           myUid = user.uid; 
@@ -2185,6 +2135,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
               }
             } catch (e) {
               console.warn("Requests read error during startup:", e);
+              switchScreen("lobby");
+              hideAppSpinner();
             }
           } else {
             const wasJoined = (safeLS.get("nz_is_joined") === "true");
@@ -2205,14 +2157,27 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
           validateLobbyInputs();
         } else {
-          firebase.auth().signInAnonymously().catch((e) => {
-            console.warn("Anonymous sign-in error:", e);
-            showToast("⚠️ 認証サーバー連携オフ。オープンモードとして接続しました。");
-          });
+          // キャッシュが何もない初めての接続時は、安全に匿名アカウントをその場で新規作成します
+          firebase.auth().signInAnonymously()
+            .then(async (cred) => {
+              myUid = cred.user.uid;
+              safeLS.set("nz_permanent_uid", myUid);
+              await syncProfileValues();
+              switchScreen("lobby");
+              hideAppSpinner();
+            })
+            .catch((e) => {
+              console.warn("Anonymous sign-in error, falling back to offline mode:", e);
+              showToast("⚠️ 認証サーバーに接続できませんでした。一時的に制限モードで動作します。");
+              switchScreen("lobby");
+              hideAppSpinner();
+            });
         }
       });
     } else {
       validateLobbyInputs();
+      switchScreen("lobby");
+      hideAppSpinner();
     }
 
     if (db) db.goOnline();
