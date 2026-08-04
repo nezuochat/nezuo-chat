@@ -441,10 +441,10 @@ function toggleAcc(id) {
 
   const $ = id => document.getElementById(id);
   let D = {};
-  let myPresenceRef = null; // 🛡️ スコープエラー対策用の変数宣言
+  let myPresenceRef = null;
 
   (function initInitialScreenState() {
-    const wasJoined = (safeLS.get("nz_is_joined") === "true");
+    const wasJoined = safeLS.get("nz_is_joined") === "true";
     const lastRoomId = safeLS.get("nz_last_room_id");
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
     if (wasJoined && lastRoomId && (Date.now() - lastPost < 1800000)) {
@@ -763,6 +763,28 @@ function toggleAcc(id) {
     }
   }
 
+  // 🛡️ 部屋が無人になったかどうかを即座にチェックして爆破（自動消滅）させる関数
+  function checkRoomSelfDestruct(roomId) {
+    if (!db || !roomId || roomId === "official") return;
+    db.ref(`presence/${roomId}`).once("value", snap => {
+      const list = snap.val() || {};
+      const now = getTrueTime();
+      let activeCount = 0;
+      for (const [id, u] of Object.entries(list)) {
+        if (u && u.t && (now - u.t < 1800000)) {
+          activeCount++;
+        }
+      }
+      if (activeCount === 0) {
+        db.ref(`chat/${roomId}`).remove().catch(()=>{});
+        db.ref(`settings/${roomId}`).remove().catch(()=>{});
+        db.ref(`presence/${roomId}`).remove().catch(()=>{});
+        db.ref(`requests/${roomId}`).remove().catch(()=>{});
+        db.ref(`banlist/${roomId}`).remove().catch(()=>{});
+      }
+    });
+  }
+
   async function doExit(isAuto = false) {
     const cleanUid = myUid, cleanName = (myName || "").trim(), cleanTrip = myTrip || "", oldRoomId = currentRoomId, wasJoined = isJoined;
     isJoined = false; stopAutoExitTimer();
@@ -774,7 +796,10 @@ function toggleAcc(id) {
       if (oldRoomId && db) {
         if (cleanUid) db.ref(`banlist/${oldRoomId}/${cleanUid}`).off("value");
         db.ref(`settings/${oldRoomId}`).off("value");
-        db.ref(`presence/${oldRoomId}/${cleanUid}`).remove().catch(()=>{});
+        db.ref(`presence/${oldRoomId}/${cleanUid}`).remove().then(() => {
+          // 🛡️ 退室した瞬間に無人チェックを走り込ませる
+          checkRoomSelfDestruct(oldRoomId);
+        }).catch(()=>{});
       }
       const limitMin = roomSettings.autoExitMinutes || 30;
       showToast(isAuto ? `⏱️ ${limitMin}分間発言がなかったため、自動退室しました。` : "🚪 退室しました。");
@@ -1090,6 +1115,11 @@ function toggleAcc(id) {
       }
       currentPresenceMap = members; isPresenceInitialized = true; renderPresence(members);
       
+      // 🛡️ メンバー増減時、誰もいなくなっていないかチェック
+      if (Object.keys(members).length === 0) {
+        checkRoomSelfDestruct(currentRoomId);
+      }
+
       if (isSystemReporter()) {
         const limitMs = (roomSettings.autoExitMinutes || 30) * 60000;
         for (const [id, u] of Object.entries(members)) {
@@ -1313,7 +1343,6 @@ function toggleAcc(id) {
       });
     }
 
-    // 🚨 ログ初期化（全消去）およびシステムお知らせログが巻き込まれず確実に出る処理
     if ($("admClearBtn")) {
       $("admClearBtn").addEventListener("click", (e) => {
         e.preventDefault();
@@ -1321,14 +1350,9 @@ function toggleAcc(id) {
           if (!ok || !db || !currentRoomId) return;
           if (D.adminModal) D.adminModal.classList.remove("show");
           try {
-            // 1. まずチャットログを全削除
             await db.ref(`chat/${currentRoomId}`).remove();
-
-            // 2. クリア基準時間を更新（この時点より前のデータがリセット対象になる）
             const clearTs = firebase.database.ServerValue.TIMESTAMP;
             await db.ref(`settings/${currentRoomId}/last_cleared_at`).set(clearTs);
-
-            // 3. クリア基準を設定したあとに、新着としてお知らせログをプッシュする
             const clearLogText = "[SYS]::🚨 [お知らせ] 管理者によってログが初期化されました";
             await db.ref(`chat/${currentRoomId}`).push({
               u: "system",
@@ -1338,11 +1362,8 @@ function toggleAcc(id) {
               m: clearLogText,
               t: firebase.database.ServerValue.TIMESTAMP
             });
-
             showToast("🚨 チャットログを初期化しました。");
-          } catch (err) {
-            showToast("⚠️ ログの初期化に失敗しました。");
-          }
+          } catch (err) { showToast("⚠️ ログの初期化に失敗しました。"); }
         });
       });
     }
