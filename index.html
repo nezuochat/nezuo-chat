@@ -189,7 +189,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 }
 
 #confirmMod { z-index: 300000 !important; }
-#approvalScreen { display: none; flex: 1; flex-direction: column; justify-content: center; align-items: center; padding: 20px; background: #0d1117; }
 @media (max-width:580px){#hdr{padding-right:0!important}#ib{padding-right:0!important}}
 </style>
 </head>
@@ -213,33 +212,34 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 <div id="adminModal" class="mod-overlay">
   <div class="gc" style="max-width: 420px; gap: 12px;">
     <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bd); padding-bottom: 8px;">
-      <span style="font-size: 14px; font-weight: bold;">⚙️ ホスト設定パネル</span>
+      <span id="adminModalTitle" style="font-size: 14px; font-weight: bold;">⚙️ ホスト設定パネル</span>
       <button class="btn" id="adminModCloseBtn" style="background: rgba(255,255,255,0.08); width: 28px; height: 28px; border-radius: 50%; font-size: 13px;">✕</button>
     </div>
 
-    <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 11px; font-weight: bold;">
-      <div style="display: flex; align-items: center; gap: 4px;">
-        <input type="checkbox" id="admApprovalMode" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
-        <label for="admApprovalMode" style="color: var(--tx); cursor: pointer; user-select: none;">承認制</label>
-      </div>
-      <div style="display: flex; align-items: center; gap: 4px;">
-        <input type="checkbox" id="admStopJoin" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
-        <label for="admStopJoin" style="color: var(--tx); cursor: pointer; user-select: none;">新規制限</label>
-      </div>
-      <div style="display: flex; align-items: center; gap: 4px;">
-        <input type="checkbox" id="admPassToggle" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
-        <label for="admPassToggle" style="color: var(--tx); cursor: pointer; user-select: none;">合言葉あり</label>
+    <div id="admOfficialAutoExitContainer" style="display: none; flex-direction: column; gap: 4px; background: var(--s2); border: 1px solid var(--bd); border-radius: 6px; padding: 8px; width: 100%;">
+      <label style="font-size:10.5px; font-weight:bold; color: #fb923c;">⏱️ 公式部屋 自動退室時間 (1〜60分)</label>
+      <div style="display: flex; gap: 6px; align-items: center;">
+        <input type="number" id="admAutoExitInput" class="inp" min="1" max="60" value="30" style="height:32px; font-size:12px; flex: 1; padding: 4px 8px;">
+        <button class="btn" id="admAutoExitSaveBtn" style="background: var(--in); color: #fff; font-size: 11px; height: 32px; width: 56px; font-weight: bold; border-radius: 4px;">設定</button>
       </div>
     </div>
 
-    <div id="admPassContainer" style="display: none; align-items: center; gap: 6px; width: 100%;">
-      <input type="text" id="admPass" class="inp" placeholder="合言葉を入力..." autocomplete="off" style="height:32px; font-size:12px; flex: 1; padding: 4px 8px;">
-      <button class="btn" id="admPassSaveBtn" style="background: var(--in); color: #fff; font-size: 11px; height: 32px; width: 56px; font-weight: bold; border-radius: 4px;">適用</button>
-    </div>
+    <div id="admGeneralSettingsGroup" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; font-size: 11px; font-weight: bold;">
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <input type="checkbox" id="admStopJoin" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
+          <label for="admStopJoin" style="color: var(--tx); cursor: pointer; user-select: none;">新規制限</label>
+        </div>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          <input type="checkbox" id="admPassToggle" style="width: 15px; height: 15px; accent-color: var(--in); cursor: pointer;">
+          <label for="admPassToggle" style="color: var(--tx); cursor: pointer; user-select: none;">合言葉あり</label>
+        </div>
+      </div>
 
-    <div id="admRequestListContainer" style="display: none; flex-direction: column; gap: 4px; background: var(--s2); border: 1px solid var(--bd); border-radius: 6px; padding: 6px; width: 100%;">
-      <label style="font-size:10px; font-weight:bold; color: var(--ro);">📋 入室申請（審査待ち）</label>
-      <div id="admRequestList" style="display: flex; flex-direction: column; gap: 4px; max-height: 80px; overflow-y: auto;"></div>
+      <div id="admPassContainer" style="display: none; align-items: center; gap: 6px; width: 100%;">
+        <input type="text" id="admPass" class="inp" placeholder="合言葉を入力..." autocomplete="off" style="height:32px; font-size:12px; flex: 1; padding: 4px 8px;">
+        <button class="btn" id="admPassSaveBtn" style="background: var(--in); color: #fff; font-size: 11px; height: 32px; width: 56px; font-weight: bold; border-radius: 4px;">適用</button>
+      </div>
     </div>
 
     <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
@@ -282,18 +282,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   </div>
 </div>
 
-<div id="approvalScreen">
-  <div class="gc" style="max-width: 380px; text-align: center; gap: 12px;">
-    <div style="font-size: 16px; font-weight: bold; color: var(--tx);">🔒 入室審査待ち</div>
-    <div style="font-size: 12.5px; color: var(--mu); line-height: 1.6;">この部屋は現在「承認制」です。<br>ホストがあなたの入室を許可するまでお待ちください。</div>
-    <div id="approvalMyInfo" style="font-size: 12px; font-weight: bold; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 6px; color: var(--usr-color);"></div>
-    <div style="display: flex; gap: 8px; margin-top: 4px;">
-      <button class="btn" id="btnCopyTripInApproval" style="background: #0ea5e9; color: #fff; flex: 1; font-size: 11px;">📋 トリップコピー</button>
-      <button class="btn" id="btnCancelApproval" style="background: var(--ro); color: #fff; flex: 1; font-size: 11px;">申請を取り消す</button>
-    </div>
-  </div>
-</div>
-
 <div id="app">
   <div id="cp">
     <div id="hdr">
@@ -318,8 +306,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <div id="chatScreen">
-      <div id="pl"></div>
+    <!-- チャット画面 -->
+    <div id="chatScreen" style="display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
+      <div id="pl" style="display: none;"></div>
 
       <div id="fixedPlayer">
         <div id="playerHeader">
@@ -364,7 +353,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <div id="lobbyScreen">
+    <!-- ロビー画面 -->
+    <div id="lobbyScreen" style="display: none; flex: 1; overflow-y: auto; padding: 10px 12px; background: #0d1117; flex-direction: column; gap: 10px;">
       <div class="lobby-sec">
         <h2>👤 ユーザー設定 (必須入力)</h2>
         <div style="display:flex; flex-direction:column; gap:4px; width:100%;">
@@ -451,24 +441,17 @@ function toggleAcc(id) {
 
   const $ = id => document.getElementById(id);
   let D = {};
+  let myPresenceRef = null; // 🛡️ スコープエラー対策用の変数宣言
 
-  // 🚀 起動直後（DOM構築前）に前回の入室状態を確認し、ロビーのチラツキを完全にシャットアウト
   (function initInitialScreenState() {
     const wasJoined = (safeLS.get("nz_is_joined") === "true");
-    const wasPending = (safeLS.get("nz_is_pending") === "true");
     const lastRoomId = safeLS.get("nz_last_room_id");
-    const pendingRoomId = safeLS.get("nz_pending_room_id");
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
-    const nowLocal = Date.now();
-
-    if (wasJoined && lastRoomId && (nowLocal - lastPost < 1800000)) {
+    if (wasJoined && lastRoomId && (Date.now() - lastPost < 1800000)) {
       const chatScr = document.getElementById("chatScreen");
       if (chatScr) chatScr.style.display = "flex";
       const logoTitle = document.getElementById("logoTitle");
       if (logoTitle) logoTitle.innerHTML = `NEZUO CHAT<span class="sub-room">${lastRoomId === "official" ? "常設公式部屋" : lastRoomId}</span>`;
-    } else if (wasPending && pendingRoomId) {
-      const appScr = document.getElementById("approvalScreen");
-      if (appScr) appScr.style.display = "flex";
     } else {
       const lobbyScr = document.getElementById("lobbyScreen");
       if (lobbyScr) lobbyScr.style.display = "flex";
@@ -508,7 +491,6 @@ function toggleAcc(id) {
       const okBtn = $("confirmOkBtn");
       const cancelBtn = $("confirmCancelBtn");
       if (!mod) { resolve(window.confirm(message)); return; }
-
       titleEl.textContent = title;
       msgEl.textContent = message;
       okBtn.textContent = okText;
@@ -585,8 +567,8 @@ function toggleAcc(id) {
   let isFirstLoad = true, isFirebaseListenersBound = false, isPresenceInitialized = false;
   let isSending = false, lastSendTime = 0, scale = 1, panX = 0, panY = 0;
   let currentPresenceMap = {}, isConnectedBound = false;
-  let roomSettings = { approvalMode: false, newEntriesDisabled: false, passcode: "", approvedTrips: {}, creatorUid: "" };
-  let requestListenerRef = null, approvalStateListener = null, myPresenceRef = null, localLastClearedTime = 0;
+  let roomSettings = { passcode: "", newEntriesDisabled: false, approvedTrips: {}, creatorUid: "", autoExitMinutes: 30 };
+  let localLastClearedTime = 0;
   const UR = /(https?:\/\/[^\s\n<>"]+)/gi;
 
   const COLORS = [
@@ -720,7 +702,6 @@ function toggleAcc(id) {
     const logoTitle = $("logoTitle") || document.querySelector(".logo");
     if ($("lobbyScreen")) $("lobbyScreen").style.display = "none";
     if ($("chatScreen")) $("chatScreen").style.display = "none";
-    if ($("approvalScreen")) $("approvalScreen").style.display = "none";
     if ($("exBtn")) $("exBtn").style.display = "none";
     if ($("inviteBtn")) $("inviteBtn").style.display = "none";
     if ($("pl")) $("pl").style.display = "none";
@@ -730,11 +711,7 @@ function toggleAcc(id) {
       if ($("chatScreen")) $("chatScreen").style.display = "flex";
       if ($("exBtn")) $("exBtn").style.display = "inline-flex";
       if ($("inviteBtn")) $("inviteBtn").style.display = "inline-flex";
-      if ($("pl")) $("pl").style.display = "flex";
       if (logoTitle && rawRoomId) logoTitle.innerHTML = `NEZUO CHAT<span class="sub-room">${rawRoomId === "official" ? "常設公式部屋" : rawRoomId}</span>`;
-    } else if (state === "approval") {
-      if ($("approvalScreen")) $("approvalScreen").style.display = "flex";
-      if (logoTitle && rawRoomId) logoTitle.innerHTML = `NEZUO CHAT<span class="sub-room">${rawRoomId === "official" ? "常設公式部屋" : rawRoomId} (審査待ち)</span>`;
     } else {
       if ($("lobbyScreen")) $("lobbyScreen").style.display = "flex";
       if ($("roomStatusBadges")) $("roomStatusBadges").style.display = "none";
@@ -748,7 +725,8 @@ function toggleAcc(id) {
   function startAutoExitChecker() {
     stopAutoExitTimer();
     if (!isJoined) return;
-    const remaining = (parseInt(safeLS.get("nz_last_post_time") || "0") + 1800000) - getTrueTime();
+    const limitMs = (roomSettings.autoExitMinutes || 30) * 60000;
+    const remaining = (parseInt(safeLS.get("nz_last_post_time") || "0") + limitMs) - getTrueTime();
     if (remaining <= 0) doExit(true);
     else autoExitTimeoutId = setTimeout(() => doExit(true), remaining);
   }
@@ -758,31 +736,37 @@ function toggleAcc(id) {
     if (!isJoined || !currentRoomId) return false;
     const activeUids = Object.keys(currentPresenceMap).sort();
     if (activeUids.length === 0) return false;
-    if (roomSettings.creatorUid && activeUids.includes(roomSettings.creatorUid)) return myUid === roomSettings.creatorUid;
     return myUid === activeUids[0];
   }
 
   const checkIsGlobalAdmin = () => (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
 
+  const exitingUsers = new Set();
   function triggerOtherExit(targetId, targetUser) {
-    if (targetUser.exiting || !db) return;
-    targetUser.exiting = true;
+    if (exitingUsers.has(targetId) || !db) return;
+    exitingUsers.add(targetId);
+
     const finishExit = () => {
-      if (isSystemReporter()) db.ref(`presence/${currentRoomId}/${targetId}`).remove().catch(() => { targetUser.exiting = false; });
+      if (isSystemReporter()) {
+        db.ref(`presence/${currentRoomId}/${targetId}`).remove().catch(() => { exitingUsers.delete(targetId); });
+      }
     };
+
     if (isSystemReporter() && (targetUser.n || "").trim()) {
-      const encLog = "[SYS]::📢 [お知らせ] " + `${targetUser.n.trim()} ${targetUser.p || ""}`.trim() + " が自動退室しました (30分間発言がなかったため)";
-      db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: firebase.database.ServerValue.TIMESTAMP }).then(finishExit).catch(finishExit);
-    } else finishExit();
+      const limitMin = roomSettings.autoExitMinutes || 30;
+      const encLog = "[SYS]::📢 [お知らせ] " + `${targetUser.n.trim()} ${targetUser.p || ""}`.trim() + ` が自動退室しました (${limitMin}分間発言がなかったため)`;
+      db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: firebase.database.ServerValue.TIMESTAMP })
+        .then(finishExit)
+        .catch(() => { exitingUsers.delete(targetId); finishExit(); });
+    } else {
+      finishExit();
+    }
   }
 
   async function doExit(isAuto = false) {
-    stopApprovalSystem();
     const cleanUid = myUid, cleanName = (myName || "").trim(), cleanTrip = myTrip || "", oldRoomId = currentRoomId, wasJoined = isJoined;
     isJoined = false; stopAutoExitTimer();
     safeLS.remove("nz_is_joined"); safeLS.remove("nz_last_post_time"); safeLS.remove("nz_current_room_id");
-    safeLS.remove("nz_is_pending"); safeLS.remove("nz_pending_room_id"); safeLS.remove("nz_pending_room_pass");
-    if (cleanUid && oldRoomId && db) db.ref(`requests/${oldRoomId}/${cleanUid}`).remove().catch(()=>{});
 
     const finishAndClean = () => {
       removeFirebaseListeners(); switchScreen("lobby");
@@ -792,60 +776,15 @@ function toggleAcc(id) {
         db.ref(`settings/${oldRoomId}`).off("value");
         db.ref(`presence/${oldRoomId}/${cleanUid}`).remove().catch(()=>{});
       }
-      showToast(isAuto ? "⏱️ 30分間発言がなかったため、自動退室しました。" : "🚪 退室しました。");
+      const limitMin = roomSettings.autoExitMinutes || 30;
+      showToast(isAuto ? `⏱️ ${limitMin}分間発言がなかったため、自動退室しました。` : "🚪 退室しました。");
     };
 
     if (wasJoined && cleanName && db) {
-      const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が自動退室しました (30分間発言がなかったため)" : " が退室しました"), activeKey);
+      const limitMin = roomSettings.autoExitMinutes || 30;
+      const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? ` が自動退室しました (${limitMin}分間発言がなかったため)` : " が退室しました"), activeKey);
       db.ref(`chat/${oldRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: firebase.database.ServerValue.TIMESTAMP }).then(finishAndClean).catch(finishAndClean);
     } else finishAndClean();
-  }
-
-  function checkIsTripApproved(tripStr) {
-    if (!tripStr || !roomSettings.approvedTrips) return false;
-    return Object.values(roomSettings.approvedTrips).includes(tripStr);
-  }
-
-  let approvalHeartbeatTimer = null;
-  function stopApprovalSystem() {
-    if (approvalStateListener) { approvalStateListener.off(); approvalStateListener = null; }
-    if (approvalHeartbeatTimer) { clearInterval(approvalHeartbeatTimer); approvalHeartbeatTimer = null; }
-  }
-
-  async function switchToApprovalScreen(lobbyRoomId) {
-    switchScreen("approval", lobbyRoomId);
-    safeLS.set("nz_is_pending", "true"); safeLS.set("nz_pending_room_id", currentRoomId); safeLS.set("nz_pending_room_pass", currentRoomPass);
-    if ($("approvalMyInfo")) $("approvalMyInfo").textContent = `${myName} (${myTrip})`;
-    if (approvalHeartbeatTimer) clearInterval(approvalHeartbeatTimer);
-    approvalHeartbeatTimer = setInterval(() => {
-      if (db && isJoined === false && safeLS.get("nz_is_pending") === "true") {
-        db.ref(`requests/${currentRoomId}/${myUid}/last_active`).set(firebase.database.ServerValue.TIMESTAMP);
-      }
-    }, 30000);
-
-    if (approvalStateListener) approvalStateListener.off();
-    approvalStateListener = db.ref(`requests/${currentRoomId}/${myUid}`);
-    approvalStateListener.on("value", async snap => {
-      const val = snap.val();
-      if (!val) return;
-      if (val.status === "approved") {
-        stopApprovalSystem();
-        safeLS.remove("nz_is_pending"); safeLS.remove("nz_pending_room_id"); safeLS.remove("nz_pending_room_pass");
-        isJoined = true; safeLS.set("nz_is_joined", "true");
-        switchScreen("chat", lobbyRoomId); setupFirebaseListeners(); initSettingsListener();
-        db.ref(`presence/${currentRoomId}/${myUid}`).set({ n: myName || "名無し", p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
-        startAutoExitChecker();
-        if ((myName || "").trim()) {
-          const encEnter = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${myName.trim()} ${myTrip}`.trim() + " が入室しました", activeKey);
-          db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: curColor, m: encEnter, t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
-        }
-        showToast("🎉 入室申請がホストに承認されました！");
-      } else if (val.status === "rejected") {
-        stopApprovalSystem(); db.ref(`requests/${currentRoomId}/${myUid}`).remove().catch(()=>{});
-        safeLS.remove("nz_is_pending"); safeLS.remove("nz_pending_room_id"); safeLS.remove("nz_pending_room_pass");
-        showToast("❌ 入室申請が却下されました。"); switchScreen("lobby");
-      }
-    });
   }
 
   async function joinRoom(options = {}) {
@@ -876,35 +815,29 @@ function toggleAcc(id) {
     }
 
     const val = (settingsSnap && settingsSnap.val()) || {};
-    roomSettings.approvalMode = val.approvalMode || false;
     roomSettings.newEntriesDisabled = val.newEntriesDisabled || false;
     roomSettings.passcode = val.passcode || "";
     roomSettings.approvedTrips = val.approvedTrips || {};
     roomSettings.creatorUid = val.creatorUid || "";
+    roomSettings.autoExitMinutes = val.autoExitMinutes || 30;
 
     if (!settingsSnap || !settingsSnap.exists()) {
       const isGlobalAdmin = checkIsGlobalAdmin();
       roomSettings.creatorUid = (currentRoomId === "official") ? (isGlobalAdmin ? myUid : ADMIN_UID) : myUid;
       try {
-        await db.ref(`settings/${currentRoomId}`).set({ creatorUid: roomSettings.creatorUid, approvalMode: false, newEntriesDisabled: false, passcode: "" });
+        await db.ref(`settings/${currentRoomId}`).set({ creatorUid: roomSettings.creatorUid, newEntriesDisabled: false, passcode: "", autoExitMinutes: 30 });
         if (currentRoomId !== "official") safeLS.set("nz_my_created_room_id", currentRoomId);
       } catch (e) { alert("新規設定の保存権限がありません。"); switchScreen("lobby"); return; }
     }
 
-    const hasApprovedTrip = checkIsTripApproved(myTrip), isGlobalAdmin = checkIsGlobalAdmin(), isOwner = (myUid === roomSettings.creatorUid || isGlobalAdmin);
+    const hasApprovedTrip = (currentRoomId === "official" ? checkIsGlobalAdmin() : Object.values(roomSettings.approvedTrips).includes(myTrip));
+    const isGlobalAdmin = checkIsGlobalAdmin();
+    const isOwner = (currentRoomId === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin));
+
     if (!options.silent && roomSettings.newEntriesDisabled && !hasApprovedTrip && !isOwner) { alert("現在、新規の入室が制限されています。"); switchScreen("lobby"); return; }
     if (!options.silent && roomSettings.passcode && !hasApprovedTrip && !isOwner) {
       const userPass = prompt("部屋の合言葉を入力してください：");
       if (userPass !== roomSettings.passcode) { alert("合言葉が一致しません。"); switchScreen("lobby"); return; }
-    }
-
-    if (roomSettings.approvalMode && !hasApprovedTrip && !isOwner) {
-      try {
-        const encName = await E2EE.encrypt(myName || "名無し", activeKey);
-        await db.ref(`requests/${currentRoomId}/${myUid}`).set({ n: encName, p: myTrip, last_active: firebase.database.ServerValue.TIMESTAMP, status: "pending" });
-        await switchToApprovalScreen(lobbyRoomId);
-      } catch (e) { alert("入室申請の送信権限がありません。"); switchScreen("lobby"); }
-      return;
     }
 
     isJoined = true;
@@ -1074,9 +1007,15 @@ function toggleAcc(id) {
   }
 
   function renderPresence(serverListMap) {
-    if (!isPresenceInitialized || !D.pl) return;
+    if (!isPresenceInitialized) return;
     const sorted = Object.values(serverListMap).filter(m => m && m.n).sort((a, b) => a.id.localeCompare(b.id));
-    D.pl.style.display = "flex";
+    
+    if (D.pl) D.pl.style.display = "flex";
+    if ($("pcnt")) {
+      $("pcnt").textContent = `${sorted.length}人`;
+      $("pcnt").style.display = "inline-block";
+    }
+
     const targetIds = new Set(sorted.map(m => m.id));
     Array.from(D.pl.children).forEach(chip => { if (chip.dataset.uid && !targetIds.has(chip.dataset.uid)) chip.remove(); });
 
@@ -1098,7 +1037,6 @@ function toggleAcc(id) {
         D.pl.appendChild(chip);
       }
     });
-    if ($("pcnt")) { $("pcnt").textContent = `${sorted.length}人`; $("pcnt").style.display = "inline-block"; }
     updateJumpBtns();
   }
 
@@ -1147,11 +1085,19 @@ function toggleAcc(id) {
       const list = s.val() || {}, members = {}, nowTrue = getTrueTime();
       for (const [id, u] of Object.entries(list)) {
         if (u && u.n && typeof u.t === "number") {
-          if (isOffsetLoaded && id !== myUid && (nowTrue - u.t >= 1800000)) { triggerOtherExit(id, u); continue; }
           members[id] = { id, ...u };
         }
       }
       currentPresenceMap = members; isPresenceInitialized = true; renderPresence(members);
+      
+      if (isSystemReporter()) {
+        const limitMs = (roomSettings.autoExitMinutes || 30) * 60000;
+        for (const [id, u] of Object.entries(members)) {
+          if (id !== myUid && (nowTrue - u.t >= limitMs)) {
+            triggerOtherExit(id, u);
+          }
+        }
+      }
     });
 
     myPresenceRef = db.ref(`presence/${currentRoomId}/${myUid}`);
@@ -1178,15 +1124,19 @@ function toggleAcc(id) {
     if (badgesContainer) {
       badgesContainer.innerHTML = ""; let count = 0;
       if (roomSettings.passcode) { badgesContainer.innerHTML += `<span style="font-size:9.5px; font-weight:900; background:#fb923c; color:#fff; padding:1.5px 5px; border-radius:3px;">🔑合言葉</span>`; count++; }
-      if (roomSettings.approvalMode) { badgesContainer.innerHTML += `<span style="font-size:9.5px; font-weight:900; background:#ef4444; color:#fff; padding:1.5px 5px; border-radius:3px;">🔒承認</span>`; count++; }
       if (roomSettings.newEntriesDisabled) { badgesContainer.innerHTML += `<span style="font-size:9.5px; font-weight:900; background:#64748b; color:#fff; padding:1.5px 5px; border-radius:3px;">🚫制限</span>`; count++; }
       badgesContainer.style.display = count > 0 ? "flex" : "none";
     }
-    $("adminBtnContainer").style.display = (myUid === roomSettings.creatorUid || checkIsGlobalAdmin()) ? "inline-flex" : "none";
+    const isGlobalAdmin = checkIsGlobalAdmin();
+    $("adminBtnContainer").style.display = (currentRoomId === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin)) ? "inline-flex" : "none";
   }
 
   function updateAdminModalFields() {
-    if ($("admApprovalMode")) $("admApprovalMode").checked = roomSettings.approvalMode;
+    const isOfficial = (currentRoomId === "official");
+    if ($("adminModalTitle")) $("adminModalTitle").textContent = isOfficial ? "⚙️ 公式部屋 管理パネル" : "⚙️ ホスト設定パネル";
+    if ($("admOfficialAutoExitContainer")) $("admOfficialAutoExitContainer").style.display = isOfficial ? "flex" : "none";
+    if ($("admGeneralSettingsGroup")) $("admGeneralSettingsGroup").style.display = isOfficial ? "none" : "flex";
+    if ($("admAutoExitInput")) $("admAutoExitInput").value = roomSettings.autoExitMinutes || 30;
     if ($("admStopJoin")) $("admStopJoin").checked = roomSettings.newEntriesDisabled;
     if ($("admPassToggle")) $("admPassToggle").checked = !!roomSettings.passcode;
     if ($("admPass")) $("admPass").value = roomSettings.passcode || "";
@@ -1197,11 +1147,13 @@ function toggleAcc(id) {
     if (!db || !currentRoomId) return;
     db.ref(`settings/${currentRoomId}`).on("value", snap => {
       const val = snap.val() || {};
-      roomSettings.approvalMode = val.approvalMode || false;
       roomSettings.newEntriesDisabled = val.newEntriesDisabled || false;
       roomSettings.passcode = val.passcode || "";
       roomSettings.approvedTrips = val.approvedTrips || {};
       roomSettings.creatorUid = val.creatorUid || "";
+      roomSettings.autoExitMinutes = val.autoExitMinutes || 30;
+
+      startAutoExitChecker();
 
       const serverClearTime = val.last_cleared_at || 0;
       if (serverClearTime && serverClearTime > localLastClearedTime) {
@@ -1219,7 +1171,8 @@ function toggleAcc(id) {
         }
       }
       applyRoomSettingsUI();
-      if (myUid === roomSettings.creatorUid || checkIsGlobalAdmin()) updateAdminModalFields();
+      const isGlobalAdmin = checkIsGlobalAdmin();
+      if (currentRoomId === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin)) updateAdminModalFields();
     });
   }
 
@@ -1254,18 +1207,9 @@ function toggleAcc(id) {
       if (!user) { const cred = await auth.signInAnonymously(); user = cred.user; }
       if (user) {
         myUid = user.uid; safeLS.set("nz_permanent_uid", myUid); await syncProfileValues();
-        const wasPending = (safeLS.get("nz_is_pending") === "true"), pendingRoomId = safeLS.get("nz_pending_room_id"), pendingRoomPass = safeLS.get("nz_pending_room_pass");
-        if (wasPending && pendingRoomId && pendingRoomPass) {
-          const reqSnap = await db.ref(`requests/${pendingRoomId}/${myUid}`).once("value");
-          if (!reqSnap.exists()) { safeLS.remove("nz_is_pending"); switchScreen("lobby"); }
-          else if (reqSnap.val().status === "approved") { safeLS.remove("nz_is_pending"); await joinRoom({ roomId: pendingRoomId, roomPass: pendingRoomPass, silent: true }); }
-          else if (reqSnap.val().status === "rejected") { safeLS.remove("nz_is_pending"); db.ref(`requests/${pendingRoomId}/${myUid}`).remove().catch(()=>{}); switchScreen("lobby"); }
-          else { currentRoomId = pendingRoomId; currentRoomPass = pendingRoomPass; activeKey = await E2EE.deriveKey(pendingRoomPass); await switchToApprovalScreen(pendingRoomId); }
-        } else {
-          const wasJoined = (safeLS.get("nz_is_joined") === "true"), lastRoomId = safeLS.get("nz_last_room_id"), lastRoomPass = safeLS.get("nz_last_room_pass"), lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
-          if (wasJoined && lastRoomId && lastRoomPass && (getTrueTime() - lastPost < 1800000)) await joinRoom({ roomId: lastRoomId, roomPass: lastRoomPass, silent: true });
-          else switchScreen("lobby");
-        }
+        const wasJoined = (safeLS.get("nz_is_joined") === "true"), lastRoomId = safeLS.get("nz_last_room_id"), lastRoomPass = safeLS.get("nz_last_room_pass"), lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
+        if (wasJoined && lastRoomId && lastRoomPass && (getTrueTime() - lastPost < 1800000)) await joinRoom({ roomId: lastRoomId, roomPass: lastRoomPass, silent: true });
+        else switchScreen("lobby");
         validateLobbyInputs();
       }
     } catch (err) { switchScreen("lobby"); }
@@ -1338,7 +1282,6 @@ function toggleAcc(id) {
     if (D.admBtn && D.adminModal) D.admBtn.addEventListener("click", (e) => { e.preventDefault(); updateAdminModalFields(); D.adminModal.classList.add("show"); });
     if (D.adminModCloseBtn && D.adminModal) D.adminModCloseBtn.addEventListener("click", (e) => { e.preventDefault(); D.adminModal.classList.remove("show"); });
 
-    if ($("admApprovalMode")) $("admApprovalMode").addEventListener("change", () => { if (db && currentRoomId) db.ref(`settings/${currentRoomId}/approvalMode`).set($("admApprovalMode").checked); });
     if ($("admStopJoin")) $("admStopJoin").addEventListener("change", () => { if (db && currentRoomId) db.ref(`settings/${currentRoomId}/newEntriesDisabled`).set($("admStopJoin").checked); });
 
     const admPassToggle = $("admPassToggle"), admPassContainer = $("admPassContainer");
@@ -1354,7 +1297,23 @@ function toggleAcc(id) {
       if (db && currentRoomId) db.ref(`settings/${currentRoomId}/passcode`).set(passVal).then(() => showToast("🔑 合言葉を更新しました。"));
     });
 
-    // 🚨 ログ初期化（全消去）およびシステムお知らせログが正しく入る修正版
+    if ($("admAutoExitSaveBtn")) {
+      $("admAutoExitSaveBtn").addEventListener("click", (e) => {
+        e.preventDefault();
+        const minutes = parseInt($("admAutoExitInput").value, 10);
+        if (isNaN(minutes) || minutes < 1 || minutes > 60) {
+          alert("1から60の間の数値を入力してください。");
+          return;
+        }
+        if (db && currentRoomId) {
+          db.ref(`settings/${currentRoomId}/autoExitMinutes`).set(minutes).then(() => {
+            showToast(`⏱️ 自動退室時間を ${minutes}分 に設定しました。`);
+          });
+        }
+      });
+    }
+
+    // 🚨 ログ初期化（全消去）およびシステムお知らせログが巻き込まれず確実に出る処理
     if ($("admClearBtn")) {
       $("admClearBtn").addEventListener("click", (e) => {
         e.preventDefault();
@@ -1362,22 +1321,28 @@ function toggleAcc(id) {
           if (!ok || !db || !currentRoomId) return;
           if (D.adminModal) D.adminModal.classList.remove("show");
           try {
-            const clearLogText = "[SYS]::🚨 [お知らせ] 管理者によってログが初期化されました";
-            const encClearLog = await E2EE.encrypt(clearLogText, activeKey);
-            
-            // トランザクション・同時実行時の競合を防ぎ、確実に削除後にシステムログが入るように処理
+            // 1. まずチャットログを全削除
             await db.ref(`chat/${currentRoomId}`).remove();
+
+            // 2. クリア基準時間を更新（この時点より前のデータがリセット対象になる）
+            const clearTs = firebase.database.ServerValue.TIMESTAMP;
+            await db.ref(`settings/${currentRoomId}/last_cleared_at`).set(clearTs);
+
+            // 3. クリア基準を設定したあとに、新着としてお知らせログをプッシュする
+            const clearLogText = "[SYS]::🚨 [お知らせ] 管理者によってログが初期化されました";
             await db.ref(`chat/${currentRoomId}`).push({
               u: "system",
               n: "システム",
               p: "",
               c: "#f43f5e",
-              m: encClearLog,
+              m: clearLogText,
               t: firebase.database.ServerValue.TIMESTAMP
             });
-            await db.ref(`settings/${currentRoomId}/last_cleared_at`).set(firebase.database.ServerValue.TIMESTAMP);
+
             showToast("🚨 チャットログを初期化しました。");
-          } catch (err) { showToast("⚠️ ログの初期化に失敗しました。"); }
+          } catch (err) {
+            showToast("⚠️ ログの初期化に失敗しました。");
+          }
         });
       });
     }
@@ -1402,23 +1367,6 @@ function toggleAcc(id) {
       e.preventDefault();
       if (!myTrip) { showToast("⚠️ トリップが生成されていません。"); return; }
       try { await navigator.clipboard.writeText(myTrip); showToast(`📋 ユーザーID「${myTrip}」をコピーしました！`); } catch(err) { showToast("⚠️ コピーに失敗しました。"); }
-    });
-
-    $("btnCopyTripInApproval").addEventListener("click", async (e) => {
-      e.preventDefault(); if (!myTrip) return;
-      try { await navigator.clipboard.writeText(myTrip); showToast(`📋 ユーザーID「${myTrip}」をコピーしました！`); } catch(err) { showToast("⚠️ コピーに失敗しました。"); }
-    });
-
-    $("btnCancelApproval").addEventListener("click", (e) => {
-      e.preventDefault();
-      customConfirm("申請の取り消し", "入室申請を取り消してロビーに戻りますか？", "取り消す", "キャンセル", true).then(ok => {
-        if (ok) {
-          stopApprovalSystem();
-          if (db && currentRoomId) db.ref(`requests/${currentRoomId}/${myUid}`).remove().catch(()=>{});
-          safeLS.remove("nz_is_pending"); safeLS.remove("nz_pending_room_id"); safeLS.remove("nz_pending_room_pass");
-          showToast("申請を取り消しました。"); switchScreen("lobby");
-        }
-      });
     });
 
     $("btnGen").addEventListener("click", (e) => {
