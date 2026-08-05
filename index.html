@@ -69,6 +69,23 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 #chatScreen { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 
+/* 🎯 チャット上部にスライド展開する折りたたみ式ホストパネル (アコーディオン) */
+#adminAccordion {
+  display: none;
+  flex-direction: column;
+  background: var(--sf);
+  border-bottom: 1px solid var(--bd);
+  padding: 10px 14px;
+  gap: 8px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  animation: slideDown 0.15s ease-out forwards;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 #pl{display:none;gap:6px;padding:6px 12px;background:var(--s2);border-bottom:1px solid var(--bd);overflow-x:auto;white-space:nowrap;min-height:36px;max-height:36px;flex-shrink:0;align-items:center;}
 .chip{font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;background:var(--bg);border:1px solid rgba(255,255,255,.06);display:inline-flex;align-items:center;color:var(--tx);height:24px}
 
@@ -162,7 +179,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 .mod-overlay {
   display: none;position: fixed;top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(5, 7, 10, 0.85);backdrop-filter: blur(4px);z-index: 200000; 
+  background: rgba(5, 7, 10, 0.55);backdrop-filter: blur(2px);z-index: 200000; 
   align-items: center;justify-content: center;padding: 20px;
 }
 .mod-overlay.show { display: flex !important; }
@@ -209,61 +226,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   </div>
 </div>
 
-<div id="adminModal" class="mod-overlay">
-  <div class="gc" style="max-width: 380px; gap: 10px; padding: 12px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bd); padding-bottom: 6px;">
-      <span id="adminModalTitle" style="font-size: 13px; font-weight: bold;">⚙️ ホスト設定</span>
-      <button class="btn" id="adminModCloseBtn" style="background: rgba(255,255,255,0.08); width: 24px; height: 24px; border-radius: 50%; font-size: 12px;">✕</button>
-    </div>
-
-    <div id="admOfficialAutoExitContainer" style="display: none; flex-direction: column; gap: 4px; background: var(--s2); border: 1px solid var(--bd); border-radius: 5px; padding: 8px; width: 100%;">
-      <label style="font-size:10.5px; font-weight:bold; color: #fb923c;">⏱️ 公式 自動退室時間 (1〜60分)</label>
-      <div style="display: flex; gap: 6px; align-items: center;">
-        <input type="number" id="admAutoExitInput" class="inp" min="1" max="60" value="30" style="height:28px; font-size:11.5px; flex: 1; padding: 2px 6px;">
-        <button class="btn" id="admAutoExitSaveBtn" style="background: var(--in); color: #fff; font-size: 10.5px; height: 28px; width: 48px; font-weight: bold; border-radius: 4px;">設定</button>
-      </div>
-    </div>
-
-    <div id="admGeneralSettingsGroup" style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
-      <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; font-size: 10.5px; font-weight: bold;">
-        <div style="display: flex; align-items: center; gap: 4px;">
-          <input type="checkbox" id="admStopJoin" style="width: 14px; height: 14px; accent-color: var(--in); cursor: pointer;">
-          <label for="admStopJoin" style="color: var(--tx); cursor: pointer; user-select: none;">新規制限</label>
-        </div>
-        <div style="display: flex; align-items: center; gap: 4px;">
-          <input type="checkbox" id="admPassToggle" style="width: 14px; height: 14px; accent-color: var(--in); cursor: pointer;">
-          <label for="admPassToggle" style="color: var(--tx); cursor: pointer; user-select: none;">合言葉あり</label>
-        </div>
-      </div>
-
-      <div id="admPassContainer" style="display: none; align-items: center; gap: 6px; width: 100%;">
-        <input type="text" id="admPass" class="inp" placeholder="合言葉を入力..." autocomplete="off" style="height:28px; font-size:11.5px; flex: 1; padding: 2px 6px;">
-        <button class="btn" id="admPassSaveBtn" style="background: var(--in); color: #fff; font-size: 10.5px; height: 28px; width: 48px; font-weight: bold; border-radius: 4px;">適用</button>
-      </div>
-    </div>
-
-    <div style="display: flex; gap: 6px; align-items: center; width: 100%;">
-      <button class="btn" id="admClearBtn" style="background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.25); color: #fda4af; font-size: 10.5px; height: 28px; flex: 1; font-weight: bold; border-radius: 4px;">🚨 ログ初期化</button>
-      <button class="btn" id="admMembersToggleBtn" style="background: var(--s2); border: 1px solid var(--bd); color: var(--tx); font-size: 10.5px; height: 28px; flex: 1; font-weight: bold; border-radius: 4px;">👥 メンバー管理</button>
-    </div>
-
-    <div id="admMembersDrawer" style="display: none; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 6px; width: 100%;">
-      <div>
-        <label style="font-size:9.5px; font-weight:bold; color: var(--mu); display:block; margin-bottom:3px;">📋 事前承認トリップ追加</label>
-        <div style="display: flex; gap: 5px;">
-          <input type="text" id="admTripInput" class="inp" placeholder="例: ◆AbCdEf" autocomplete="off" style="height:28px; font-size:11.5px; flex: 1; padding: 2px 6px;">
-          <button class="btn" id="admTripAddBtn" style="background: var(--in); color: #fff; font-size: 10.5px; height: 28px; width: 48px; font-weight: bold; border-radius: 4px;">追加</button>
-        </div>
-        <div id="admTripList" style="background:var(--s2); border:1px solid var(--bd); border-radius:5px; max-height:50px; overflow-y:auto; padding:3px; font-size:10.5px; display:flex; flex-direction:column; gap:3px; font-family: monospace; margin-top: 3px;"></div>
-      </div>
-      <div>
-        <label style="font-size:9.5px; font-weight:bold; color: var(--mu); display:block; margin-bottom:3px;">🚫 追放（BAN）リスト</label>
-        <div id="admBanList" style="background:var(--s2); border:1px solid var(--bd); border-radius:5px; max-height:50px; overflow-y:auto; padding:3px; font-size:10.5px; display:flex; flex-direction:column; gap:3px;"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <div id="confirmMod" class="mod-overlay">
   <div class="gc" style="max-width: 300px; padding: 14px;">
     <div id="confirmTitle" style="font-size: 13px; font-weight: bold; margin-bottom: 6px;">確認</div>
@@ -295,7 +257,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           <div class="hbs">
             <div id="adminBtnContainer" style="display: none; align-items: center;">
               <button class="btn" id="admBtn" style="background: var(--in); border: 1px solid var(--in); color: #fff; height: 26px; padding: 0 7px; font-size: 10.5px; border-radius: 5px; font-weight: bold; display: inline-flex; align-items: center; gap: 2px;">
-                ⚙️ ホスト
+                ⚙️ ホスト設定
               </button>
             </div>
             <button class="bclr" id="clrBtn" title="色設定"><span class="bclr-dot" id="clrDot"></span> 色</button>
@@ -308,6 +270,61 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     <!-- チャット画面 -->
     <div id="chatScreen" style="display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
+      
+      <!-- 🎯 チャット上部にスライド展開する折りたたみ式ホストパネル (アコーディオン) -->
+      <div id="adminAccordion">
+        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bd); padding-bottom: 4px;">
+          <span id="adminAccordionTitle" style="font-size: 12px; font-weight: bold; color: var(--tx);">⚙️ ホスト設定パネル</span>
+          <button class="btn" id="adminAccordionCloseBtn" style="background: rgba(255,255,255,0.08); width: 22px; height: 22px; border-radius: 50%; font-size: 11px; padding:0; display:flex; align-items:center; justify-content:center;">✕</button>
+        </div>
+
+        <div id="admOfficialAutoExitContainer" style="display: none; flex-direction: column; gap: 4px; background: var(--s2); border: 1px solid var(--bd); border-radius: 5px; padding: 6px; width: 100%;">
+          <label style="font-size:10px; font-weight:bold; color: #fb923c;">⏱️ 公式 自動退室時間 (1〜60分)</label>
+          <div style="display: flex; gap: 6px; align-items: center;">
+            <input type="number" id="admAutoExitInput" class="inp" min="1" max="60" value="30" style="height:26px; font-size:11px; flex: 1; padding: 2px 6px;">
+            <button class="btn" id="admAutoExitSaveBtn" style="background: var(--in); color: #fff; font-size: 10px; height: 26px; width: 44px; font-weight: bold; border-radius: 4px;">設定</button>
+          </div>
+        </div>
+
+        <div id="admGeneralSettingsGroup" style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; font-size: 10.5px; font-weight: bold;">
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <input type="checkbox" id="admStopJoin" style="width: 13px; height: 13px; accent-color: var(--in); cursor: pointer;">
+              <label for="admStopJoin" style="color: var(--tx); cursor: pointer; user-select: none;">新規制限</label>
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px;">
+              <input type="checkbox" id="admPassToggle" style="width: 13px; height: 13px; accent-color: var(--in); cursor: pointer;">
+              <label for="admPassToggle" style="color: var(--tx); cursor: pointer; user-select: none;">合言葉あり</label>
+            </div>
+          </div>
+
+          <div id="admPassContainer" style="display: none; align-items: center; gap: 6px; width: 100%;">
+            <input type="text" id="admPass" class="inp" placeholder="合言葉を入力..." autocomplete="off" style="height:26px; font-size:11px; flex: 1; padding: 2px 6px;">
+            <button class="btn" id="admPassSaveBtn" style="background: var(--in); color: #fff; font-size: 10px; height: 26px; width: 44px; font-weight: bold; border-radius: 4px;">適用</button>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 6px; align-items: center; width: 100%;">
+          <button class="btn" id="admClearBtn" style="background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.25); color: #fda4af; font-size: 10px; height: 26px; flex: 1; font-weight: bold; border-radius: 4px;">🚨 ログ初期化</button>
+          <button class="btn" id="admMembersToggleBtn" style="background: var(--s2); border: 1px solid var(--bd); color: var(--tx); font-size: 10px; height: 26px; flex: 1; font-weight: bold; border-radius: 4px;">👥 メンバー管理</button>
+        </div>
+
+        <div id="admMembersDrawer" style="display: none; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 6px; width: 100%;">
+          <div>
+            <label style="font-size:9.5px; font-weight:bold; color: var(--mu); display:block; margin-bottom:2px;">📋 事前承認トリップ追加</label>
+            <div style="display: flex; gap: 5px;">
+              <input type="text" id="admTripInput" class="inp" placeholder="例: ◆AbCdEf" autocomplete="off" style="height:26px; font-size:11px; flex: 1; padding: 2px 6px;">
+              <button class="btn" id="admTripAddBtn" style="background: var(--in); color: #fff; font-size: 10px; height: 26px; width: 44px; font-weight: bold; border-radius: 4px;">追加</button>
+            </div>
+            <div id="admTripList" style="background:var(--s2); border:1px solid var(--bd); border-radius:5px; max-height:45px; overflow-y:auto; padding:3px; font-size:10px; display:flex; flex-direction:column; gap:2px; font-family: monospace; margin-top: 2px;"></div>
+          </div>
+          <div>
+            <label style="font-size:9.5px; font-weight:bold; color: var(--mu); display:block; margin-bottom:2px;">🚫 追放（BAN）リスト</label>
+            <div id="admBanList" style="background:var(--s2); border:1px solid var(--bd); border-radius:5px; max-height:45px; overflow-y:auto; padding:3px; font-size:10px; display:flex; flex-direction:column; gap:2px;"></div>
+          </div>
+        </div>
+      </div>
+
       <div id="pl" style="display: none;"></div>
 
       <div id="fixedPlayer">
@@ -469,7 +486,6 @@ function toggleAcc(id) {
     }
   }
 
-  // 🎯 重複・バグなしの即時切り替え型スマートトースト（表示時間1.6秒に短縮）
   function showToast(text, duration = 1600) {
     const container = $("toastContainer");
     if (!container) return;
@@ -730,7 +746,6 @@ function toggleAcc(id) {
 
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
 
-  // ⏱️ 生存確認なし：最終発言時刻（nz_last_post_time）からの経過時間でのみ判定
   function startAutoExitChecker() {
     stopAutoExitTimer();
     if (!isJoined) return;
@@ -1130,7 +1145,6 @@ function toggleAcc(id) {
       if (isSystemReporter()) {
         const limitMs = (roomSettings.autoExitMinutes || 30) * 60000;
         for (const [id, u] of Object.entries(members)) {
-          // 🎯 最終発言時間（u.t）をベースにした厳密な自動退室判定
           if (id !== myUid && (nowTrue - u.t >= limitMs)) {
             triggerOtherExit(id, u);
           }
@@ -1169,9 +1183,9 @@ function toggleAcc(id) {
     $("adminBtnContainer").style.display = (currentRoomId === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin)) ? "inline-flex" : "none";
   }
 
-  function updateAdminModalFields() {
+  function updateAdminAccordionFields() {
     const isOfficial = (currentRoomId === "official");
-    if ($("adminModalTitle")) $("adminModalTitle").textContent = isOfficial ? "⚙️ 公式部屋 管理パネル" : "⚙️ ホスト設定パネル";
+    if ($("adminAccordionTitle")) $("adminAccordionTitle").textContent = isOfficial ? "⚙️ 公式部屋 管理パネル" : "⚙️ ホスト設定パネル";
     if ($("admOfficialAutoExitContainer")) $("admOfficialAutoExitContainer").style.display = isOfficial ? "flex" : "none";
     if ($("admGeneralSettingsGroup")) $("admGeneralSettingsGroup").style.display = isOfficial ? "none" : "flex";
     if ($("admAutoExitInput")) $("admAutoExitInput").value = roomSettings.autoExitMinutes || 30;
@@ -1210,7 +1224,7 @@ function toggleAcc(id) {
       }
       applyRoomSettingsUI();
       const isGlobalAdmin = checkIsGlobalAdmin();
-      if (currentRoomId === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin)) updateAdminModalFields();
+      if (currentRoomId === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin)) updateAdminAccordionFields();
     });
   }
 
@@ -1231,11 +1245,10 @@ function toggleAcc(id) {
       if (keepOpen) D.mi.focus(); else D.mi.blur();
       updateLastPostTime(getTrueTime());
 
-      // 🎯 発言した瞬間、最終発言時刻（t）を更新して自動退室タイマーを正確にリセット
       const postTs = firebase.database.ServerValue.TIMESTAMP;
       await db.ref(`chat/${currentRoomId}`).push({ u: myUid, n: encName, p: encTrip, c: curColor, m: encText, t: postTs });
       if (myPresenceRef) myPresenceRef.child("t").set(postTs).catch(()=>{});
-      scBottom(true); // 🎯 自分の発言時にも必ず最新へ追従
+      scBottom(true);
     } catch (e) { showToast("❌ メッセージの送信に失敗しました。"); }
     finally { isSending = false; }
   }
@@ -1271,7 +1284,7 @@ function toggleAcc(id) {
       imgViewCloseBtn: $("imgViewCloseBtn"), clrCancel: $("clrCancel"), clrOk: $("clrOk"),
       clrPick2: $("clrPick2"), clrPrev: $("clrPrev"), pcnt: $("pcnt"), pl: $("pl"),
       mi: $("mi"), kbKeepOpenChk: $("kbKeepOpenChk"), clrDot: $("clrDot"),
-      adminModal: $("adminModal"), admBtn: $("admBtn"), adminModCloseBtn: $("adminModCloseBtn")
+      adminAccordion: $("adminAccordion"), admBtn: $("admBtn"), adminAccordionCloseBtn: $("adminAccordionCloseBtn")
     };
 
     buildPicker($("lobbyColorGrid"), curColor, "clrc2", (v) => {
@@ -1289,7 +1302,10 @@ function toggleAcc(id) {
     if (D.clrOk) D.clrOk.addEventListener("click", (e) => {
       e.preventDefault(); curColor = tmpColor; setGlobalColor(curColor); safeLS.set("nz_color", curColor);
       if (D.clrDot) D.clrDot.style.background = curColor; D.clrmod.classList.remove("show");
-      if (isJoined && db && myUid && currentRoomId) db.ref(`presence/${currentRoomId}/${myUid}/c`).set(curColor).catch(()=>{});
+      if (isJoined && db && myUid && currentRoomId) {
+        db.ref(`presence/${currentRoomId}/${myUid}/c`).set(curColor).catch(()=>{});
+        showToast("🎨 表示カラーを変更しました");
+      }
     });
 
     if (D.exBtn) D.exBtn.addEventListener("click", (e) => { e.preventDefault(); customConfirm("退室確認", "本当にこの部屋から退室しますか？", "退室する", "キャンセル", true).then(ok => { if (ok) doExit(false); }); });
@@ -1297,7 +1313,6 @@ function toggleAcc(id) {
 
     if (D.mi) {
       D.mi.addEventListener("input", () => { updateClrMsgBtnVisibility(); D.mi.style.height = "auto"; D.mi.style.height = Math.min(D.mi.scrollHeight, 120) + "px"; });
-      // 🎯 キーボード表示・フォーカス時に最新ログが見える位置へ確実スクロール
       D.mi.addEventListener("focus", () => {
         setTimeout(() => scBottom(true), 50);
         setTimeout(() => scBottom(true), 250);
@@ -1310,7 +1325,6 @@ function toggleAcc(id) {
       });
     }
 
-    // 🎯 モバイルでのキーボード開閉（リサイズ）による追従
     if (typeof window !== 'undefined') {
       let lastHeight = window.innerHeight;
       window.addEventListener('resize', () => {
@@ -1337,22 +1351,48 @@ function toggleAcc(id) {
     if (D.jumpDownBtn) D.jumpDownBtn.addEventListener("click", (e) => { e.preventDefault(); if (D.tl) D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" }); isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); });
     if (D.imgViewCloseBtn && D.imgViewMod) D.imgViewCloseBtn.addEventListener("click", (e) => { e.preventDefault(); D.imgViewMod.classList.remove("show"); });
 
-    if (D.admBtn && D.adminModal) D.admBtn.addEventListener("click", (e) => { e.preventDefault(); updateAdminModalFields(); D.adminModal.classList.add("show"); });
-    if (D.adminModCloseBtn && D.adminModal) D.adminModCloseBtn.addEventListener("click", (e) => { e.preventDefault(); D.adminModal.classList.remove("show"); });
+    // 🎯 ホストボタンを押したとき、ポップアップではなく上部アコーディオン（折りたたみ）を開閉する
+    if (D.admBtn && D.adminAccordion) {
+      D.admBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const isShow = D.adminAccordion.style.display === "flex";
+        D.adminAccordion.style.display = isShow ? "none" : "flex";
+        if (!isShow) {
+          updateAdminAccordionFields();
+          scBottom(true); // パネルを開いたときにもログが見える位置へ追従
+        }
+      });
+    }
+    if (D.adminAccordionCloseBtn && D.adminAccordion) {
+      D.adminAccordionCloseBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        D.adminAccordion.style.display = "none";
+      });
+    }
 
-    if ($("admStopJoin")) $("admStopJoin").addEventListener("change", () => { if (db && currentRoomId) db.ref(`settings/${currentRoomId}/newEntriesDisabled`).set($("admStopJoin").checked); });
+    if ($("admStopJoin")) $("admStopJoin").addEventListener("change", () => {
+      if (db && currentRoomId) {
+        db.ref(`settings/${currentRoomId}/newEntriesDisabled`).set($("admStopJoin").checked).then(() => {
+          showToast(`🚫 新規入室制限を ${$("admStopJoin").checked ? "有効" : "無効"} にしました`);
+        });
+      }
+    });
 
     const admPassToggle = $("admPassToggle"), admPassContainer = $("admPassContainer");
     if (admPassToggle && admPassContainer) {
       admPassToggle.addEventListener("change", () => {
         admPassContainer.style.display = admPassToggle.checked ? "flex" : "none";
-        if (!admPassToggle.checked && db && currentRoomId) db.ref(`settings/${currentRoomId}/passcode`).set("");
+        if (!admPassToggle.checked && db && currentRoomId) {
+          db.ref(`settings/${currentRoomId}/passcode`).set("").then(() => {
+            showToast("🔑 合言葉を解除しました");
+          });
+        }
       });
     }
 
     if ($("admPassSaveBtn")) $("admPassSaveBtn").addEventListener("click", (e) => {
       e.preventDefault(); const passVal = $("admPass").value.trim();
-      if (db && currentRoomId) db.ref(`settings/${currentRoomId}/passcode`).set(passVal).then(() => showToast("🔑 合言葉を更新しました。"));
+      if (db && currentRoomId) db.ref(`settings/${currentRoomId}/passcode`).set(passVal).then(() => showToast("🔑 合言葉を設定しました"));
     });
 
     if ($("admAutoExitSaveBtn")) {
@@ -1365,7 +1405,7 @@ function toggleAcc(id) {
         }
         if (db && currentRoomId) {
           db.ref(`settings/${currentRoomId}/autoExitMinutes`).set(minutes).then(() => {
-            showToast(`⏱️ 自動退室時間を ${minutes}分 に設定しました。`);
+            showToast(`⏱️ 自動退室時間を ${minutes}分 に設定しました`);
           });
         }
       });
@@ -1376,7 +1416,7 @@ function toggleAcc(id) {
         e.preventDefault();
         customConfirm("ログの初期化", "この部屋のすべてのチャットログを消去しますか？", "消去する", "キャンセル", true).then(async ok => {
           if (!ok || !db || !currentRoomId) return;
-          if (D.adminModal) D.adminModal.classList.remove("show");
+          if (D.adminAccordion) D.adminAccordion.style.display = "none";
           try {
             await db.ref(`chat/${currentRoomId}`).remove();
             const clearTs = firebase.database.ServerValue.TIMESTAMP;
@@ -1390,8 +1430,8 @@ function toggleAcc(id) {
               m: clearLogText,
               t: firebase.database.ServerValue.TIMESTAMP
             });
-            showToast("🚨 チャットログを初期化しました。");
-          } catch (err) { showToast("⚠️ ログの初期化に失敗しました。"); }
+            showToast("🚨 チャットログを初期化しました");
+          } catch (err) { showToast("⚠️ ログの初期化に失敗しました"); }
         });
       });
     }
@@ -1408,14 +1448,17 @@ function toggleAcc(id) {
         e.preventDefault(); const tripVal = $("admTripInput").value.trim();
         if (!tripVal || !db || !currentRoomId) return;
         const newKey = db.ref(`settings/${currentRoomId}/approvedTrips`).push().key;
-        db.ref(`settings/${currentRoomId}/approvedTrips/${newKey}`).set(tripVal).then(() => { $("admTripInput").value = ""; showToast("事前承認トリップを追加しました。"); });
+        db.ref(`settings/${currentRoomId}/approvedTrips/${newKey}`).set(tripVal).then(() => {
+          $("admTripInput").value = "";
+          showToast("📋 事前承認トリップを追加しました");
+        });
       });
     }
 
     $("btnCopyTrip").addEventListener("click", async (e) => {
       e.preventDefault();
-      if (!myTrip) { showToast("⚠️ トリップが生成されていません。"); return; }
-      try { await navigator.clipboard.writeText(myTrip); showToast(`📋 ユーザーID「${myTrip}」をコピーしました！`); } catch(err) { showToast("⚠️ コピーに失敗しました。"); }
+      if (!myTrip) { showToast("⚠️ トリップが生成されていません"); return; }
+      try { await navigator.clipboard.writeText(myTrip); showToast(`📋 トリップ「${myTrip}」をコピーしました`); } catch(err) { showToast("⚠️ コピーに失敗しました"); }
     });
 
     $("btnGen").addEventListener("click", (e) => {
@@ -1432,14 +1475,15 @@ function toggleAcc(id) {
         for (let i = 0; i < 12; i++) randPass += chars[Math.floor(Math.random() * chars.length)];
       }
       $("lobbyRoomId").value = randId; $("lobbyRoomPass").value = randPass;
-      showToast("🎲 新しい英数字の部屋IDとパスワードを生成しました。"); validateLobbyInputs();
+      showToast("🎲 部屋IDとパスワードを生成しました");
+      validateLobbyInputs();
     });
 
     $("inviteBtn").addEventListener("click", async (e) => {
       e.preventDefault();
       const rawParam = `r=${encodeURIComponent(safeLS.get("nz_last_room_id"))}&p=${encodeURIComponent(safeLS.get("nz_last_room_pass"))}`;
       const inviteUrl = window.location.origin + window.location.pathname + "#" + btoa(unescape(encodeURIComponent(rawParam)));
-      try { await navigator.clipboard.writeText(inviteUrl); showToast("🔗 招待URLをコピーしました！"); } catch(err) { alert("コピーに失敗しました：\n" + inviteUrl); }
+      try { await navigator.clipboard.writeText(inviteUrl); showToast("🔗 招待URLをコピーしました"); } catch(err) { alert("コピーに失敗しました：\n" + inviteUrl); }
     });
 
     D.joinBtn.addEventListener("click", (e) => { e.preventDefault(); joinRoom(); });
