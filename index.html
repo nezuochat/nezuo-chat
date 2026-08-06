@@ -451,8 +451,9 @@ function toggleAcc(id) {
   const $ = id => document.getElementById(id);
   let D = {};
   let myPresenceRef = null;
+  let hasEnteredLogged = false; // 🎯 セッション内の入室ログ重複防止フラグ
 
-  // 🎯 バックグラウンド復帰時の即時同期 & 自動退室判定（Visibility Change）
+  // 🎯 バックグラウンド復帰時・タブ切り替え時の即時再接続＆同期
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -849,7 +850,7 @@ function toggleAcc(id) {
 
   async function doExit(isAuto = false) {
     const cleanUid = myUid, cleanName = (myName || "").trim(), cleanTrip = myTrip || "", oldRoomId = currentRoomId, wasJoined = isJoined;
-    isJoined = false; stopAutoExitTimer();
+    isJoined = false; stopAutoExitTimer(); hasEnteredLogged = false;
     safeLS.remove("nz_is_joined"); safeLS.remove("nz_last_post_time"); safeLS.remove("nz_session_start_time"); safeLS.remove("nz_current_room_id");
 
     const finishAndClean = () => {
@@ -941,11 +942,14 @@ function toggleAcc(id) {
     } catch (e) {}
     startAutoExitChecker();
 
+    // 🎯 入室ログの重複を完璧に防ぐフラグ管理
     const cleanName = (myName || "").trim();
-    if (!options.silent && cleanName) {
+    if (!options.silent && cleanName && !hasEnteredLogged) {
+      hasEnteredLogged = true;
       const encEnter = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${cleanName} ${myTrip}`.trim() + " が入室しました", activeKey);
       db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encEnter, t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
     }
+
     applyRoomSettingsUI(); initSettingsListener(); scBottom(true);
   }
 
@@ -988,6 +992,7 @@ function toggleAcc(id) {
     if (msgTime > latestDisplayedTs) latestDisplayedTs = msgTime;
     updateUnreadBadge();
     
+    // 🎯 初回読み込み時や入室時は必ず一番下に追従
     if (isFirstLoad || m.u === myUid || m.u === "system") {
       scBottom(true);
     }
@@ -1366,7 +1371,6 @@ function toggleAcc(id) {
 
     if (D.mi) {
       D.mi.addEventListener("input", () => { updateClrMsgBtnVisibility(); D.mi.style.height = "auto"; D.mi.style.height = Math.min(D.mi.scrollHeight, 120) + "px"; });
-      // 🎯 入力欄にフォーカスした時（キーボード表示時）に一番下へスクロールして追従させる
       D.mi.addEventListener("focus", () => {
         setTimeout(() => scBottom(true), 50);
         setTimeout(() => scBottom(true), 250);
@@ -1385,7 +1389,6 @@ function toggleAcc(id) {
         const currentHeight = window.innerHeight;
         if (Math.abs(lastHeight - currentHeight) > 100) {
           lastHeight = currentHeight;
-          // 🎯 画面リサイズ（キーボード出入等）時に一番下へスクロールして追従させる
           if (isJoined) setTimeout(() => scBottom(true), 100);
         }
       });
