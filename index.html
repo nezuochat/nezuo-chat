@@ -65,11 +65,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .lobby-row { display: flex; flex-direction: column; gap: 4px; }
 .lobby-row label { font-size: 10px; font-weight: bold; color: var(--mu); }
 .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-#lobbyTripPrev { font-size: 11px; font-weight: bold; color: var(--usr-color); text-align: center; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#lobbyTripPrev { font-size: 11px; font-weight: bold; color: var(--usr-color); text-align: center; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1px solid rgba(255,255,255,0.06); }
 
 #chatScreen { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 
-/* 🎯 チャット上部にスライド展開する折りたたみ式ホストパネル (アコーディオン) */
+/* チャット上部にスライド展開する折りたたみ式ホストパネル */
 #adminAccordion {
   display: none;
   flex-direction: column;
@@ -87,7 +87,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 }
 
 #pl{display:none;gap:6px;padding:6px 12px;background:var(--s2);border-bottom:1px solid var(--bd);overflow-x:auto;white-space:nowrap;min-height:36px;max-height:36px;flex-shrink:0;align-items:center;}
-.chip{font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;background:var(--bg);border:1px solid rgba(255,255,255,.06);display:inline-flex;align-items:center;color:var(--tx);height:24px}
+/* 🎯 メンバーチップ：文字色と枠色(border)をユーザーカラーで完全統一 */
+.chip{font-size:11px;font-weight:700;padding:2px 7px;border-radius:5px;background:var(--bg);border:1.5px solid var(--usr-color);display:inline-flex;align-items:center;color:var(--tx);height:24px}
 
 #fixedPlayer{display:none;flex-direction:column;background:var(--s2);border-bottom:1px solid var(--bd);width:100%}
 #playerHeader{background:var(--sf);padding:8px 12px;font-size:12px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--bd)}
@@ -104,7 +105,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .mm-trip{font-size:10.5px;margin-left:2px;overflow:hidden;text-overflow:ellipsis}
 .ts{color:var(--mu);opacity:.6;font-size:9.5px;margin-left:auto;font-family:monospace}
 .mb, .mb a {user-select: text !important;-webkit-user-select: text !important;}
-.mb{align-self:start;font-size:14.5px;line-height:1.5;max-width:100%;word-break:break-all;white-space:pre-wrap;color:var(--tx);padding-right:60px;margin-bottom:2px;}
+/* 🎯 メッセージボックス：左側の縦枠線(ボーダー)をユーザーカラーで完全統一 */
+.mb{align-self:start;font-size:14.5px;line-height:1.5;max-width:100%;word-break:break-all;white-space:pre-wrap;color:var(--tx);padding-left:10px;margin-bottom:2px;}
 
 .sys-msg{position:relative;text-align:center;font-size:11.5px;font-weight:bold;color:var(--mu);margin:8px 0;background:rgba(255,255,255,.02);padding:8px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.04);word-break:break-all;line-height:1.4}
 .sys-ts{display:block;font-size:10px;color:var(--mu);opacity:.75;font-family:monospace;margin-top:4px}
@@ -149,8 +151,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 }
 
 #imgViewSrc{max-width:95%;max-height:95%;object-fit:contain;user-select: auto !important;}
-.clrpick-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px}
-.clrc2{aspect-ratio:1;width:100%;max-width:22px;border-radius:50%;margin:0 auto;border:2px solid transparent}
+.clrpick-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.clrc2{aspect-ratio:1;width:100%;max-width:28px;border-radius:50%;margin:0 auto;border:2px solid transparent}
 .clrc2.sel{border-color:var(--tx)!important;transform:scale(1.2)}
 
 .inline-img {
@@ -215,7 +217,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 <div id="clrmod" class="mod-overlay">
   <div class="gc" style="max-width: 340px;">
     <div class="clrmc">
-      <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">🎨 表示カラー設定 (32色)</div>
+      <div style="font-size: 13px; font-weight: bold; margin-bottom: 8px;">🎨 表示カラー設定 (16色)</div>
       <div class="clr-prev" id="clrPrev">プレビュー</div>
       <div class="clrpick-grid" id="clrPick2" style="margin: 12px 0;"></div>
       <div class="clr-btns">
@@ -595,10 +597,10 @@ function toggleAcc(id) {
   const UR = /(https?:\/\/[^\s\n<>"]+)/gi;
 
   const COLORS = [
-    {v:"#94a3b8",n:"グレー"},{v:"#e2e8f0",n:"スレート"},{v:"#06b6d4",n:"シアン"},{v:"#7dd3fc",n:"パステルスカイ"},{v:"#38bdf8",n:"スカイ"},{v:"#6366f1",n:"インディゴ"},{v:"#818cf8",n:"パステルインディゴ"},{v:"#bef264",n:"パステルライム"},
-    {v:"#a3e635",n:"ライム1"},{v:"#84cc16",n:"ライム2"},{v:"#10b981",n:"エメラルド"},{v:"#34d399",n:"ミント"},{v:"#a7f3d0",n:"パステルミント"},{v:"#2dd4bf",n:"ティール"},{v:"#99f6e4",n:"パステルティール"},{v:"#14b8a6",n:"アクア"},
-    {v:"#fde68a",n:"パステルイエロー"},{v:"#fb9e0b",n:"アンバー"},{v:"#f59e0b",n:"イエロー"},{v:"#fdba74",n:"パステルオレンジ"},{v:"#fb923c",n:"オレンジ1"},{v:"#fca5a5",n:"パステルレッド"},{v:"#f87171",n:"レッド2"},
-    {v:"#ef4444",n:"レッド1"},{v:"#db2777",n:"ローズ"},{v:"#f472b6",n:"ピンク"},{v:"#f9a8d4",n:"ライトピンク"},{v:"#fda4af",n:"パステルローズ"},{v:"#a855f7",n:"パープル"},{v:"#c084fc",n:"ライトパープル"},{v:"#c4b5fd",n:"パステルパープル"}
+    {v:"#f1f5f9",n:"ホワイト"},{v:"#94a3b8",n:"グレー"},{v:"#38bdf8",n:"スカイ"},{v:"#06b6d4",n:"シアン"},
+    {v:"#34d399",n:"ミント"},{v:"#10b981",n:"エメラルド"},{v:"#a3e635",n:"ライム"},{v:"#fde68a",n:"パステルイエロー"},
+    {v:"#f59e0b",n:"アンバー"},{v:"#fb923c",n:"オレンジ"},{v:"#f87171",n:"レッド"},{v:"#f43f5e",n:"ローズ"},
+    {v:"#f472b6",n:"ピンク"},{v:"#c084fc",n:"ライトパープル"},{v:"#a855f7",n:"パープル"},{v:"#818cf8",n:"インディゴ"}
   ];
 
   const renderedMwNodes = new Map();
@@ -721,7 +723,7 @@ function toggleAcc(id) {
     });
   }
 
-  function switchScreen(state, rawRoomId = "") {
+  function switchScreen(state, rawRoomId = "", isSilent = false) {
     const logoTitle = $("logoTitle") || document.querySelector(".logo");
     if ($("lobbyScreen")) $("lobbyScreen").style.display = "none";
     if ($("chatScreen")) $("chatScreen").style.display = "none";
@@ -735,7 +737,9 @@ function toggleAcc(id) {
       if ($("exBtn")) $("exBtn").style.display = "inline-flex";
       if ($("inviteBtn")) $("inviteBtn").style.display = "inline-flex";
       if (logoTitle && rawRoomId) logoTitle.innerHTML = `NEZUO CHAT<span class="sub-room">${rawRoomId === "official" ? "常設公式部屋" : rawRoomId}</span>`;
-      showToast("🚪 部屋に入室しました");
+      if (!isSilent) {
+        showToast("🚪 部屋に入室しました");
+      }
     } else {
       if ($("lobbyScreen")) $("lobbyScreen").style.display = "flex";
       if ($("roomStatusBadges")) $("roomStatusBadges").style.display = "none";
@@ -892,7 +896,8 @@ function toggleAcc(id) {
     safeLS.set("nz_is_joined", "true"); safeLS.set("nz_last_room_id", lobbyRoomId);
     safeLS.set("nz_last_room_pass", lobbyRoomPass); safeLS.set("nz_current_room_id", currentRoomId);
     updateLastPostTime(getTrueTime());
-    switchScreen("chat", lobbyRoomId); setupFirebaseListeners();
+    switchScreen("chat", lobbyRoomId, options.silent);
+    setupFirebaseListeners();
 
     try {
       await db.ref(`presence/${currentRoomId}/${myUid}`).set({ n: myName || "名無し", p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP });
@@ -981,7 +986,7 @@ function toggleAcc(id) {
         <span class="mm-trip" style="display: ${trip ? 'inline' : 'none'}">${escapeHtml(trip)}</span>
         <span class="ts">${fDT(msgTime)}</span>
       </div>
-      <div class="mb" style="border-left: 2px solid ${color}; padding-left: 8px;"></div>
+      <div class="mb" style="border-left: 2px solid ${color}; padding-left: 10px;"></div>
     `;
     const mb = el.querySelector(".mb");
     if (m.m) {
@@ -1069,10 +1074,10 @@ function toggleAcc(id) {
     sorted.forEach(m => {
       const text = m.p ? `${m.n} ${m.p}` : m.n, color = m.c || "#94a3b8";
       let chip = D.pl.querySelector(`[data-uid="${m.id}"]`);
-      if (chip) { chip.textContent = text; chip.style.color = color; chip.style.borderColor = color + "44"; }
+      if (chip) { chip.textContent = text; chip.style.color = color; chip.style.borderColor = color; }
       else {
         chip = document.createElement("span"); chip.className = "chip"; chip.dataset.uid = m.id;
-        chip.style.color = color; chip.style.borderColor = color + "44"; chip.textContent = text;
+        chip.style.color = color; chip.style.borderColor = color; chip.textContent = text;
         if ((myUid === roomSettings.creatorUid || checkIsGlobalAdmin()) && m.id !== myUid) {
           chip.title = "このユーザーを追放(BAN)"; chip.style.cursor = "pointer";
           chip.addEventListener("click", () => {
