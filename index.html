@@ -452,19 +452,17 @@ function toggleAcc(id) {
   let D = {};
   let myPresenceRef = null;
 
-  // 🎯 バックグラウンド復帰時の即時同期（Visibility Change）の監視
+  // 🎯 バックグラウンド復帰時の即時同期 & 自動退室判定（Visibility Change）
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
-          // 復帰した瞬間に自分のプレゼンスのタイムスタンプを更新し、即時同期を促す
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
           }
         }
-        // 画面に戻ってきたら強制的に最新ログが見える位置へスクロール
-        setTimeout(() => scBottom(true), 100);
+        checkAutoExitOnResume();
       }
     });
   }
@@ -472,8 +470,11 @@ function toggleAcc(id) {
   (function initInitialScreenState() {
     const wasJoined = safeLS.get("nz_is_joined") === "true";
     const lastRoomId = safeLS.get("nz_last_room_id");
+    const sessionStart = parseInt(safeLS.get("nz_session_start_time") || "0");
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
-    if (wasJoined && lastRoomId && (Date.now() - lastPost < 180000)) {
+    const baselineTime = Math.max(sessionStart, lastPost);
+    
+    if (wasJoined && lastRoomId && (Date.now() - baselineTime < 180000)) {
       const chatScr = document.getElementById("chatScreen");
       if (chatScr) chatScr.style.display = "flex";
       const logoTitle = document.getElementById("logoTitle");
@@ -592,7 +593,6 @@ function toggleAcc(id) {
   let myUid = "", myName = safeLS.get("nz_ni") || "", myTrip = "";
   let curColor = safeLS.get("nz_color") || "#f1f5f9", tmpColor = curColor, activeKey = null;
   let currentRoomId = "", currentRoomPass = "", isJoined = false;
-  let isAutoScroll = true;
   const unreadMsgIds = new Set();
   let autoExitTimeoutId = null, serverTimeOffset = 0, isOffsetLoaded = false;
   const displayedMsgIds = new Set();
@@ -758,16 +758,43 @@ function toggleAcc(id) {
   }
 
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
+  const updateSessionStartTime = time => safeLS.set("nz_session_start_time", time.toString());
 
   function startAutoExitChecker() {
     stopAutoExitTimer();
     if (!isJoined) return;
-    const lastPost = parseInt(safeLS.get("nz_last_post_time") || getTrueTime().toString(), 10);
-    const remaining = (lastPost + AUTO_EXIT_MS) - getTrueTime();
-    if (remaining <= 0) doExit(true);
-    else autoExitTimeoutId = setTimeout(() => doExit(true), remaining);
+    const sessionStart = parseInt(safeLS.get("nz_session_start_time") || getTrueTime().toString(), 10);
+    const lastPost = parseInt(safeLS.get("nz_last_post_time") || sessionStart.toString(), 10);
+    const baselineTime = Math.max(sessionStart, lastPost);
+    
+    const remaining = (baselineTime + AUTO_EXIT_MS) - getTrueTime();
+    if (remaining <= 0) {
+      doExit(true);
+    } else {
+      autoExitTimeoutId = setTimeout(() => doExit(true), remaining);
+    }
   }
-  function stopAutoExitTimer() { if (autoExitTimeoutId) { clearTimeout(autoExitTimeoutId); autoExitTimeoutId = null; } }
+
+  function stopAutoExitTimer() { 
+    if (autoExitTimeoutId) { 
+      clearTimeout(autoExitTimeoutId); 
+      autoExitTimeoutId = null; 
+    } 
+  }
+
+  function checkAutoExitOnResume() {
+    if (!isJoined) return;
+    const sessionStart = parseInt(safeLS.get("nz_session_start_time") || getTrueTime().toString(), 10);
+    const lastPost = parseInt(safeLS.get("nz_last_post_time") || sessionStart.toString(), 10);
+    const baselineTime = Math.max(sessionStart, lastPost);
+    
+    const elapsed = getTrueTime() - baselineTime;
+    if (elapsed >= AUTO_EXIT_MS) {
+      doExit(true);
+    } else {
+      startAutoExitChecker();
+    }
+  }
 
   function isSystemReporter() {
     if (!isJoined || !currentRoomId) return false;
@@ -823,7 +850,7 @@ function toggleAcc(id) {
   async function doExit(isAuto = false) {
     const cleanUid = myUid, cleanName = (myName || "").trim(), cleanTrip = myTrip || "", oldRoomId = currentRoomId, wasJoined = isJoined;
     isJoined = false; stopAutoExitTimer();
-    safeLS.remove("nz_is_joined"); safeLS.remove("nz_last_post_time"); safeLS.remove("nz_current_room_id");
+    safeLS.remove("nz_is_joined"); safeLS.remove("nz_last_post_time"); safeLS.remove("nz_session_start_time"); safeLS.remove("nz_current_room_id");
 
     const finishAndClean = () => {
       removeFirebaseListeners(); switchScreen("lobby");
@@ -897,9 +924,15 @@ function toggleAcc(id) {
     }
 
     isJoined = true;
-    safeLS.set("nz_is_joined", "true"); safeLS.set("nz_last_room_id", lobbyRoomId);
-    safeLS.set("nz_last_room_pass", lobbyRoomPass); safeLS.set("nz_current_room_id", currentRoomId);
-    updateLastPostTime(getTrueTime());
+    safeLS.set("nz_is_joined", "true"); 
+    safeLS.set("nz_last_room_id", lobbyRoomId);
+    safeLS.set("nz_last_room_pass", lobbyRoomPass); 
+    safeLS.set("nz_current_room_id", currentRoomId);
+    
+    const nowTrue = getTrueTime();
+    updateSessionStartTime(nowTrue);
+    updateLastPostTime(nowTrue);
+
     switchScreen("chat", lobbyRoomId, options.silent);
     setupFirebaseListeners();
 
@@ -948,13 +981,14 @@ function toggleAcc(id) {
     const el = cMsg(m, isNewIncoming);
     insertMessageInOrder(el);
     const msgTime = getMsgTime(m);
+
     if (!isFirstLoad && m.u !== myUid && m.u !== "system" && msgTime > latestDisplayedTs) {
       unreadMsgIds.add(m.id);
     }
     if (msgTime > latestDisplayedTs) latestDisplayedTs = msgTime;
     updateUnreadBadge();
     
-    if (m.u === myUid || m.u === "system" || isAutoScroll) {
+    if (isFirstLoad || m.u === myUid || m.u === "system") {
       scBottom(true);
     }
     updateJumpBtns();
@@ -1023,7 +1057,10 @@ function toggleAcc(id) {
     if (isImg) {
       const wrapper = document.createElement("div"); wrapper.style.marginTop = "6px";
       const img = document.createElement("img"); img.className = "inline-img"; img.src = url;
-      img.onload = () => scBottomOnImgLoad();
+      img.onload = () => {
+        const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40);
+        if (isBottom) scBottomOnImgLoad();
+      };
       img.onclick = () => { if (D.imgViewSrc && D.imgViewMod) { D.imgViewSrc.src = url; resetZoom(); D.imgViewMod.classList.add("show"); } };
       wrapper.appendChild(img); return wrapper;
     }
@@ -1062,7 +1099,7 @@ function toggleAcc(id) {
       if (type === "youtube" && ytId) { titleEl.textContent = "📺 YouTube"; D.playerContent.style.aspectRatio = "16/9"; D.playerContent.innerHTML = `<iframe style="width:100%;height:100%;" src="https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&controls=1&playsinline=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`; }
       else if (type === "niconico" && nicoId) { titleEl.textContent = "📺 ニコニコ動画"; D.playerContent.style.aspectRatio = "16/9"; D.playerContent.innerHTML = `<iframe style="width:100%;height:100%;" src="https://embed.nicovideo.jp/watch/${nicoId}?jsapi=0&autoplay=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`; }
     }
-    scBottom(); updateJumpBtns();
+    updateJumpBtns();
   }
 
   function renderPresence(serverListMap) {
@@ -1250,7 +1287,9 @@ function toggleAcc(id) {
 
       D.mi.value = ""; updateClrMsgBtnVisibility(); D.mi.style.height = "auto";
       if (keepOpen) D.mi.focus(); else D.mi.blur();
-      updateLastPostTime(getTrueTime());
+      
+      const trueNow = getTrueTime();
+      updateLastPostTime(trueNow);
 
       const postTs = firebase.database.ServerValue.TIMESTAMP;
       await db.ref(`chat/${currentRoomId}`).push({ u: myUid, n: encName, p: encTrip, c: curColor, m: encText, t: postTs });
@@ -1268,9 +1307,16 @@ function toggleAcc(id) {
       if (!user) { const cred = await auth.signInAnonymously(); user = cred.user; }
       if (user) {
         myUid = user.uid; safeLS.set("nz_permanent_uid", myUid); await syncProfileValues();
-        const wasJoined = (safeLS.get("nz_is_joined") === "true"), lastRoomId = safeLS.get("nz_last_room_id"), lastRoomPass = safeLS.get("nz_last_room_pass"), lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
-        if (wasJoined && lastRoomId && lastRoomPass && (getTrueTime() - lastPost < AUTO_EXIT_MS)) await joinRoom({ roomId: lastRoomId, roomPass: lastRoomPass, silent: true });
-        else switchScreen("lobby");
+        const wasJoined = (safeLS.get("nz_is_joined") === "true"), lastRoomId = safeLS.get("nz_last_room_id"), lastRoomPass = safeLS.get("nz_last_room_pass");
+        const sessionStart = parseInt(safeLS.get("nz_session_start_time") || "0");
+        const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
+        const baselineTime = Math.max(sessionStart, lastPost);
+
+        if (wasJoined && lastRoomId && lastRoomPass && (Date.now() - baselineTime < AUTO_EXIT_MS)) {
+          await joinRoom({ roomId: lastRoomId, roomPass: lastRoomPass, silent: true });
+        } else {
+          switchScreen("lobby");
+        }
         validateLobbyInputs();
       }
     } catch (err) { switchScreen("lobby"); }
@@ -1320,6 +1366,7 @@ function toggleAcc(id) {
 
     if (D.mi) {
       D.mi.addEventListener("input", () => { updateClrMsgBtnVisibility(); D.mi.style.height = "auto"; D.mi.style.height = Math.min(D.mi.scrollHeight, 120) + "px"; });
+      // 🎯 入力欄にフォーカスした時（キーボード表示時）に一番下へスクロールして追従させる
       D.mi.addEventListener("focus", () => {
         setTimeout(() => scBottom(true), 50);
         setTimeout(() => scBottom(true), 250);
@@ -1338,6 +1385,7 @@ function toggleAcc(id) {
         const currentHeight = window.innerHeight;
         if (Math.abs(lastHeight - currentHeight) > 100) {
           lastHeight = currentHeight;
+          // 🎯 画面リサイズ（キーボード出入等）時に一番下へスクロールして追従させる
           if (isJoined) setTimeout(() => scBottom(true), 100);
         }
       });
@@ -1349,13 +1397,21 @@ function toggleAcc(id) {
     if (D.tl) {
       D.tl.addEventListener("scroll", () => {
         const isBottom = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40;
-        isAutoScroll = isBottom; if (isBottom) { unreadMsgIds.clear(); updateUnreadBadge(); }
+        if (isBottom) { 
+          unreadMsgIds.clear(); 
+          updateUnreadBadge(); 
+        }
         updateJumpBtns();
       });
     }
 
     if (D.jumpUpBtn) D.jumpUpBtn.addEventListener("click", (e) => { e.preventDefault(); if (D.tl) D.tl.scrollTo({ top: 0, behavior: "smooth" }); });
-    if (D.jumpDownBtn) D.jumpDownBtn.addEventListener("click", (e) => { e.preventDefault(); if (D.tl) D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" }); isAutoScroll = true; unreadMsgIds.clear(); updateUnreadBadge(); });
+    if (D.jumpDownBtn) D.jumpDownBtn.addEventListener("click", (e) => { 
+      e.preventDefault(); 
+      if (D.tl) D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" }); 
+      unreadMsgIds.clear(); 
+      updateUnreadBadge(); 
+    });
     if (D.imgViewCloseBtn && D.imgViewMod) D.imgViewCloseBtn.addEventListener("click", (e) => { e.preventDefault(); D.imgViewMod.classList.remove("show"); });
 
     if (D.admBtn && D.adminAccordion) {
@@ -1365,7 +1421,6 @@ function toggleAcc(id) {
         D.adminAccordion.style.display = isShow ? "none" : "flex";
         if (!isShow) {
           updateAdminAccordionFields();
-          scBottom(true);
         }
       });
     }
