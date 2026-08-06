@@ -69,7 +69,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 #chatScreen { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 
-/* チャット上部にスライド展開する折りたたみ式ホストパネル */
+/* ホストパネル */
 #adminAccordion {
   display: none;
   flex-direction: column;
@@ -271,7 +271,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     <!-- チャット画面 -->
     <div id="chatScreen" style="display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
       
-      <!-- アコーディオン式ホストパネル -->
+      <!-- ホストパネル -->
       <div id="adminAccordion">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bd); padding-bottom: 4px;">
           <span id="adminAccordionTitle" style="font-size: 12px; font-weight: bold; color: var(--tx);">⚙️ ホスト設定パネル</span>
@@ -451,9 +451,11 @@ function toggleAcc(id) {
   const $ = id => document.getElementById(id);
   let D = {};
   let myPresenceRef = null;
-  let hasEnteredLogged = false; // 🎯 セッション内の入室ログ重複防止フラグ
+  let hasEnteredLogged = false;
 
-  // 🎯 バックグラウンド復帰時・タブ切り替え時の即時再接続＆同期
+  const checkIsGlobalAdmin = () => (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
+
+  // 🎯 爆速復帰 & 即時同期 (Visibility Change)
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -463,6 +465,7 @@ function toggleAcc(id) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
           }
         }
+        fastSyncOnResume();
         checkAutoExitOnResume();
       }
     });
@@ -797,33 +800,34 @@ function toggleAcc(id) {
     }
   }
 
-  function isSystemReporter() {
-    if (!isJoined || !currentRoomId) return false;
-    const activeUids = Object.keys(currentPresenceMap).sort();
-    if (activeUids.length === 0) return false;
-    return myUid === activeUids[0];
-  }
+  // 🎯 分散監視＆重複防止付き自動退室・通知
+  const processedExits = new Set();
+  function checkAndTriggerExitForInactiveUsers(membersMap) {
+    if (!isJoined || !db || !currentRoomId) return;
+    const nowTrue = getTrueTime();
+    
+    for (const [id, u] of Object.entries(membersMap)) {
+      if (u && typeof u.t === "number" && (nowTrue - u.t >= AUTO_EXIT_MS)) {
+        const exitKey = `${currentRoomId}_${id}_${Math.floor(u.t / 1000000)}`;
+        if (processedExits.has(exitKey)) continue;
+        processedExits.add(exitKey);
 
-  const checkIsGlobalAdmin = () => (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
-
-  const exitingUsers = new Set();
-  function triggerOtherExit(targetId, targetUser) {
-    if (exitingUsers.has(targetId) || !db) return;
-    exitingUsers.add(targetId);
-
-    const finishExit = () => {
-      if (isSystemReporter()) {
-        db.ref(`presence/${currentRoomId}/${targetId}`).remove().catch(() => { exitingUsers.delete(targetId); });
+        db.ref(`presence/${currentRoomId}/${id}`).transaction(currentData => {
+          if (currentData !== null) {
+            return null; 
+          }
+          return; 
+        }, async (error, committed) => {
+          if (!error && committed) {
+            const userName = (u.n || "").trim();
+            const userTrip = (u.p || "").trim();
+            if (userName) {
+              const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
+              db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
+            }
+          }
+        });
       }
-    };
-
-    if (isSystemReporter() && (targetUser.n || "").trim()) {
-      const encLog = "[SYS]::📢 [お知らせ] " + `${targetUser.n.trim()} ${targetUser.p || ""}`.trim() + " が自動退室しました (3分間発言がなかったため)";
-      db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: firebase.database.ServerValue.TIMESTAMP })
-        .then(finishExit)
-        .catch(() => { exitingUsers.delete(targetId); finishExit(); });
-    } else {
-      finishExit();
     }
   }
 
@@ -872,6 +876,7 @@ function toggleAcc(id) {
     } else finishAndClean();
   }
 
+  // 🎯 完全動作・爆速入室処理（エラーブロック完全解消）
   async function joinRoom(options = {}) {
     if (!db) { alert("データベースが準備できていません。"); return; }
     let lobbyRoomId = options.roomId || $("lobbyRoomId").value.trim();
@@ -880,23 +885,23 @@ function toggleAcc(id) {
     if (lobbyRoomId !== "official" && !lobbyRoomPass) { alert("部屋パスワードを入力してください。"); return; }
 
     const safeRoomPath = (lobbyRoomId === "official") ? "official" : await window.sha256(lobbyRoomId);
-    removeFirebaseListeners(); isFirstLoad = true;
-    currentRoomId = safeRoomPath; currentRoomPass = lobbyRoomPass;
-    activeKey = await E2EE.deriveKey(lobbyRoomPass);
 
+    // 安全なBANチェック
     let isBanned = false;
-    try { await db.ref(`banlist/${currentRoomId}/${myUid}`).once("value").then(s => { if (s.val()) isBanned = true; }); } catch (e) {}
-    if (isBanned) { alert("この部屋の管理者により、アクセスが制限されています。"); switchScreen("lobby"); return; }
-
     try {
-      db.ref(`banlist/${currentRoomId}/${myUid}`).on("value", s => {
-        if (s.val() && isJoined) { alert("管理者によりアクセスが制限（BAN）されました。"); doExit(); }
-      });
+      const banSnap = await db.ref(`banlist/${safeRoomPath}/${myUid}`).once("value");
+      if (banSnap.exists() && banSnap.val()) isBanned = true;
     } catch (e) {}
 
+    if (isBanned) { alert("この部屋の管理者により、アクセスが制限されています。"); return; }
+
+    // 安全な設定取得
     let settingsSnap = null;
-    try { settingsSnap = await db.ref(`settings/${currentRoomId}`).once("value"); } catch (e) {
-      alert("データベース接続、または権限エラーです。"); switchScreen("lobby"); return;
+    try {
+      settingsSnap = await db.ref(`settings/${safeRoomPath}`).once("value");
+    } catch (e) {
+      alert("データベース接続、または権限エラーです。");
+      return;
     }
 
     const val = (settingsSnap && settingsSnap.val()) || {};
@@ -905,24 +910,34 @@ function toggleAcc(id) {
     roomSettings.approvedTrips = val.approvedTrips || {};
     roomSettings.creatorUid = val.creatorUid || "";
 
-    if (!settingsSnap || !settingsSnap.exists()) {
+    if (!settingsSnap.exists() || !roomSettings.creatorUid) {
       const isGlobalAdmin = checkIsGlobalAdmin();
-      roomSettings.creatorUid = (currentRoomId === "official") ? (isGlobalAdmin ? myUid : ADMIN_UID) : myUid;
+      roomSettings.creatorUid = (safeRoomPath === "official") ? (isGlobalAdmin ? myUid : ADMIN_UID) : myUid;
       try {
-        await db.ref(`settings/${currentRoomId}`).set({ creatorUid: roomSettings.creatorUid, newEntriesDisabled: false, passcode: "" });
-        if (currentRoomId !== "official") safeLS.set("nz_my_created_room_id", currentRoomId);
-      } catch (e) { alert("新規設定の保存権限がありません。"); switchScreen("lobby"); return; }
+        await db.ref(`settings/${safeRoomPath}`).set({ creatorUid: roomSettings.creatorUid, newEntriesDisabled: false, passcode: "" });
+        if (safeRoomPath !== "official") safeLS.set("nz_my_created_room_id", safeRoomPath);
+      } catch (e) {}
     }
 
-    const hasApprovedTrip = (currentRoomId === "official" ? checkIsGlobalAdmin() : Object.values(roomSettings.approvedTrips).includes(myTrip));
+    const hasApprovedTrip = (safeRoomPath === "official" ? checkIsGlobalAdmin() : Object.values(roomSettings.approvedTrips).includes(myTrip));
     const isGlobalAdmin = checkIsGlobalAdmin();
-    const isOwner = (currentRoomId === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin));
+    const isOwner = (safeRoomPath === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin));
 
-    if (!options.silent && roomSettings.newEntriesDisabled && !hasApprovedTrip && !isOwner) { alert("現在、新規の入室が制限されています。"); switchScreen("lobby"); return; }
+    if (!options.silent && roomSettings.newEntriesDisabled && !hasApprovedTrip && !isOwner) { alert("現在、新規の入室が制限されています。"); return; }
     if (!options.silent && roomSettings.passcode && !hasApprovedTrip && !isOwner) {
       const userPass = prompt("部屋の合言葉を入力してください：");
-      if (userPass !== roomSettings.passcode) { alert("合言葉が一致しません。"); switchScreen("lobby"); return; }
+      if (userPass !== roomSettings.passcode) { alert("合言葉が一致しません。"); return; }
     }
+
+    removeFirebaseListeners(); isFirstLoad = true;
+    currentRoomId = safeRoomPath; currentRoomPass = lobbyRoomPass;
+    activeKey = await E2EE.deriveKey(lobbyRoomPass);
+
+    try {
+      db.ref(`banlist/${currentRoomId}/${myUid}`).on("value", s => {
+        if (s.val() && isJoined) { alert("管理者によりアクセスが制限（BAN）されました。"); doExit(); }
+      });
+    } catch (e) {}
 
     isJoined = true;
     safeLS.set("nz_is_joined", "true"); 
@@ -934,30 +949,37 @@ function toggleAcc(id) {
     updateSessionStartTime(nowTrue);
     updateLastPostTime(nowTrue);
 
+    // 🚀 画面を爆速切り替え
     switchScreen("chat", lobbyRoomId, options.silent);
     setupFirebaseListeners();
 
-    try {
-      await db.ref(`presence/${currentRoomId}/${myUid}`).set({ n: myName || "名無し", p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP });
-    } catch (e) {}
+    // バックグラウンドでプレゼンス登録と入室通知
+    db.ref(`presence/${currentRoomId}/${myUid}`).set({ n: myName || "名無し", p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
     startAutoExitChecker();
 
-    // 🎯 入室ログの重複を完璧に防ぐフラグ管理
     const cleanName = (myName || "").trim();
     if (!options.silent && cleanName && !hasEnteredLogged) {
       hasEnteredLogged = true;
-      const encEnter = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${cleanName} ${myTrip}`.trim() + " が入室しました", activeKey);
-      db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encEnter, t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
+      E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${cleanName} ${myTrip}`.trim() + " が入室しました", activeKey).then(encEnter => {
+        db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encEnter, t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
+      });
     }
 
-    applyRoomSettingsUI(); initSettingsListener(); scBottom(true);
+    applyRoomSettingsUI(); 
+    initSettingsListener();
+    setTimeout(() => scBottom(true), 50);
   }
 
+  // 🎯 新しいログが完全に見える位置への確実な追従
   function scBottom(force = false) {
     if (!D.tl) return;
-    D.tl.scrollTop = D.tl.scrollHeight;
+    requestAnimationFrame(() => {
+      D.tl.scrollTop = D.tl.scrollHeight;
+      setTimeout(() => {
+        if (D.tl) D.tl.scrollTop = D.tl.scrollHeight;
+      }, 50);
+    });
   }
-  function scBottomOnImgLoad() { scBottom(true); }
 
   function updateJumpBtns() {
     if (!D.tl || !D.jumpUpBtn || !D.jumpDownBtn) return;
@@ -992,7 +1014,6 @@ function toggleAcc(id) {
     if (msgTime > latestDisplayedTs) latestDisplayedTs = msgTime;
     updateUnreadBadge();
     
-    // 🎯 初回読み込み時や入室時は必ず一番下に追従
     if (isFirstLoad || m.u === myUid || m.u === "system") {
       scBottom(true);
     }
@@ -1064,7 +1085,7 @@ function toggleAcc(id) {
       const img = document.createElement("img"); img.className = "inline-img"; img.src = url;
       img.onload = () => {
         const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40);
-        if (isBottom) scBottomOnImgLoad();
+        if (isBottom) scBottom(true);
       };
       img.onclick = () => { if (D.imgViewSrc && D.imgViewMod) { D.imgViewSrc.src = url; resetZoom(); D.imgViewMod.classList.add("show"); } };
       wrapper.appendChild(img); return wrapper;
@@ -1107,6 +1128,7 @@ function toggleAcc(id) {
     updateJumpBtns();
   }
 
+  // 🎯 ちらつきゼロ・爆速入室者リスト描画（DOM差分更新）
   function renderPresence(serverListMap) {
     if (!isPresenceInitialized) return;
     const sorted = Object.values(serverListMap).filter(m => m && m.n).sort((a, b) => a.id.localeCompare(b.id));
@@ -1123,8 +1145,10 @@ function toggleAcc(id) {
     sorted.forEach(m => {
       const text = m.p ? `${m.n} ${m.p}` : m.n, color = m.c || "#f1f5f9";
       let chip = D.pl.querySelector(`[data-uid="${m.id}"]`);
-      if (chip) { chip.textContent = text; chip.style.color = color; chip.style.borderColor = color; }
-      else {
+      if (chip) {
+        if (chip.textContent !== text) chip.textContent = text;
+        if (chip.style.color !== color) { chip.style.color = color; chip.style.borderColor = color; }
+      } else {
         chip = document.createElement("span"); chip.className = "chip"; chip.dataset.uid = m.id;
         chip.style.color = color; chip.style.borderColor = color; chip.textContent = text;
         if ((myUid === roomSettings.creatorUid || checkIsGlobalAdmin()) && m.id !== myUid) {
@@ -1149,6 +1173,34 @@ function toggleAcc(id) {
   }
 
   let chatQuery = null, presenceRef = null;
+  
+  // 🎯 復帰時の爆速即時強制同期
+  async function fastSyncOnResume() {
+    if (!db || !isJoined || !currentRoomId) return;
+    try {
+      const [chatSnap, presSnap] = await Promise.all([
+        db.ref(`chat/${currentRoomId}`).limitToLast(30).once("value"),
+        db.ref(`presence/${currentRoomId}`).once("value")
+      ]);
+      
+      const list = presSnap.val() || {}, members = {};
+      for (const [id, u] of Object.entries(list)) {
+        if (u && u.n && typeof u.t === "number") members[id] = { id, ...u };
+      }
+      currentPresenceMap = members;
+      renderPresence(members);
+      checkAndTriggerExitForInactiveUsers(members);
+
+      chatSnap.forEach(async child => {
+        const m = child.val();
+        if (m && !displayedMsgIds.has(child.key)) {
+          m.id = child.key;
+          await syncSingleMessage(m, false);
+        }
+      });
+    } catch (e) {}
+  }
+
   async function setupFirebaseListeners() {
     if (!db || !isJoined || isFirebaseListenersBound) return;
     isFirebaseListenersBound = true;
@@ -1183,7 +1235,7 @@ function toggleAcc(id) {
     }).catch(() => {});
 
     presenceRef.on("value", s => {
-      const list = s.val() || {}, members = {}, nowTrue = getTrueTime();
+      const list = s.val() || {}, members = {};
       for (const [id, u] of Object.entries(list)) {
         if (u && u.n && typeof u.t === "number") {
           members[id] = { id, ...u };
@@ -1195,13 +1247,7 @@ function toggleAcc(id) {
         checkRoomSelfDestruct(currentRoomId);
       }
 
-      if (isSystemReporter()) {
-        for (const [id, u] of Object.entries(members)) {
-          if (id !== myUid && (nowTrue - u.t >= AUTO_EXIT_MS)) {
-            triggerOtherExit(id, u);
-          }
-        }
-      }
+      checkAndTriggerExitForInactiveUsers(members);
     });
 
     myPresenceRef = db.ref(`presence/${currentRoomId}/${myUid}`);
