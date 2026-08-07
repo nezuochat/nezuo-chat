@@ -491,7 +491,10 @@ function toggleAcc(id) {
 
   function updateUnreadBadge() {
     if (!D.unreadBadge) return;
-    const count = unreadMsgIds.size;
+    const isNoScrollNeeded = D.tl && (D.tl.scrollHeight <= D.tl.clientHeight + 40);
+    const count = isNoScrollNeeded ? 0 : unreadMsgIds.size;
+    if (isNoScrollNeeded) unreadMsgIds.clear();
+
     if (count > 0) {
       D.unreadBadge.textContent = count > 99 ? "99+" : count;
       D.unreadBadge.style.display = "inline-flex";
@@ -800,7 +803,7 @@ function toggleAcc(id) {
     }
   }
 
-  // 🎯 分散監視＆重複防止付き自動退室・通知
+  // 🎯 分散監視＆重複防止付き自動退室・通知（タイムスタンプを期限切れの正確な時間に修正）
   const processedExits = new Set();
   function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
@@ -811,6 +814,8 @@ function toggleAcc(id) {
         const exitKey = `${currentRoomId}_${id}_${Math.floor(u.t / 1000000)}`;
         if (processedExits.has(exitKey)) continue;
         processedExits.add(exitKey);
+
+        const exactExpiryTime = u.t + AUTO_EXIT_MS;
 
         db.ref(`presence/${currentRoomId}/${id}`).transaction(currentData => {
           if (currentData !== null) {
@@ -823,7 +828,8 @@ function toggleAcc(id) {
             const userTrip = (u.p || "").trim();
             if (userName) {
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
-              db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
+              // 発見時刻ではなく、期限を迎えた正確な時間をタイムスタンプ(t)にセット
+              db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exactExpiryTime }).catch(()=>{});
             }
           }
         });
@@ -871,12 +877,13 @@ function toggleAcc(id) {
     };
 
     if (wasJoined && cleanName && db) {
+      const expiryTime = getTrueTime();
       const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が自動退室しました (3分間発言がなかったため)" : " が退室しました"), activeKey);
-      db.ref(`chat/${oldRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: firebase.database.ServerValue.TIMESTAMP }).then(finishAndClean).catch(finishAndClean);
+      db.ref(`chat/${oldRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: expiryTime }).then(finishAndClean).catch(finishAndClean);
     } else finishAndClean();
   }
 
-  // 🎯 完全動作・爆速入室処理（エラーブロック完全解消）
+  // 🎯 完全動作・爆速入室処理
   async function joinRoom(options = {}) {
     if (!db) { alert("データベースが準備できていません。"); return; }
     let lobbyRoomId = options.roomId || $("lobbyRoomId").value.trim();
@@ -886,7 +893,6 @@ function toggleAcc(id) {
 
     const safeRoomPath = (lobbyRoomId === "official") ? "official" : await window.sha256(lobbyRoomId);
 
-    // 安全なBANチェック
     let isBanned = false;
     try {
       const banSnap = await db.ref(`banlist/${safeRoomPath}/${myUid}`).once("value");
@@ -895,7 +901,6 @@ function toggleAcc(id) {
 
     if (isBanned) { alert("この部屋の管理者により、アクセスが制限されています。"); return; }
 
-    // 安全な設定取得
     let settingsSnap = null;
     try {
       settingsSnap = await db.ref(`settings/${safeRoomPath}`).once("value");
@@ -961,7 +966,7 @@ function toggleAcc(id) {
     if (!options.silent && cleanName && !hasEnteredLogged) {
       hasEnteredLogged = true;
       E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${cleanName} ${myTrip}`.trim() + " が入室しました", activeKey).then(encEnter => {
-        db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encEnter, t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
+        db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encEnter, t: getTrueTime() }).catch(()=>{});
       });
     }
 
