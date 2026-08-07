@@ -461,11 +461,12 @@ function toggleAcc(id) {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
+          // 🎯 開いた瞬間にインメモリキャッシュとサーバーから爆速同期
+          fastSyncOnResume();
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
           }
         }
-        fastSyncOnResume();
         checkAutoExitOnResume();
       }
     });
@@ -882,7 +883,7 @@ function toggleAcc(id) {
     } else finishAndClean();
   }
 
-  // 🎯 爆速入室処理
+  // 🎯 爆速入室処理（ローカル保存なし・ステートレス）
   async function joinRoom(options = {}) {
     if (!db) { alert("データベースが準備できていません。"); return; }
     let lobbyRoomId = options.roomId || $("lobbyRoomId").value.trim();
