@@ -461,7 +461,6 @@ function toggleAcc(id) {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
-          // 🎯 開いた瞬間にインメモリキャッシュとサーバーから爆速同期
           fastSyncOnResume();
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
@@ -883,7 +882,7 @@ function toggleAcc(id) {
     } else finishAndClean();
   }
 
-  // 🎯 爆速入室処理（ローカル保存なし・ステートレス）
+  // 🎯 爆速入室処理
   async function joinRoom(options = {}) {
     if (!db) { alert("データベースが準備できていません。"); return; }
     let lobbyRoomId = options.roomId || $("lobbyRoomId").value.trim();
@@ -1011,14 +1010,23 @@ function toggleAcc(id) {
     insertMessageInOrder(el);
     const msgTime = getMsgTime(m);
 
+    // 🎯 ユーザーが一番下にいるとき（または自分・システムの発言）だけ自動追従する
+    const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40);
+
     if (!isFirstLoad && m.u !== myUid && m.u !== "system" && msgTime > latestDisplayedTs) {
-      unreadMsgIds.add(m.id);
+      if (!isBottom) {
+        unreadMsgIds.add(m.id);
+      }
     }
     if (msgTime > latestDisplayedTs) latestDisplayedTs = msgTime;
     updateUnreadBadge();
     
-    if (isFirstLoad || m.u === myUid || m.u === "system") {
+    if (isFirstLoad || m.u === myUid || m.u === "system" || (isNewIncoming && isBottom)) {
       scBottom(true);
+      if (isBottom) {
+        unreadMsgIds.clear();
+        updateUnreadBadge();
+      }
     }
     updateJumpBtns();
   }
