@@ -803,7 +803,7 @@ function toggleAcc(id) {
     }
   }
 
-  // 🎯 分散監視＆重複防止付き自動退室・通知（タイムスタンプを期限切れの正確な時間に修正）
+  // 🎯 分散監視＆重複防止付き自動退室・通知
   const processedExits = new Set();
   function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
@@ -828,7 +828,6 @@ function toggleAcc(id) {
             const userTrip = (u.p || "").trim();
             if (userName) {
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
-              // 発見時刻ではなく、期限を迎えた正確な時間をタイムスタンプ(t)にセット
               db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exactExpiryTime }).catch(()=>{});
             }
           }
@@ -883,7 +882,7 @@ function toggleAcc(id) {
     } else finishAndClean();
   }
 
-  // 🎯 完全動作・爆速入室処理
+  // 🎯 爆速入室処理
   async function joinRoom(options = {}) {
     if (!db) { alert("データベースが準備できていません。"); return; }
     let lobbyRoomId = options.roomId || $("lobbyRoomId").value.trim();
@@ -958,7 +957,6 @@ function toggleAcc(id) {
     switchScreen("chat", lobbyRoomId, options.silent);
     setupFirebaseListeners();
 
-    // バックグラウンドでプレゼンス登録と入室通知
     db.ref(`presence/${currentRoomId}/${myUid}`).set({ n: myName || "名無し", p: myTrip, c: curColor, t: firebase.database.ServerValue.TIMESTAMP }).catch(()=>{});
     startAutoExitChecker();
 
@@ -975,7 +973,6 @@ function toggleAcc(id) {
     setTimeout(() => scBottom(true), 50);
   }
 
-  // 🎯 新しいログが完全に見える位置への確実な追従
   function scBottom(force = false) {
     if (!D.tl) return;
     requestAnimationFrame(() => {
