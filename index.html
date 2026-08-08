@@ -452,6 +452,7 @@ function toggleAcc(id) {
   let D = {};
   let myPresenceRef = null;
   let hasEnteredLogged = false;
+  let autoExitIntervalId = null; // 🎯 3分自動退室を確実に監視する常時タイマー
 
   const checkIsGlobalAdmin = () => (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
 
@@ -601,7 +602,7 @@ function toggleAcc(id) {
   let curColor = safeLS.get("nz_color") || "#f1f5f9", tmpColor = curColor, activeKey = null;
   let currentRoomId = "", currentRoomPass = "", isJoined = false;
   const unreadMsgIds = new Set();
-  let autoExitTimeoutId = null, serverTimeOffset = 0, isOffsetLoaded = false;
+  let serverTimeOffset = 0, isOffsetLoaded = false;
   const displayedMsgIds = new Set();
   let isFirstLoad = true, isFirebaseListenersBound = false, isPresenceInitialized = false;
   let isSending = false, lastSendTime = 0, scale = 1, panX = 0, panY = 0;
@@ -767,25 +768,29 @@ function toggleAcc(id) {
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
   const updateSessionStartTime = time => safeLS.set("nz_session_start_time", time.toString());
 
+  // 🎯 常時稼働する自動退室・監視ループ（数秒おきにズレなく3分を精密チェック）
   function startAutoExitChecker() {
     stopAutoExitTimer();
     if (!isJoined) return;
-    const sessionStart = parseInt(safeLS.get("nz_session_start_time") || getTrueTime().toString(), 10);
-    const lastPost = parseInt(safeLS.get("nz_last_post_time") || sessionStart.toString(), 10);
-    const baselineTime = Math.max(sessionStart, lastPost);
     
-    const remaining = (baselineTime + AUTO_EXIT_MS) - getTrueTime();
-    if (remaining <= 0) {
-      doExit(true);
-    } else {
-      autoExitTimeoutId = setTimeout(() => doExit(true), remaining);
-    }
+    autoExitIntervalId = setInterval(() => {
+      if (!isJoined) { stopAutoExitTimer(); return; }
+      const sessionStart = parseInt(safeLS.get("nz_session_start_time") || getTrueTime().toString(), 10);
+      const lastPost = parseInt(safeLS.get("nz_last_post_time") || sessionStart.toString(), 10);
+      const baselineTime = Math.max(sessionStart, lastPost);
+      
+      const elapsed = getTrueTime() - baselineTime;
+      if (elapsed >= AUTO_EXIT_MS) {
+        stopAutoExitTimer();
+        doExit(true);
+      }
+    }, 2000); // 2秒おきに厳密チェック
   }
 
   function stopAutoExitTimer() { 
-    if (autoExitTimeoutId) { 
-      clearTimeout(autoExitTimeoutId); 
-      autoExitTimeoutId = null; 
+    if (autoExitIntervalId) { 
+      clearInterval(autoExitIntervalId); 
+      autoExitIntervalId = null; 
     } 
   }
 
@@ -803,7 +808,7 @@ function toggleAcc(id) {
     }
   }
 
-  // 🎯 分散監視＆重複防止付き自動退室・通知
+  // 🎯 分散監視＆重複防止付き自動退室・通知（正確な期限切れ時間をセット）
   const processedExits = new Set();
   function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
@@ -1010,8 +1015,8 @@ function toggleAcc(id) {
     insertMessageInOrder(el);
     const msgTime = getMsgTime(m);
 
-    // 🎯 ユーザーが一番下にいるとき（または自分・システムの発言）だけ自動追従する
-    const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40);
+    // 🎯 最下部判定のマージンを80pxに拡大し、確実に「下にいるときだけ」追従
+    const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 80);
 
     if (!isFirstLoad && m.u !== myUid && m.u !== "system" && msgTime > latestDisplayedTs) {
       if (!isBottom) {
@@ -1095,7 +1100,7 @@ function toggleAcc(id) {
       const wrapper = document.createElement("div"); wrapper.style.marginTop = "6px";
       const img = document.createElement("img"); img.className = "inline-img"; img.src = url;
       img.onload = () => {
-        const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40);
+        const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 80);
         if (isBottom) scBottom(true);
       };
       img.onclick = () => { if (D.imgViewSrc && D.imgViewMod) { D.imgViewSrc.src = url; resetZoom(); D.imgViewMod.classList.add("show"); } };
@@ -1456,7 +1461,7 @@ function toggleAcc(id) {
 
     if (D.tl) {
       D.tl.addEventListener("scroll", () => {
-        const isBottom = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40;
+        const isBottom = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 80;
         if (isBottom) { 
           unreadMsgIds.clear(); 
           updateUnreadBadge(); 
