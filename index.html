@@ -462,7 +462,6 @@ function toggleAcc(id) {
 
   const checkIsGlobalAdmin = () => (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
 
-  // 🎯 ロビー画面のお知らせ通知を表示するヘルパー
   function showLobbyNotice(msg) {
     safeLS.set("nz_lobby_notice", msg);
     const banner = $("lobbyNoticeBanner");
@@ -479,16 +478,19 @@ function toggleAcc(id) {
     if (banner) banner.style.display = "none";
   }
 
-  // 🎯 バックグラウンド復帰時の爆速完全同期 (Visibility Change)
+  // 🎯 爆速強制再接続 & 完全同調 (Visibility Change)
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
-          fastSyncOnResume();
-          if (myPresenceRef) {
-            myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
-          }
+          // 強制リコネクトを確実に走らせてから一括同期
+          setTimeout(() => {
+            fastSyncOnResume();
+            if (myPresenceRef) {
+              myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
+            }
+          }, 50);
         }
         checkAutoExitOnResume();
       }
@@ -502,7 +504,6 @@ function toggleAcc(id) {
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
     const baselineTime = Math.max(sessionStart, lastPost);
     
-    // 起動時のロビー通知復元
     const savedNotice = safeLS.get("nz_lobby_notice");
     if (savedNotice) {
       setTimeout(() => showLobbyNotice(savedNotice), 100);
@@ -797,7 +798,6 @@ function toggleAcc(id) {
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
   const updateSessionStartTime = time => safeLS.set("nz_session_start_time", time.toString());
 
-  // 🎯 常時稼働する自動退室・監視ループ
   function startAutoExitChecker() {
     stopAutoExitTimer();
     if (!isJoined) return;
@@ -837,7 +837,6 @@ function toggleAcc(id) {
     }
   }
 
-  // 🎯 分散監視＆重複防止付き自動退室・通知（正しい期限時刻セット & ロビーお知らせ永続化）
   const processedExits = new Set();
   function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
@@ -929,7 +928,7 @@ function toggleAcc(id) {
     if (!lobbyRoomId) { alert("部屋IDを入力してください。"); return; }
     if (lobbyRoomId !== "official" && !lobbyRoomPass) { alert("部屋パスワードを入力してください。"); return; }
 
-    clearLobbyNotice(); // 入室時にロビーのお知らせをクリア
+    clearLobbyNotice();
     const safeRoomPath = (lobbyRoomId === "official") ? "official" : await window.sha256(lobbyRoomId);
 
     let isBanned = false;
@@ -1224,12 +1223,14 @@ function toggleAcc(id) {
 
   let chatQuery = null, presenceRef = null;
   
-  // 🎯 復帰時の爆速即時強制同期
+  // 🎯 復帰時の爆速即時強制再接続 ＆ 完全同調
   async function fastSyncOnResume() {
     if (!db || !isJoined || !currentRoomId) return;
     try {
+      // 接続状態を明示的にリセットして再取得
+      db.goOnline();
       const [chatSnap, presSnap] = await Promise.all([
-        db.ref(`chat/${currentRoomId}`).limitToLast(30).once("value"),
+        db.ref(`chat/${currentRoomId}`).limitToLast(50).once("value"),
         db.ref(`presence/${currentRoomId}`).once("value")
       ]);
       
@@ -1442,7 +1443,6 @@ function toggleAcc(id) {
       adminAccordion: $("adminAccordion"), admBtn: $("admBtn"), adminAccordionCloseBtn: $("adminAccordionCloseBtn")
     };
 
-    // ロビー通知の閉じるボタン
     const noticeCloseBtn = $("lobbyNoticeCloseBtn");
     if (noticeCloseBtn) {
       noticeCloseBtn.addEventListener("click", (e) => {
