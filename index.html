@@ -364,6 +364,12 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     <!-- ロビー画面 -->
     <div id="lobbyScreen" style="display: none; flex: 1; overflow-y: auto; padding: 10px 12px; background: #0d1117; flex-direction: column; gap: 10px;">
+      <!-- 🎯 自動退室・解散のお知らせが残る通知バナー -->
+      <div id="lobbyNoticeBanner" style="display: none; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 8px; padding: 10px 12px; align-items: center; justify-content: space-between; gap: 8px;">
+        <span id="lobbyNoticeText" style="font-size: 11.5px; font-weight: bold; color: #fda4af; line-height: 1.4;"></span>
+        <button id="lobbyNoticeCloseBtn" style="background: none; border: none; color: #fda4af; font-size: 14px; font-weight: bold; cursor: pointer; padding: 2px 6px;">✕</button>
+      </div>
+
       <div class="lobby-sec">
         <h2>👤 ユーザー設定 (必須入力)</h2>
         <div style="display:flex; flex-direction:column; gap:4px; width:100%;">
@@ -452,11 +458,28 @@ function toggleAcc(id) {
   let D = {};
   let myPresenceRef = null;
   let hasEnteredLogged = false;
-  let autoExitIntervalId = null; // 🎯 3分自動退室を確実に監視する常時タイマー
+  let autoExitIntervalId = null;
 
   const checkIsGlobalAdmin = () => (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
 
-  // 🎯 爆速復帰 & 即時同期 (Visibility Change)
+  // 🎯 ロビー画面のお知らせ通知を表示するヘルパー
+  function showLobbyNotice(msg) {
+    safeLS.set("nz_lobby_notice", msg);
+    const banner = $("lobbyNoticeBanner");
+    const textEl = $("lobbyNoticeText");
+    if (banner && textEl) {
+      textEl.textContent = msg;
+      banner.style.display = "flex";
+    }
+  }
+
+  function clearLobbyNotice() {
+    safeLS.remove("nz_lobby_notice");
+    const banner = $("lobbyNoticeBanner");
+    if (banner) banner.style.display = "none";
+  }
+
+  // 🎯 バックグラウンド復帰時の爆速完全同期 (Visibility Change)
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -479,6 +502,12 @@ function toggleAcc(id) {
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
     const baselineTime = Math.max(sessionStart, lastPost);
     
+    // 起動時のロビー通知復元
+    const savedNotice = safeLS.get("nz_lobby_notice");
+    if (savedNotice) {
+      setTimeout(() => showLobbyNotice(savedNotice), 100);
+    }
+
     if (wasJoined && lastRoomId && (Date.now() - baselineTime < 180000)) {
       const chatScr = document.getElementById("chatScreen");
       if (chatScr) chatScr.style.display = "flex";
@@ -768,7 +797,7 @@ function toggleAcc(id) {
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
   const updateSessionStartTime = time => safeLS.set("nz_session_start_time", time.toString());
 
-  // 🎯 常時稼働する自動退室・監視ループ（数秒おきにズレなく3分を精密チェック）
+  // 🎯 常時稼働する自動退室・監視ループ
   function startAutoExitChecker() {
     stopAutoExitTimer();
     if (!isJoined) return;
@@ -784,7 +813,7 @@ function toggleAcc(id) {
         stopAutoExitTimer();
         doExit(true);
       }
-    }, 2000); // 2秒おきに厳密チェック
+    }, 2000);
   }
 
   function stopAutoExitTimer() { 
@@ -808,7 +837,7 @@ function toggleAcc(id) {
     }
   }
 
-  // 🎯 分散監視＆重複防止付き自動退室・通知（正確な期限切れ時間をセット）
+  // 🎯 分散監視＆重複防止付き自動退室・通知（正しい期限時刻セット & ロビーお知らせ永続化）
   const processedExits = new Set();
   function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
@@ -834,6 +863,10 @@ function toggleAcc(id) {
             if (userName) {
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
               db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exactExpiryTime }).catch(()=>{});
+              
+              if (id === myUid) {
+                showLobbyNotice("⏱️ 3分間発言がなかったため、自動退室しました。");
+              }
             }
           }
         });
@@ -877,7 +910,8 @@ function toggleAcc(id) {
           checkRoomSelfDestruct(oldRoomId);
         }).catch(()=>{});
       }
-      showToast(isAuto ? "⏱️ 3分間発言がなかったため、自動退室しました。" : "🚪 退室しました。");
+      const noticeMsg = isAuto ? "⏱️ 3分間発言がなかったため、自動退室しました。" : "🚪 退室しました。";
+      showLobbyNotice(noticeMsg);
     };
 
     if (wasJoined && cleanName && db) {
@@ -895,6 +929,7 @@ function toggleAcc(id) {
     if (!lobbyRoomId) { alert("部屋IDを入力してください。"); return; }
     if (lobbyRoomId !== "official" && !lobbyRoomPass) { alert("部屋パスワードを入力してください。"); return; }
 
+    clearLobbyNotice(); // 入室時にロビーのお知らせをクリア
     const safeRoomPath = (lobbyRoomId === "official") ? "official" : await window.sha256(lobbyRoomId);
 
     let isBanned = false;
@@ -1015,7 +1050,6 @@ function toggleAcc(id) {
     insertMessageInOrder(el);
     const msgTime = getMsgTime(m);
 
-    // 🎯 最下部判定のマージンを80pxに拡大し、確実に「下にいるときだけ」追従
     const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 80);
 
     if (!isFirstLoad && m.u !== myUid && m.u !== "system" && msgTime > latestDisplayedTs) {
@@ -1271,6 +1305,7 @@ function toggleAcc(id) {
       if (isJoined && !s.exists()) {
         myPresenceRef.off(); removeFirebaseListeners(); isJoined = false; switchScreen("lobby");
         showToast("⚠️ 部屋が解散されたか、退室処理が行われました。");
+        showLobbyNotice("⚠️ 入室していた部屋が解散されたか、存在しなくなりました。");
       }
     });
   }
@@ -1406,6 +1441,15 @@ function toggleAcc(id) {
       mi: $("mi"), kbKeepOpenChk: $("kbKeepOpenChk"), clrDot: $("clrDot"),
       adminAccordion: $("adminAccordion"), admBtn: $("admBtn"), adminAccordionCloseBtn: $("adminAccordionCloseBtn")
     };
+
+    // ロビー通知の閉じるボタン
+    const noticeCloseBtn = $("lobbyNoticeCloseBtn");
+    if (noticeCloseBtn) {
+      noticeCloseBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        clearLobbyNotice();
+      });
+    }
 
     buildPicker($("lobbyColorGrid"), curColor, "clrc2", (v) => {
       curColor = v; setGlobalColor(curColor); safeLS.set("nz_color", curColor);
