@@ -301,6 +301,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           <button class="btn" id="admMembersToggleBtn" style="background: var(--s2); border: 1px solid var(--bd); color: var(--tx); font-size: 10px; height: 26px; flex: 1; font-weight: bold; border-radius: 4px;">👥 メンバー管理</button>
         </div>
 
+        <!-- 🗑️ ホスト専用：部屋解散ボタン（一般プライベート部屋のみ表示） -->
+        <div id="admDestroyRoomContainer" style="display: none; width: 100%; margin-top: 2px;">
+          <button class="btn" id="admDestroyRoomBtn" style="background: rgba(244,63,94,0.2); border: 1px solid rgba(244,63,94,0.5); color: #fda4af; font-size: 10px; height: 26px; width: 100%; font-weight: bold; border-radius: 4px;">🗑️ 部屋を解散してデータを完全消去</button>
+        </div>
+
         <div id="admMembersDrawer" style="display: none; flex-direction: column; gap: 6px; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 6px; width: 100%;">
           <div>
             <label style="font-size:9.5px; font-weight:bold; color: var(--mu); display:block; margin-bottom:2px;">📋 事前承認トリップ追加</label>
@@ -461,7 +466,7 @@ function toggleAcc(id) {
 
   const checkIsGlobalAdmin = () => (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
   const checkIsRoomHostOrAdmin = () => {
-    if (currentRoomId === "official") return true; 
+    if (currentRoomId === "official") return checkIsGlobalAdmin(); 
     return (myUid === roomSettings.creatorUid || checkIsGlobalAdmin());
   };
 
@@ -481,7 +486,6 @@ function toggleAcc(id) {
     if (banner) banner.style.display = "none";
   }
 
-  // 🎯 【チラつきゼロ化】復帰時はDOMを全消しせず、差分だけを滑らかに高速同期（Virtual Diffing Sync）
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -841,7 +845,6 @@ function toggleAcc(id) {
   
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
-    if (!checkIsRoomHostOrAdmin()) return; 
 
     const nowTrue = getTrueTime();
     
@@ -1177,7 +1180,6 @@ function toggleAcc(id) {
     updateJumpBtns();
   }
 
-  // 🎯 【チラつきゼロ化】入室者リストの差分仮想更新（DOM Diffing）
   function renderPresence(serverListMap) {
     if (!isPresenceInitialized) return;
     const sorted = Object.values(serverListMap).filter(m => m && m.n).sort((a, b) => a.id.localeCompare(b.id));
@@ -1200,7 +1202,9 @@ function toggleAcc(id) {
       } else {
         chip = document.createElement("span"); chip.className = "chip"; chip.dataset.uid = m.id;
         chip.style.color = color; chip.style.borderColor = color; chip.textContent = text;
-        if ((myUid === roomSettings.creatorUid || checkIsGlobalAdmin()) && m.id !== myUid) {
+        // 🎯 メンバーBAN：一般部屋は作成者/管理者、公式部屋はグローバル管理者のみ可能
+        const canBan = currentRoomId === "official" ? checkIsGlobalAdmin() : (myUid === roomSettings.creatorUid || checkIsGlobalAdmin());
+        if (canBan && m.id !== myUid) {
           chip.title = "このユーザーを追放(BAN)"; chip.style.cursor = "pointer";
           chip.addEventListener("click", () => {
             customConfirm("メンバーのBAN", `ユーザー「${m.n}」を本当にこの部屋からBANしますか？`, "BANする", "キャンセル", true).then(ok => {
@@ -1215,7 +1219,8 @@ function toggleAcc(id) {
   }
 
   const banUser = function(targetUid, targetName, targetTrip) {
-    if (!db || (myUid !== roomSettings.creatorUid && !checkIsGlobalAdmin())) return;
+    const canBan = currentRoomId === "official" ? checkIsGlobalAdmin() : (myUid === roomSettings.creatorUid || checkIsGlobalAdmin());
+    if (!db || !canBan) return;
     db.ref(`banlist/${currentRoomId}/${targetUid}`).set({ n: targetName, p: targetTrip, t: firebase.database.ServerValue.TIMESTAMP }).then(() => {
       showToast(`${targetName} をBANしました。`); db.ref(`presence/${currentRoomId}/${targetUid}`).remove().catch(()=>{});
     });
@@ -1223,7 +1228,6 @@ function toggleAcc(id) {
 
   let chatQuery = null, presenceRef = null, settingsRef = null;
 
-  // 🎯 【チラつきゼロ化】復帰時は画面をクリアせず、未取得の差分メッセージだけを滑らかに同期
   async function fastSyncOnResume() {
     if (!db || !isJoined || !currentRoomId) return;
     try {
@@ -1275,7 +1279,6 @@ function toggleAcc(id) {
         if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
       }
       if (D.tli) {
-        // 初回のみクリアして流し込み、以後は差分追記
         D.tli.innerHTML = "";
         D.tli.appendChild(fragment);
       }
@@ -1331,7 +1334,12 @@ function toggleAcc(id) {
       }
       applyRoomSettingsUI();
       const isGlobalAdmin = checkIsGlobalAdmin();
-      if (currentRoomId === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin)) updateAdminAccordionFields();
+      // 🎯 公式部屋はホストパネルではなく管理者用項目のみ、一般部屋は作成者/管理者に表示
+      if (currentRoomId === "official") {
+        $("adminBtnContainer").style.display = isGlobalAdmin ? "inline-flex" : "none";
+      } else {
+        $("adminBtnContainer").style.display = (myUid === roomSettings.creatorUid || isGlobalAdmin) ? "inline-flex" : "none";
+      }
     });
 
     myPresenceRef = db.ref(`presence/${currentRoomId}/${myUid}`);
@@ -1366,7 +1374,13 @@ function toggleAcc(id) {
       badgesContainer.style.display = count > 0 ? "flex" : "none";
     }
     const isGlobalAdmin = checkIsGlobalAdmin();
-    $("adminBtnContainer").style.display = (currentRoomId === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin)) ? "inline-flex" : "none";
+    if (currentRoomId === "official") {
+      $("adminBtnContainer").style.display = isGlobalAdmin ? "inline-flex" : "none";
+      if ($("admDestroyRoomContainer")) $("admDestroyRoomContainer").style.display = "none"; // 🎯 公式部屋は解散ボタン非表示
+    } else {
+      $("adminBtnContainer").style.display = (myUid === roomSettings.creatorUid || isGlobalAdmin) ? "inline-flex" : "none";
+      if ($("admDestroyRoomContainer")) $("admDestroyRoomContainer").style.display = (myUid === roomSettings.creatorUid || isGlobalAdmin) ? "flex" : "none";
+    }
   }
 
   function updateAdminAccordionFields() {
@@ -1414,6 +1428,34 @@ function toggleAcc(id) {
       if (!user) { const cred = await auth.signInAnonymously(); user = cred.user; }
       if (user) {
         myUid = user.uid; safeLS.set("nz_permanent_uid", myUid); await syncProfileValues();
+        
+        // 🎯 【管理者ロビー接続時の一括ゾンビ掃除】管理者がロビーに接続した瞬間、全部屋のゾンビデータを一網打尽にスキャン＆クリーンアップ
+        if (checkIsGlobalAdmin()) {
+          db.ref("presence").once("value", snap => {
+            const allRooms = snap.val() || {};
+            const now = getTrueTime();
+            for (const [roomId, members] of Object.entries(allRooms)) {
+              if (!members) continue;
+              let hasActive = false;
+              for (const [uId, uData] of Object.entries(members)) {
+                if (uData && uData.t && (now - uData.t < 1800000)) {
+                  hasActive = true;
+                } else {
+                  // 30分以上放置されたゾンビ個体データを削除
+                  db.ref(`presence/${roomId}/${uId}`).remove().catch(()=>{});
+                }
+              }
+              // アクティブが0人なら部屋ごと完全消去
+              if (!hasActive && roomId !== "official") {
+                db.ref(`chat/${roomId}`).remove().catch(()=>{});
+                db.ref(`settings/${roomId}`).remove().catch(()=>{});
+                db.ref(`presence/${roomId}`).remove().catch(()=>{});
+                db.ref(`banlist/${roomId}`).remove().catch(()=>{});
+              }
+            }
+          }).catch(()=>{});
+        }
+
         const wasJoined = (safeLS.get("nz_is_joined") === "true"), lastRoomId = safeLS.get("nz_last_room_id"), lastRoomPass = safeLS.get("nz_last_room_pass");
         const sessionStart = parseInt(safeLS.get("nz_session_start_time") || "0");
         const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
@@ -1597,6 +1639,29 @@ function toggleAcc(id) {
             });
             showToast("🚨 チャットログを初期化しました");
           } catch (err) { showToast("⚠️ ログの初期化に失敗しました"); }
+        });
+      });
+    }
+
+    // 🗑️ ホスト専用：部屋の強制解散（完全消去）ボタン
+    if ($("admDestroyRoomBtn")) {
+      $("admDestroyRoomBtn").addEventListener("click", (e) => {
+        e.preventDefault();
+        customConfirm("部屋の解散確認", "この部屋を完全に解散し、すべてのデータを消去しますか？この操作は取り消せません。", "解散する", "キャンセル", true).then(async ok => {
+          if (!ok || !db || !currentRoomId) return;
+          try {
+            const roomIdRef = currentRoomId;
+            const updates = {};
+            updates[`chat/${roomIdRef}`] = null;
+            updates[`presence/${roomIdRef}`] = null;
+            updates[`settings/${roomIdRef}`] = null;
+            updates[`banlist/${roomIdRef}`] = null;
+
+            await db.ref().update(updates);
+            showToast("🗑️ 部屋を解散しました");
+          } catch (err) {
+            showToast("⚠️ 部屋の解散に失敗しました");
+          }
         });
       });
     }
