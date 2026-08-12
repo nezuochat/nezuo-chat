@@ -465,10 +465,6 @@ function toggleAcc(id) {
   let autoExitIntervalId = null;
 
   const checkIsGlobalAdmin = () => (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
-  const checkIsRoomHostOrAdmin = () => {
-    if (currentRoomId === "official") return checkIsGlobalAdmin(); 
-    return (myUid === roomSettings.creatorUid || checkIsGlobalAdmin());
-  };
 
   function showLobbyNotice(msg) {
     safeLS.set("nz_lobby_notice", msg);
@@ -486,6 +482,7 @@ function toggleAcc(id) {
     if (banner) banner.style.display = "none";
   }
 
+  // 🎯 【爆速・パラレル化対応】タブ復帰時は並列復号で一瞬で同期
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -1202,7 +1199,6 @@ function toggleAcc(id) {
       } else {
         chip = document.createElement("span"); chip.className = "chip"; chip.dataset.uid = m.id;
         chip.style.color = color; chip.style.borderColor = color; chip.textContent = text;
-        // 🎯 メンバーBAN：一般部屋は作成者/管理者、公式部屋はグローバル管理者のみ可能
         const canBan = currentRoomId === "official" ? checkIsGlobalAdmin() : (myUid === roomSettings.creatorUid || checkIsGlobalAdmin());
         if (canBan && m.id !== myUid) {
           chip.title = "このユーザーを追放(BAN)"; chip.style.cursor = "pointer";
@@ -1245,13 +1241,36 @@ function toggleAcc(id) {
       renderPresence(members);
       checkAndTriggerExitForInactiveUsers(members);
 
-      chatSnap.forEach(async child => {
+      const promises = [];
+      chatSnap.forEach(child => {
         const m = child.val();
         if (m && !displayedMsgIds.has(child.key)) {
           m.id = child.key;
-          await syncSingleMessage(m, false);
+          promises.push((async () => {
+            m.m = await E2EE.decrypt(m.m, activeKey);
+            m.n = await E2EE.decrypt(m.n, activeKey);
+            m.p = await E2EE.decrypt(m.p, activeKey);
+            return m;
+          })());
         }
       });
+      const resolvedMsgs = await Promise.all(promises);
+      resolvedMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
+
+      const fragment = document.createDocumentFragment();
+      resolvedMsgs.forEach(m => {
+        if (!displayedMsgIds.has(m.id)) {
+          const el = cMsg(m, false);
+          el.dataset.ts = getMsgTime(m);
+          fragment.appendChild(el);
+          displayedMsgIds.add(m.id);
+          if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
+        }
+      });
+      if (D.tli && fragment.children.length > 0) {
+        D.tli.appendChild(fragment);
+        scBottom(true);
+      }
     } catch (e) {}
   }
 
@@ -1265,19 +1284,27 @@ function toggleAcc(id) {
     chatRef.off(); presenceRef.off(); settingsRef.off();
 
     chatRef.limitToLast(100).once("value").then(async snap => {
-      const fragment = document.createDocumentFragment(), msgs = [];
+      const msgs = [];
       snap.forEach(child => { const m = child.val(); if (m) { m.id = child.key; msgs.push(m); } });
 
-      for (const m of msgs) {
-        if (displayedMsgIds.has(m.id)) continue;
+      const decryptedPromises = msgs.map(async m => {
         m.m = await E2EE.decrypt(m.m, activeKey);
         m.n = await E2EE.decrypt(m.n, activeKey);
         m.p = await E2EE.decrypt(m.p, activeKey);
+        return m;
+      });
+      const resolvedMsgs = await Promise.all(decryptedPromises);
+
+      const fragment = document.createDocumentFragment();
+      resolvedMsgs.forEach(m => {
+        if (displayedMsgIds.has(m.id)) return;
         const el = cMsg(m, false);
         el.dataset.ts = getMsgTime(m);
-        fragment.appendChild(el); displayedMsgIds.add(m.id);
+        fragment.appendChild(el);
+        displayedMsgIds.add(m.id);
         if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
-      }
+      });
+
       if (D.tli) {
         D.tli.innerHTML = "";
         D.tli.appendChild(fragment);
@@ -1334,7 +1361,6 @@ function toggleAcc(id) {
       }
       applyRoomSettingsUI();
       const isGlobalAdmin = checkIsGlobalAdmin();
-      // 🎯 公式部屋はホストパネルではなく管理者用項目のみ、一般部屋は作成者/管理者に表示
       if (currentRoomId === "official") {
         $("adminBtnContainer").style.display = isGlobalAdmin ? "inline-flex" : "none";
       } else {
@@ -1376,7 +1402,7 @@ function toggleAcc(id) {
     const isGlobalAdmin = checkIsGlobalAdmin();
     if (currentRoomId === "official") {
       $("adminBtnContainer").style.display = isGlobalAdmin ? "inline-flex" : "none";
-      if ($("admDestroyRoomContainer")) $("admDestroyRoomContainer").style.display = "none"; // 🎯 公式部屋は解散ボタン非表示
+      if ($("admDestroyRoomContainer")) $("admDestroyRoomContainer").style.display = "none";
     } else {
       $("adminBtnContainer").style.display = (myUid === roomSettings.creatorUid || isGlobalAdmin) ? "inline-flex" : "none";
       if ($("admDestroyRoomContainer")) $("admDestroyRoomContainer").style.display = (myUid === roomSettings.creatorUid || isGlobalAdmin) ? "flex" : "none";
@@ -1429,7 +1455,6 @@ function toggleAcc(id) {
       if (user) {
         myUid = user.uid; safeLS.set("nz_permanent_uid", myUid); await syncProfileValues();
         
-        // 🎯 【管理者ロビー接続時の一括ゾンビ掃除】管理者がロビーに接続した瞬間、全部屋のゾンビデータを一網打尽にスキャン＆クリーンアップ
         if (checkIsGlobalAdmin()) {
           db.ref("presence").once("value", snap => {
             const allRooms = snap.val() || {};
@@ -1441,11 +1466,9 @@ function toggleAcc(id) {
                 if (uData && uData.t && (now - uData.t < 1800000)) {
                   hasActive = true;
                 } else {
-                  // 30分以上放置されたゾンビ個体データを削除
                   db.ref(`presence/${roomId}/${uId}`).remove().catch(()=>{});
                 }
               }
-              // アクティブが0人なら部屋ごと完全消去
               if (!hasActive && roomId !== "official") {
                 db.ref(`chat/${roomId}`).remove().catch(()=>{});
                 db.ref(`settings/${roomId}`).remove().catch(()=>{});
@@ -1643,7 +1666,6 @@ function toggleAcc(id) {
       });
     }
 
-    // 🗑️ ホスト専用：部屋の強制解散（完全消去）ボタン
     if ($("admDestroyRoomBtn")) {
       $("admDestroyRoomBtn").addEventListener("click", (e) => {
         e.preventDefault();
