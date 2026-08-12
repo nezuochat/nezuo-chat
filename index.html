@@ -461,7 +461,7 @@ function toggleAcc(id) {
 
   const checkIsGlobalAdmin = () => (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
   const checkIsRoomHostOrAdmin = () => {
-    if (currentRoomId === "official") return true; // 公式部屋は全員がお掃除エージェントになれる
+    if (currentRoomId === "official") return true; 
     return (myUid === roomSettings.creatorUid || checkIsGlobalAdmin());
   };
 
@@ -481,16 +481,20 @@ function toggleAcc(id) {
     if (banner) banner.style.display = "none";
   }
 
-  // 🎯 爆速・ハードリフレッシュによる完全同調 (Visibility Change / Reconnect)
+  // 🎯 タブ復帰・スリープ解除時は入室時と全く同じクリーンリフレッシュを実行
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
-          db.goOnline();
-          await fastSyncOnResume();
-          if (myPresenceRef) {
-            myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
-          }
+          db.goOffline();
+          setTimeout(async () => {
+            db.goOnline();
+            removeFirebaseListeners();
+            await setupFirebaseListeners(); 
+            if (myPresenceRef) {
+              myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
+            }
+          }, 80);
         }
         checkAutoExitOnResume();
       }
@@ -839,10 +843,9 @@ function toggleAcc(id) {
 
   const processedExits = new Set();
   
-  // 🎯 重複ブロック＆ホスト/管理者権限による確実なお掃除ルーチン
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
-    if (!checkIsRoomHostOrAdmin()) return; // 権限がない一般ユーザーはお掃除を実行しない
+    if (!checkIsRoomHostOrAdmin()) return; 
 
     const nowTrue = getTrueTime();
     
@@ -855,10 +858,9 @@ function toggleAcc(id) {
 
         const exactExpiryTime = u.t + AUTO_EXIT_MS;
 
-        // トランザクションで競合・重複書き込みを完全にブロック
         db.ref(`presence/${currentRoomId}/${id}`).transaction(currentData => {
           if (currentData !== null) {
-            return null; // データが存在すれば削除実行
+            return null; 
           }
           return; 
         }, async (error, committed) => {
@@ -894,7 +896,6 @@ function toggleAcc(id) {
         db.ref(`chat/${roomId}`).remove().catch(()=>{});
         db.ref(`settings/${roomId}`).remove().catch(()=>{});
         db.ref(`presence/${roomId}`).remove().catch(()=>{});
-        db.ref(`requests/${roomId}`).remove().catch(()=>{});
         db.ref(`banlist/${roomId}`).remove().catch(()=>{});
       }
     });
@@ -1012,7 +1013,6 @@ function toggleAcc(id) {
     }
 
     applyRoomSettingsUI(); 
-    initSettingsListener();
     setTimeout(() => scBottom(true), 50);
   }
 
@@ -1217,49 +1217,23 @@ function toggleAcc(id) {
     updateJumpBtns();
   }
 
-  function banUser(targetUid, targetName, targetTrip) {
+  const banUser = function(targetUid, targetName, targetTrip) {
     if (!db || (myUid !== roomSettings.creatorUid && !checkIsGlobalAdmin())) return;
     db.ref(`banlist/${currentRoomId}/${targetUid}`).set({ n: targetName, p: targetTrip, t: firebase.database.ServerValue.TIMESTAMP }).then(() => {
       showToast(`${targetName} をBANしました。`); db.ref(`presence/${currentRoomId}/${targetUid}`).remove().catch(()=>{});
     });
-  }
+  };
 
-  let chatQuery = null, presenceRef = null;
-  
-  // 🎯 復帰時のハードリフレッシュによる高速同調
-  async function fastSyncOnResume() {
-    if (!db || !isJoined || !currentRoomId) return;
-    try {
-      db.goOnline();
-      const [chatSnap, presSnap] = await Promise.all([
-        db.ref(`chat/${currentRoomId}`).limitToLast(50).once("value"),
-        db.ref(`presence/${currentRoomId}`).once("value")
-      ]);
-      
-      const list = presSnap.val() || {}, members = {};
-      for (const [id, u] of Object.entries(list)) {
-        if (u && u.n && typeof u.t === "number") members[id] = { id, ...u };
-      }
-      currentPresenceMap = members;
-      renderPresence(members);
-      checkAndTriggerExitForInactiveUsers(members);
-
-      chatSnap.forEach(async child => {
-        const m = child.val();
-        if (m && !displayedMsgIds.has(child.key)) {
-          m.id = child.key;
-          await syncSingleMessage(m, false);
-        }
-      });
-    } catch (e) {}
-  }
+  let chatQuery = null, presenceRef = null, settingsRef = null;
 
   async function setupFirebaseListeners() {
     if (!db || !isJoined || isFirebaseListenersBound) return;
     isFirebaseListenersBound = true;
     const chatRef = db.ref(`chat/${currentRoomId}`);
     presenceRef = db.ref(`presence/${currentRoomId}`);
-    chatRef.off(); presenceRef.off();
+    settingsRef = db.ref(`settings/${currentRoomId}`);
+
+    chatRef.off(); presenceRef.off(); settingsRef.off();
     if (D.tli) D.tli.innerHTML = "";
     displayedMsgIds.clear(); renderedMwNodes.clear();
 
@@ -1303,51 +1277,7 @@ function toggleAcc(id) {
       checkAndTriggerExitForInactiveUsers(members);
     });
 
-    myPresenceRef = db.ref(`presence/${currentRoomId}/${myUid}`);
-    myPresenceRef.on("value", s => {
-      if (isJoined && !s.exists()) {
-        myPresenceRef.off(); removeFirebaseListeners(); isJoined = false; switchScreen("lobby");
-        showToast("⚠️ 部屋が解散されたか、退室処理が行われました。");
-        showLobbyNotice("⚠️ 入室していた部屋が解散されたか、存在しなくなりました。");
-      }
-    });
-  }
-
-  function removeFirebaseListeners() {
-    if (chatQuery) chatQuery.off("child_added");
-    if (db && currentRoomId) db.ref(`chat/${currentRoomId}`).off("child_removed");
-    if (myPresenceRef) { myPresenceRef.off("value"); myPresenceRef = null; }
-    if (presenceRef) presenceRef.off("value");
-    isFirebaseListenersBound = false; isPresenceInitialized = false;
-    displayedMsgIds.clear(); renderedMwNodes.clear(); unreadMsgIds.clear(); updateUnreadBadge();
-    if (D.tli) D.tli.innerHTML = ""; if (D.pl) D.pl.innerHTML = ""; if ($("pcnt")) $("pcnt").style.display = "none";
-  }
-
-  function applyRoomSettingsUI() {
-    const badgesContainer = $("roomStatusBadges");
-    if (badgesContainer) {
-      badgesContainer.innerHTML = ""; let count = 0;
-      if (roomSettings.passcode) { badgesContainer.innerHTML += `<span style="font-size:9.5px; font-weight:900; background:#fb923c; color:#fff; padding:1.5px 5px; border-radius:3px;">🔑合言葉</span>`; count++; }
-      if (roomSettings.newEntriesDisabled) { badgesContainer.innerHTML += `<span style="font-size:9.5px; font-weight:900; background:#64748b; color:#fff; padding:1.5px 5px; border-radius:3px;">🚫制限</span>`; count++; }
-      badgesContainer.style.display = count > 0 ? "flex" : "none";
-    }
-    const isGlobalAdmin = checkIsGlobalAdmin();
-    $("adminBtnContainer").style.display = (currentRoomId === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin)) ? "inline-flex" : "none";
-  }
-
-  function updateAdminAccordionFields() {
-    const isOfficial = (currentRoomId === "official");
-    if ($("adminAccordionTitle")) $("adminAccordionTitle").textContent = isOfficial ? "⚙️ 公式部屋 管理パネル" : "⚙️ ホスト設定パネル";
-    if ($("admGeneralSettingsGroup")) $("admGeneralSettingsGroup").style.display = isOfficial ? "none" : "flex";
-    if ($("admStopJoin")) $("admStopJoin").checked = roomSettings.newEntriesDisabled;
-    if ($("admPassToggle")) $("admPassToggle").checked = !!roomSettings.passcode;
-    if ($("admPass")) $("admPass").value = roomSettings.passcode || "";
-    if ($("admPassContainer")) $("admPassContainer").style.display = roomSettings.passcode ? "flex" : "none";
-  }
-
-  function initSettingsListener() {
-    if (!db || !currentRoomId) return;
-    db.ref(`settings/${currentRoomId}`).on("value", snap => {
+    settingsRef.on("value", snap => {
       const val = snap.val() || {};
       roomSettings.newEntriesDisabled = val.newEntriesDisabled || false;
       roomSettings.passcode = val.passcode || "";
@@ -1375,6 +1305,50 @@ function toggleAcc(id) {
       const isGlobalAdmin = checkIsGlobalAdmin();
       if (currentRoomId === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin)) updateAdminAccordionFields();
     });
+
+    myPresenceRef = db.ref(`presence/${currentRoomId}/${myUid}`);
+    myPresenceRef.on("value", s => {
+      if (isJoined && !s.exists()) {
+        myPresenceRef.off(); removeFirebaseListeners(); isJoined = false; switchScreen("lobby");
+        showToast("⚠️ 部屋が解散されたか、退室処理が行われました。");
+        showLobbyNotice("⚠️ 入室していた部屋が解散されたか、存在しなくなりました。");
+      }
+    });
+  }
+
+  function removeFirebaseListeners() {
+    if (chatQuery) chatQuery.off("child_added");
+    if (db && currentRoomId) {
+      db.ref(`chat/${currentRoomId}`).off("child_removed");
+      db.ref(`settings/${currentRoomId}`).off("value");
+    }
+    if (myPresenceRef) { myPresenceRef.off("value"); myPresenceRef = null; }
+    if (presenceRef) presenceRef.off("value");
+    isFirebaseListenersBound = false; isPresenceInitialized = false;
+    displayedMsgIds.clear(); renderedMwNodes.clear(); unreadMsgIds.clear(); updateUnreadBadge();
+    if (D.tli) D.tli.innerHTML = ""; if (D.pl) D.pl.innerHTML = ""; if ($("pcnt")) $("pcnt").style.display = "none";
+  }
+
+  function applyRoomSettingsUI() {
+    const badgesContainer = $("roomStatusBadges");
+    if (badgesContainer) {
+      badgesContainer.innerHTML = ""; let count = 0;
+      if (roomSettings.passcode) { badgesContainer.innerHTML += `<span style="font-size:9.5px; font-weight:900; background:#fb923c; color:#fff; padding:1.5px 5px; border-radius:3px;">🔑合言葉</span>`; count++; }
+      if (roomSettings.newEntriesDisabled) { badgesContainer.innerHTML += `<span style="font-size:9.5px; font-weight:900; background:#64748b; color:#fff; padding:1.5px 5px; border-radius:3px;">🚫制限</span>`; count++; }
+      badgesContainer.style.display = count > 0 ? "flex" : "none";
+    }
+    const isGlobalAdmin = checkIsGlobalAdmin();
+    $("adminBtnContainer").style.display = (currentRoomId === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin)) ? "inline-flex" : "none";
+  }
+
+  function updateAdminAccordionFields() {
+    const isOfficial = (currentRoomId === "official");
+    if ($("adminAccordionTitle")) $("adminAccordionTitle").textContent = isOfficial ? "⚙️ 公式部屋 管理パネル" : "⚙️ ホスト設定パネル";
+    if ($("admGeneralSettingsGroup")) $("admGeneralSettingsGroup").style.display = isOfficial ? "none" : "flex";
+    if ($("admStopJoin")) $("admStopJoin").checked = roomSettings.newEntriesDisabled;
+    if ($("admPassToggle")) $("admPassToggle").checked = !!roomSettings.passcode;
+    if ($("admPass")) $("admPass").value = roomSettings.passcode || "";
+    if ($("admPassContainer")) $("admPassContainer").style.display = roomSettings.passcode ? "flex" : "none";
   }
 
   async function sendMessage() {
@@ -1567,6 +1541,7 @@ function toggleAcc(id) {
       if (db && currentRoomId) db.ref(`settings/${currentRoomId}/passcode`).set(passVal).then(() => showToast("🔑 合言葉を設定しました"));
     });
 
+    // 🎯 ログ初期化（暗号化されたシステムメッセージを正しくプッシュして権限エラーを防止）
     if ($("admClearBtn")) {
       $("admClearBtn").addEventListener("click", (e) => {
         e.preventDefault();
@@ -1574,17 +1549,24 @@ function toggleAcc(id) {
           if (!ok || !db || !currentRoomId) return;
           if (D.adminAccordion) D.adminAccordion.style.display = "none";
           try {
-            await db.ref(`chat/${currentRoomId}`).remove();
             const clearTs = firebase.database.ServerValue.TIMESTAMP;
-            await db.ref(`settings/${currentRoomId}/last_cleared_at`).set(clearTs);
+            const updates = {};
+            updates[`chat/${currentRoomId}`] = null;
+            updates[`settings/${currentRoomId}/last_cleared_at`] = clearTs;
+
+            await db.ref().update(updates);
+
             const clearLogText = "[SYS]::🚨 [お知らせ] 管理者によってログが初期化されました";
+            const encClearLog = await E2EE.encrypt(clearLogText, activeKey);
+
             await db.ref(`chat/${currentRoomId}`).push({
-              u: "system",
-              n: "システム",
+              u: myUid, // 自分のUIDを使用してルール（u === auth.uid）のバリデーションを通過させる
+              n: await E2EE.encrypt("システム", activeKey),
               p: "",
               c: "#f43f5e",
-              m: clearLogText,
-              t: firebase.database.ServerValue.TIMESTAMP
+              m: encClearLog,
+              t: clearTs,
+              sys: true
             });
             showToast("🚨 チャットログを初期化しました");
           } catch (err) { showToast("⚠️ ログの初期化に失敗しました"); }
