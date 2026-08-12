@@ -364,7 +364,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     <!-- ロビー画面 -->
     <div id="lobbyScreen" style="display: none; flex: 1; overflow-y: auto; padding: 10px 12px; background: #0d1117; flex-direction: column; gap: 10px;">
-      <!-- 🎯 自動退室・解散のお知らせが残る通知バナー -->
       <div id="lobbyNoticeBanner" style="display: none; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 8px; padding: 10px 12px; align-items: center; justify-content: space-between; gap: 8px;">
         <span id="lobbyNoticeText" style="font-size: 11.5px; font-weight: bold; color: #fda4af; line-height: 1.4;"></span>
         <button id="lobbyNoticeCloseBtn" style="background: none; border: none; color: #fda4af; font-size: 14px; font-weight: bold; cursor: pointer; padding: 2px 6px;">✕</button>
@@ -461,6 +460,10 @@ function toggleAcc(id) {
   let autoExitIntervalId = null;
 
   const checkIsGlobalAdmin = () => (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
+  const checkIsRoomHostOrAdmin = () => {
+    if (currentRoomId === "official") return true; // 公式部屋は全員がお掃除エージェントになれる
+    return (myUid === roomSettings.creatorUid || checkIsGlobalAdmin());
+  };
 
   function showLobbyNotice(msg) {
     safeLS.set("nz_lobby_notice", msg);
@@ -478,19 +481,16 @@ function toggleAcc(id) {
     if (banner) banner.style.display = "none";
   }
 
-  // 🎯 爆速強制再接続 & 完全同調 (Visibility Change)
+  // 🎯 爆速・ハードリフレッシュによる完全同調 (Visibility Change / Reconnect)
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
-          // 強制リコネクトを確実に走らせてから一括同期
-          setTimeout(() => {
-            fastSyncOnResume();
-            if (myPresenceRef) {
-              myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
-            }
-          }, 50);
+          await fastSyncOnResume();
+          if (myPresenceRef) {
+            myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
+          }
         }
         checkAutoExitOnResume();
       }
@@ -838,21 +838,27 @@ function toggleAcc(id) {
   }
 
   const processedExits = new Set();
-  function checkAndTriggerExitForInactiveUsers(membersMap) {
+  
+  // 🎯 重複ブロック＆ホスト/管理者権限による確実なお掃除ルーチン
+  async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
+    if (!checkIsRoomHostOrAdmin()) return; // 権限がない一般ユーザーはお掃除を実行しない
+
     const nowTrue = getTrueTime();
     
     for (const [id, u] of Object.entries(membersMap)) {
       if (u && typeof u.t === "number" && (nowTrue - u.t >= AUTO_EXIT_MS)) {
-        const exitKey = `${currentRoomId}_${id}_${Math.floor(u.t / 1000000)}`;
+        const timeBlock = Math.floor(u.t / 1000000);
+        const exitKey = `${currentRoomId}_${id}_${timeBlock}`;
         if (processedExits.has(exitKey)) continue;
         processedExits.add(exitKey);
 
         const exactExpiryTime = u.t + AUTO_EXIT_MS;
 
+        // トランザクションで競合・重複書き込みを完全にブロック
         db.ref(`presence/${currentRoomId}/${id}`).transaction(currentData => {
           if (currentData !== null) {
-            return null; 
+            return null; // データが存在すれば削除実行
           }
           return; 
         }, async (error, committed) => {
@@ -920,7 +926,6 @@ function toggleAcc(id) {
     } else finishAndClean();
   }
 
-  // 🎯 爆速入室処理
   async function joinRoom(options = {}) {
     if (!db) { alert("データベースが準備できていません。"); return; }
     let lobbyRoomId = options.roomId || $("lobbyRoomId").value.trim();
@@ -992,7 +997,6 @@ function toggleAcc(id) {
     updateSessionStartTime(nowTrue);
     updateLastPostTime(nowTrue);
 
-    // 🚀 画面を爆速切り替え
     switchScreen("chat", lobbyRoomId, options.silent);
     setupFirebaseListeners();
 
@@ -1177,7 +1181,6 @@ function toggleAcc(id) {
     updateJumpBtns();
   }
 
-  // 🎯 ちらつきゼロ・爆速入室者リスト描画（DOM差分更新）
   function renderPresence(serverListMap) {
     if (!isPresenceInitialized) return;
     const sorted = Object.values(serverListMap).filter(m => m && m.n).sort((a, b) => a.id.localeCompare(b.id));
@@ -1223,11 +1226,10 @@ function toggleAcc(id) {
 
   let chatQuery = null, presenceRef = null;
   
-  // 🎯 復帰時の爆速即時強制再接続 ＆ 完全同調
+  // 🎯 復帰時のハードリフレッシュによる高速同調
   async function fastSyncOnResume() {
     if (!db || !isJoined || !currentRoomId) return;
     try {
-      // 接続状態を明示的にリセットして再取得
       db.goOnline();
       const [chatSnap, presSnap] = await Promise.all([
         db.ref(`chat/${currentRoomId}`).limitToLast(50).once("value"),
