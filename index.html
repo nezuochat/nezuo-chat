@@ -481,20 +481,16 @@ function toggleAcc(id) {
     if (banner) banner.style.display = "none";
   }
 
-  // 🎯 タブ復帰・スリープ解除時は入室時と全く同じクリーンリフレッシュを実行
+  // 🎯 【チラつきゼロ化】復帰時はDOMを全消しせず、差分だけを滑らかに高速同期（Virtual Diffing Sync）
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
-          db.goOffline();
-          setTimeout(async () => {
-            db.goOnline();
-            removeFirebaseListeners();
-            await setupFirebaseListeners(); 
-            if (myPresenceRef) {
-              myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
-            }
-          }, 80);
+          db.goOnline();
+          await fastSyncOnResume();
+          if (myPresenceRef) {
+            myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
+          }
         }
         checkAutoExitOnResume();
       }
@@ -1181,6 +1177,7 @@ function toggleAcc(id) {
     updateJumpBtns();
   }
 
+  // 🎯 【チラつきゼロ化】入室者リストの差分仮想更新（DOM Diffing）
   function renderPresence(serverListMap) {
     if (!isPresenceInitialized) return;
     const sorted = Object.values(serverListMap).filter(m => m && m.n).sort((a, b) => a.id.localeCompare(b.id));
@@ -1226,6 +1223,34 @@ function toggleAcc(id) {
 
   let chatQuery = null, presenceRef = null, settingsRef = null;
 
+  // 🎯 【チラつきゼロ化】復帰時は画面をクリアせず、未取得の差分メッセージだけを滑らかに同期
+  async function fastSyncOnResume() {
+    if (!db || !isJoined || !currentRoomId) return;
+    try {
+      db.goOnline();
+      const [chatSnap, presSnap] = await Promise.all([
+        db.ref(`chat/${currentRoomId}`).limitToLast(50).once("value"),
+        db.ref(`presence/${currentRoomId}`).once("value")
+      ]);
+      
+      const list = presSnap.val() || {}, members = {};
+      for (const [id, u] of Object.entries(list)) {
+        if (u && u.n && typeof u.t === "number") members[id] = { id, ...u };
+      }
+      currentPresenceMap = members;
+      renderPresence(members);
+      checkAndTriggerExitForInactiveUsers(members);
+
+      chatSnap.forEach(async child => {
+        const m = child.val();
+        if (m && !displayedMsgIds.has(child.key)) {
+          m.id = child.key;
+          await syncSingleMessage(m, false);
+        }
+      });
+    } catch (e) {}
+  }
+
   async function setupFirebaseListeners() {
     if (!db || !isJoined || isFirebaseListenersBound) return;
     isFirebaseListenersBound = true;
@@ -1234,8 +1259,6 @@ function toggleAcc(id) {
     settingsRef = db.ref(`settings/${currentRoomId}`);
 
     chatRef.off(); presenceRef.off(); settingsRef.off();
-    if (D.tli) D.tli.innerHTML = "";
-    displayedMsgIds.clear(); renderedMwNodes.clear();
 
     chatRef.limitToLast(100).once("value").then(async snap => {
       const fragment = document.createDocumentFragment(), msgs = [];
@@ -1251,7 +1274,12 @@ function toggleAcc(id) {
         fragment.appendChild(el); displayedMsgIds.add(m.id);
         if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
       }
-      D.tli.appendChild(fragment); isFirstLoad = false; scBottom(true); updateJumpBtns();
+      if (D.tli) {
+        // 初回のみクリアして流し込み、以後は差分追記
+        D.tli.innerHTML = "";
+        D.tli.appendChild(fragment);
+      }
+      isFirstLoad = false; scBottom(true); updateJumpBtns();
 
       chatQuery = chatRef.orderByChild("t").startAt(latestDisplayedTs + 1);
       chatQuery.on("child_added", async child => { const m = child.val(); if (m) { m.id = child.key; await syncSingleMessage(m, true); } });
@@ -1326,7 +1354,7 @@ function toggleAcc(id) {
     if (presenceRef) presenceRef.off("value");
     isFirebaseListenersBound = false; isPresenceInitialized = false;
     displayedMsgIds.clear(); renderedMwNodes.clear(); unreadMsgIds.clear(); updateUnreadBadge();
-    if (D.tli) D.tli.innerHTML = ""; if (D.pl) D.pl.innerHTML = ""; if ($("pcnt")) $("pcnt").style.display = "none";
+    if (D.pl) D.pl.innerHTML = ""; if ($("pcnt")) $("pcnt").style.display = "none";
   }
 
   function applyRoomSettingsUI() {
@@ -1541,7 +1569,6 @@ function toggleAcc(id) {
       if (db && currentRoomId) db.ref(`settings/${currentRoomId}/passcode`).set(passVal).then(() => showToast("🔑 合言葉を設定しました"));
     });
 
-    // 🎯 ログ初期化（暗号化されたシステムメッセージを正しくプッシュして権限エラーを防止）
     if ($("admClearBtn")) {
       $("admClearBtn").addEventListener("click", (e) => {
         e.preventDefault();
@@ -1560,7 +1587,7 @@ function toggleAcc(id) {
             const encClearLog = await E2EE.encrypt(clearLogText, activeKey);
 
             await db.ref(`chat/${currentRoomId}`).push({
-              u: myUid, // 自分のUIDを使用してルール（u === auth.uid）のバリデーションを通過させる
+              u: myUid,
               n: await E2EE.encrypt("システム", activeKey),
               p: "",
               c: "#f43f5e",
