@@ -87,7 +87,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .v-btn.active { background: var(--em); color: #fff; border-color: var(--em); }
 .v-btn.danger { background: rgba(244,63,94,0.2); color: #fda4af; border-color: rgba(244,63,94,0.4); }
 
-/* 未接続時の通話開始アクションバー */
 #voiceStartBar {
   display: flex;
   align-items: center;
@@ -303,16 +302,16 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     <!-- チャット画面 -->
     <div id="chatScreen" style="display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
       
-      <!-- 🎙️ チャット内：音声通話アクションバー（未接続時） -->
+      <!-- 🎙️ チャット内：音声通話開始バー（未接続時） -->
       <div id="voiceStartBar">
-        <span>🎙️ 音声通話 / リスナーモード</span>
+        <span>🎙️ 音声通話 / リスナー</span>
         <div class="voice-btns">
           <button class="v-btn active" id="startCallBtn">📞 双方向通話</button>
           <button class="v-btn" id="startListenBtn">🎧 聴くだけ</button>
         </div>
       </div>
 
-      <!-- 🎙️ チャット内：接続中コントロールパネル -->
+      <!-- 🎙️ チャット内：通話コントロールパネル（接続中） -->
       <div id="voicePanel">
         <span id="voiceStatusText">📞 接続中</span>
         <div class="voice-btns">
@@ -1081,7 +1080,7 @@ function toggleAcc(id) {
     setTimeout(() => scBottom(true), 50);
   }
 
-  // 🎙️ チャット内通話開始・リスナー開始トリガー（確認ダイアログ付き）
+  // 🎙️ チャット内：通話開始・リスナー開始トリガー（確認ダイアログ付き）
   async function promptAndInitVoice(isListener) {
     const modeTitle = isListener ? "聴くだけモード(リスナー)" : "双方向音声通話";
     const ok = await customConfirm("通話の確認", `この部屋で${modeTitle}を開始しますか？`, "開始する", "キャンセル");
