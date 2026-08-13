@@ -482,7 +482,7 @@ function toggleAcc(id) {
     if (banner) banner.style.display = "none";
   }
 
-  // 🎯 【爆速・パラレル化対応】タブ復帰時は並列復号で一瞬で同期
+  // 🎯 【超高速・完全同期対応】タブ復帰時・再接続時は、入室時と同様に全データを再読込して一瞬で表示を完全同期
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -1224,53 +1224,75 @@ function toggleAcc(id) {
 
   let chatQuery = null, presenceRef = null, settingsRef = null;
 
+  // 🎯 【超高速・完全同期】タブ復帰時・再接続時には、入室時と同様の全フェッチ＆再描画を完全に実行
   async function fastSyncOnResume() {
     if (!db || !isJoined || !currentRoomId) return;
     try {
       db.goOnline();
+      
+      // 1. プレゼンスと最新チャットログを完全並列取得（入室時と同等）
       const [chatSnap, presSnap] = await Promise.all([
-        db.ref(`chat/${currentRoomId}`).limitToLast(50).once("value"),
+        db.ref(`chat/${currentRoomId}`).limitToLast(100).once("value"),
         db.ref(`presence/${currentRoomId}`).once("value")
       ]);
       
+      // 2. プレゼンス（入室者リスト）の即時再構築
       const list = presSnap.val() || {}, members = {};
       for (const [id, u] of Object.entries(list)) {
         if (u && u.n && typeof u.t === "number") members[id] = { id, ...u };
       }
       currentPresenceMap = members;
+      isPresenceInitialized = true;
       renderPresence(members);
       checkAndTriggerExitForInactiveUsers(members);
 
-      const promises = [];
+      // 3. ログの重複クリアと再フェッチ・復号・描画
+      if (D.tli) D.tli.innerHTML = "";
+      displayedMsgIds.clear();
+      renderedMwNodes.clear();
+      unreadMsgIds.clear();
+      updateUnreadBadge();
+
+      const msgs = [];
       chatSnap.forEach(child => {
         const m = child.val();
-        if (m && !displayedMsgIds.has(child.key)) {
-          m.id = child.key;
-          promises.push((async () => {
-            m.m = await E2EE.decrypt(m.m, activeKey);
-            m.n = await E2EE.decrypt(m.n, activeKey);
-            m.p = await E2EE.decrypt(m.p, activeKey);
-            return m;
-          })());
-        }
+        if (m) { m.id = child.key; msgs.push(m); }
       });
-      const resolvedMsgs = await Promise.all(promises);
+
+      const decryptedPromises = msgs.map(async m => {
+        m.m = await E2EE.decrypt(m.m, activeKey);
+        m.n = await E2EE.decrypt(m.n, activeKey);
+        m.p = await E2EE.decrypt(m.p, activeKey);
+        return m;
+      });
+      const resolvedMsgs = await Promise.all(decryptedPromises);
       resolvedMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
 
       const fragment = document.createDocumentFragment();
       resolvedMsgs.forEach(m => {
-        if (!displayedMsgIds.has(m.id)) {
-          const el = cMsg(m, false);
-          el.dataset.ts = getMsgTime(m);
-          fragment.appendChild(el);
-          displayedMsgIds.add(m.id);
-          if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
-        }
+        if (displayedMsgIds.has(m.id)) return;
+        const el = cMsg(m, false);
+        el.dataset.ts = getMsgTime(m);
+        fragment.appendChild(el);
+        displayedMsgIds.add(m.id);
+        if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
       });
+
       if (D.tli && fragment.children.length > 0) {
         D.tli.appendChild(fragment);
-        scBottom(true);
       }
+      isFirstLoad = false;
+      scBottom(true);
+      updateJumpBtns();
+
+      // 4. ライブリスナーのクエリも最新タイムスタンプに追従して再バインド
+      if (chatQuery) chatQuery.off("child_added");
+      chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(latestDisplayedTs + 1);
+      chatQuery.on("child_added", async child => {
+        const m = child.val();
+        if (m) { m.id = child.key; await syncSingleMessage(m, true); }
+      });
+
     } catch (e) {}
   }
 
