@@ -482,20 +482,13 @@ function toggleAcc(id) {
     if (banner) banner.style.display = "none";
   }
 
-  // 🎯 【サーバー絶対時間対応】タブ復帰/再接続時は、サーバー時間オフセットを厳密に再取得して瞬時に同期
+  // 🎯 【全接続対応・超高速タブ復帰パイプライン】
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
-          // サーバー時間オフセットを強制リフレッシュしてから同期
-          await new Promise(resolve => {
-            db.ref(".info/serverTimeOffset").once("value", snap => {
-              serverTimeOffset = snap.val() || 0;
-              isOffsetLoaded = true;
-              resolve();
-            }, () => resolve());
-          });
+          await syncServerOffset();
           await fastSyncOnResume();
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
@@ -648,7 +641,7 @@ function toggleAcc(id) {
   let currentPresenceMap = {}, isConnectedBound = false;
   let roomSettings = { passcode: "", newEntriesDisabled: false, approvedTrips: {}, creatorUid: "" };
   let localLastClearedTime = 0;
-  const AUTO_EXIT_MS = 180000; // 3分固定
+  const AUTO_EXIT_MS = 180000;
   const UR = /(https?:\/\/[^\s\n<>"]+)/gi;
 
   const COLORS = [
@@ -662,7 +655,6 @@ function toggleAcc(id) {
   const setGlobalColor = c => document.documentElement.style.setProperty("--usr-color", c);
   setGlobalColor(curColor);
 
-  // 🎯 【時刻ズレ完全防止】サーバー時間オフセット（serverTimeOffset）を加味した絶対正確な現在時刻を取得
   const getTrueTime = () => { const t = Date.now() + serverTimeOffset; return isNaN(t) ? Date.now() : t; };
   const getMsgTime = (m) => {
     if (m && m.t) {
@@ -1233,10 +1225,20 @@ function toggleAcc(id) {
 
   let chatQuery = null, presenceRef = null, settingsRef = null;
 
+  async function syncServerOffset() {
+    if (!db) return;
+    try {
+      const snap = await db.ref(".info/serverTimeOffset").once("value");
+      serverTimeOffset = snap.val() || 0;
+      isOffsetLoaded = true;
+    } catch(e) {}
+  }
+
   async function fastSyncOnResume() {
     if (!db || !isJoined || !currentRoomId) return;
     try {
       db.goOnline();
+      await syncServerOffset();
       
       const [chatSnap, presSnap] = await Promise.all([
         db.ref(`chat/${currentRoomId}`).limitToLast(100).once("value"),
@@ -1306,6 +1308,8 @@ function toggleAcc(id) {
     settingsRef = db.ref(`settings/${currentRoomId}`);
 
     chatRef.off(); presenceRef.off(); settingsRef.off();
+
+    await syncServerOffset();
 
     chatRef.limitToLast(100).once("value").then(async snap => {
       const msgs = [];
@@ -1470,14 +1474,31 @@ function toggleAcc(id) {
     finally { isSending = false; }
   }
 
+  // 🎯 【超並列コールドスタートブート】ショートカット起動やPWA起動時も一瞬で自動入室・爆速同期
   const initDirectDatabaseProcess = async () => {
     try {
       const cachedUid = safeLS.get("nz_permanent_uid");
       if (cachedUid) { myUid = cachedUid; await syncProfileValues(); }
-      let user = auth.currentUser;
-      if (!user) { const cred = await auth.signInAnonymously(); user = cred.user; }
-      if (user) {
-        myUid = user.uid; safeLS.set("nz_permanent_uid", myUid); await syncProfileValues();
+
+      if (db) db.goOnline();
+
+      // 認証とオンライン化・サーバー時間を完全並列（Parallel）で同時実行して起動遅延を完全消去
+      const [userCred] = await Promise.all([
+        (async () => {
+          let u = auth.currentUser;
+          if (!u) {
+            const cred = await auth.signInAnonymously();
+            u = cred.user;
+          }
+          return u;
+        })(),
+        syncServerOffset()
+      ]);
+
+      if (userCred) {
+        myUid = userCred.uid;
+        safeLS.set("nz_permanent_uid", myUid);
+        await syncProfileValues();
         
         if (checkIsGlobalAdmin()) {
           db.ref("presence").once("value", snap => {
@@ -1503,7 +1524,9 @@ function toggleAcc(id) {
           }).catch(()=>{});
         }
 
-        const wasJoined = (safeLS.get("nz_is_joined") === "true"), lastRoomId = safeLS.get("nz_last_room_id"), lastRoomPass = safeLS.get("nz_last_room_pass");
+        const wasJoined = (safeLS.get("nz_is_joined") === "true");
+        const lastRoomId = safeLS.get("nz_last_room_id");
+        const lastRoomPass = safeLS.get("nz_last_room_pass");
         const sessionStart = parseInt(safeLS.get("nz_session_start_time") || "0");
         const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
         const baselineTime = Math.max(sessionStart, lastPost);
@@ -1515,10 +1538,15 @@ function toggleAcc(id) {
         }
         validateLobbyInputs();
       }
-    } catch (err) { switchScreen("lobby"); }
-    if (db) db.goOnline();
+    } catch (err) {
+      switchScreen("lobby");
+    }
+
     if (!isConnectedBound && db) {
-      db.ref(".info/serverTimeOffset").on("value", snap => { serverTimeOffset = snap.val() || 0; isOffsetLoaded = true; });
+      db.ref(".info/serverTimeOffset").on("value", snap => {
+        serverTimeOffset = snap.val() || 0;
+        isOffsetLoaded = true;
+      });
       isConnectedBound = true;
     }
   };
