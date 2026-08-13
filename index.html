@@ -226,11 +226,15 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   </div>
 </div>
 
+<!-- 🎯 必ず出るポップアップ用確認モーダル -->
 <div id="confirmMod" class="mod-overlay">
   <div class="gc" style="max-width: 300px; padding: 14px;">
     <div id="confirmTitle" style="font-size: 13px; font-weight: bold; margin-bottom: 6px;">確認</div>
     <div id="confirmMessage" style="font-size: 12px; color: var(--mu); margin-bottom: 14px; line-height: 1.4;"></div>
-    <div class="clr-btns">
+    <div class="clr-btns" id="confirmSingleBtnContainer" style="display: none;">
+      <button class="clr-ok" id="confirmSingleOkBtn" style="height: 32px; font-size: 12px; grid-column: span 2;">OK</button>
+    </div>
+    <div class="clr-btns" id="confirmDualBtnContainer">
       <button class="clr-cancel" id="confirmCancelBtn" style="height: 32px; font-size: 12px;">キャンセル</button>
       <button class="clr-ok" id="confirmOkBtn" style="height: 32px; font-size: 12px;">OK</button>
     </div>
@@ -474,6 +478,8 @@ function toggleAcc(id) {
       textEl.textContent = msg;
       banner.style.display = "flex";
     }
+    // 🎯 自動退室や解散時に必ずポップアップ（確実に出る確認モーダル）で通知
+    customAlert("お知らせ", msg);
   }
 
   function clearLobbyNotice() {
@@ -482,14 +488,39 @@ function toggleAcc(id) {
     if (banner) banner.style.display = "none";
   }
 
-  // 🎯 【全接続対応・超高速タブ復帰パイプライン】
+  function customAlert(title, message) {
+    return new Promise((resolve) => {
+      const mod = $("confirmMod");
+      const titleEl = $("confirmTitle");
+      const msgEl = $("confirmMessage");
+      const singleContainer = $("confirmSingleBtnContainer");
+      const dualContainer = $("confirmDualBtnContainer");
+      const singleOkBtn = $("confirmSingleOkBtn");
+      if (!mod) { alert(message); resolve(); return; }
+      titleEl.textContent = title;
+      msgEl.textContent = message;
+      singleContainer.style.display = "grid";
+      dualContainer.style.display = "none";
+      mod.classList.add("show");
+
+      const cleanup = () => {
+        mod.classList.remove("show");
+        singleOkBtn.removeEventListener("click", onSingleOk);
+        resolve();
+      };
+      function onSingleOk(e) { e.preventDefault(); cleanup(); }
+      singleOkBtn.addEventListener("click", onSingleOk);
+    });
+  }
+
+  // 🎯 【全接続対応・完全一括読み込みパイプライン】タブ復帰/再接続時は、入室時と全く同じ爆速全件取得＆描画を実行
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
           await syncServerOffset();
-          await fastSyncOnResume();
+          await loadRoomDataAndRender(true);
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
           }
@@ -563,12 +594,16 @@ function toggleAcc(id) {
       const msgEl = $("confirmMessage");
       const okBtn = $("confirmOkBtn");
       const cancelBtn = $("confirmCancelBtn");
+      const singleContainer = $("confirmSingleBtnContainer");
+      const dualContainer = $("confirmDualBtnContainer");
       if (!mod) { resolve(window.confirm(message)); return; }
       titleEl.textContent = title;
       msgEl.textContent = message;
       okBtn.textContent = okText;
       cancelBtn.textContent = cancelText;
       okBtn.style.background = isDanger ? "var(--ro)" : "var(--in)";
+      singleContainer.style.display = "none";
+      dualContainer.style.display = "grid";
       mod.classList.add("show");
 
       const cleanup = (result) => {
@@ -655,6 +690,7 @@ function toggleAcc(id) {
   const setGlobalColor = c => document.documentElement.style.setProperty("--usr-color", c);
   setGlobalColor(curColor);
 
+  // 🎯 【時刻完全統一】serverTimeOffsetを全ログ・チャット・自動退室で共通使用
   const getTrueTime = () => { const t = Date.now() + serverTimeOffset; return isNaN(t) ? Date.now() : t; };
   const getMsgTime = (m) => {
     if (m && m.t) {
@@ -1234,10 +1270,11 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  async function fastSyncOnResume() {
+  // 🎯 【全再読み込み・爆速完全同期パイプライン】入室時と全く同じ仕組みをいかなる復帰時にも実行
+  async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
     try {
-      db.goOnline();
+      if (isResume) db.goOnline();
       await syncServerOffset();
       
       const [chatSnap, presSnap] = await Promise.all([
@@ -1245,6 +1282,7 @@ function toggleAcc(id) {
         db.ref(`presence/${currentRoomId}`).once("value")
       ]);
       
+      // 1. プレゼンス更新
       const list = presSnap.val() || {}, members = {};
       for (const [id, u] of Object.entries(list)) {
         if (u && u.n && typeof u.t === "number") members[id] = { id, ...u };
@@ -1253,6 +1291,13 @@ function toggleAcc(id) {
       isPresenceInitialized = true;
       renderPresence(members);
       checkAndTriggerExitForInactiveUsers(members);
+
+      // 2. ログの全件一括再読み込み＆再描画（入室時と同じ挙動）
+      if (D.tli) D.tli.innerHTML = "";
+      displayedMsgIds.clear();
+      renderedMwNodes.clear();
+      unreadMsgIds.clear();
+      updateUnreadBadge();
 
       const msgs = [];
       chatSnap.forEach(child => {
@@ -1270,26 +1315,23 @@ function toggleAcc(id) {
       resolvedMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
 
       const fragment = document.createDocumentFragment();
-      let hasNewNodes = false;
       resolvedMsgs.forEach(m => {
-        if (!displayedMsgIds.has(m.id)) {
-          const el = cMsg(m, false);
-          el.dataset.ts = getMsgTime(m);
-          fragment.appendChild(el);
-          displayedMsgIds.add(m.id);
-          hasNewNodes = true;
-        }
-        const msgTime = getMsgTime(m);
-        if (msgTime > latestDisplayedTs) latestDisplayedTs = msgTime;
+        if (displayedMsgIds.has(m.id)) return;
+        const el = cMsg(m, false);
+        el.dataset.ts = getMsgTime(m);
+        fragment.appendChild(el);
+        displayedMsgIds.add(m.id);
+        if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
       });
 
-      if (D.tli && hasNewNodes) {
+      if (D.tli && fragment.children.length > 0) {
         D.tli.appendChild(fragment);
-        const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 80);
-        if (isBottom) scBottom(true);
       }
+      isFirstLoad = false;
+      scBottom(true);
       updateJumpBtns();
 
+      // 3. ライブリスナーの再設定
       if (chatQuery) chatQuery.off("child_added");
       chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(latestDisplayedTs + 1);
       chatQuery.on("child_added", async child => {
@@ -1303,49 +1345,13 @@ function toggleAcc(id) {
   async function setupFirebaseListeners() {
     if (!db || !isJoined || isFirebaseListenersBound) return;
     isFirebaseListenersBound = true;
-    const chatRef = db.ref(`chat/${currentRoomId}`);
+    
     presenceRef = db.ref(`presence/${currentRoomId}`);
     settingsRef = db.ref(`settings/${currentRoomId}`);
+    presenceRef.off(); settingsRef.off();
 
-    chatRef.off(); presenceRef.off(); settingsRef.off();
-
-    await syncServerOffset();
-
-    chatRef.limitToLast(100).once("value").then(async snap => {
-      const msgs = [];
-      snap.forEach(child => { const m = child.val(); if (m) { m.id = child.key; msgs.push(m); } });
-
-      const decryptedPromises = msgs.map(async m => {
-        m.m = await E2EE.decrypt(m.m, activeKey);
-        m.n = await E2EE.decrypt(m.n, activeKey);
-        m.p = await E2EE.decrypt(m.p, activeKey);
-        return m;
-      });
-      const resolvedMsgs = await Promise.all(decryptedPromises);
-
-      const fragment = document.createDocumentFragment();
-      resolvedMsgs.forEach(m => {
-        if (displayedMsgIds.has(m.id)) return;
-        const el = cMsg(m, false);
-        el.dataset.ts = getMsgTime(m);
-        fragment.appendChild(el);
-        displayedMsgIds.add(m.id);
-        if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
-      });
-
-      if (D.tli) {
-        D.tli.innerHTML = "";
-        D.tli.appendChild(fragment);
-      }
-      isFirstLoad = false; scBottom(true); updateJumpBtns();
-
-      chatQuery = chatRef.orderByChild("t").startAt(latestDisplayedTs + 1);
-      chatQuery.on("child_added", async child => { const m = child.val(); if (m) { m.id = child.key; await syncSingleMessage(m, true); } });
-      chatRef.on("child_removed", child => {
-        const el = renderedMwNodes.get(child.key);
-        if (el) { el.remove(); renderedMwNodes.delete(child.key); displayedMsgIds.delete(child.key); unreadMsgIds.delete(child.key); updateUnreadBadge(); updateJumpBtns(); }
-      });
-    }).catch(() => {});
+    // 入室時・接続時のメインローディング処理
+    await loadRoomDataAndRender(false);
 
     presenceRef.on("value", s => {
       const list = s.val() || {}, members = {};
@@ -1400,8 +1406,7 @@ function toggleAcc(id) {
     myPresenceRef.on("value", s => {
       if (isJoined && !s.exists()) {
         myPresenceRef.off(); removeFirebaseListeners(); isJoined = false; switchScreen("lobby");
-        showToast("⚠️ 部屋が解散されたか、退室処理が行われました。");
-        showLobbyNotice("⚠️ 入室していた部屋が解散されたか、存在しなくなりました。");
+        showLobbyNotice("⚠️ 部屋が解散されたか、退室処理が行われました。");
       }
     });
   }
@@ -1482,7 +1487,6 @@ function toggleAcc(id) {
 
       if (db) db.goOnline();
 
-      // 認証とオンライン化・サーバー時間を完全並列（Parallel）で同時実行して起動遅延を完全消去
       const [userCred] = await Promise.all([
         (async () => {
           let u = auth.currentUser;
