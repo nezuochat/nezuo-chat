@@ -482,12 +482,20 @@ function toggleAcc(id) {
     if (banner) banner.style.display = "none";
   }
 
-  // 🎯 【超高速・完全同期対応】タブ復帰時・再接続時は、入室時と同様に全データを再読込して一瞬で表示を完全同期
+  // 🎯 【サーバー絶対時間対応】タブ復帰/再接続時は、サーバー時間オフセットを厳密に再取得して瞬時に同期
   if (typeof document !== 'undefined') {
     document.addEventListener("visibilitychange", async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
+          // サーバー時間オフセットを強制リフレッシュしてから同期
+          await new Promise(resolve => {
+            db.ref(".info/serverTimeOffset").once("value", snap => {
+              serverTimeOffset = snap.val() || 0;
+              isOffsetLoaded = true;
+              resolve();
+            }, () => resolve());
+          });
           await fastSyncOnResume();
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
@@ -654,6 +662,7 @@ function toggleAcc(id) {
   const setGlobalColor = c => document.documentElement.style.setProperty("--usr-color", c);
   setGlobalColor(curColor);
 
+  // 🎯 【時刻ズレ完全防止】サーバー時間オフセット（serverTimeOffset）を加味した絶対正確な現在時刻を取得
   const getTrueTime = () => { const t = Date.now() + serverTimeOffset; return isNaN(t) ? Date.now() : t; };
   const getMsgTime = (m) => {
     if (m && m.t) {
@@ -1224,19 +1233,16 @@ function toggleAcc(id) {
 
   let chatQuery = null, presenceRef = null, settingsRef = null;
 
-  // 🎯 【超高速・完全同期】タブ復帰時・再接続時には、入室時と同様の全フェッチ＆再描画を完全に実行
   async function fastSyncOnResume() {
     if (!db || !isJoined || !currentRoomId) return;
     try {
       db.goOnline();
       
-      // 1. プレゼンスと最新チャットログを完全並列取得（入室時と同等）
       const [chatSnap, presSnap] = await Promise.all([
         db.ref(`chat/${currentRoomId}`).limitToLast(100).once("value"),
         db.ref(`presence/${currentRoomId}`).once("value")
       ]);
       
-      // 2. プレゼンス（入室者リスト）の即時再構築
       const list = presSnap.val() || {}, members = {};
       for (const [id, u] of Object.entries(list)) {
         if (u && u.n && typeof u.t === "number") members[id] = { id, ...u };
@@ -1245,13 +1251,6 @@ function toggleAcc(id) {
       isPresenceInitialized = true;
       renderPresence(members);
       checkAndTriggerExitForInactiveUsers(members);
-
-      // 3. ログの重複クリアと再フェッチ・復号・描画
-      if (D.tli) D.tli.innerHTML = "";
-      displayedMsgIds.clear();
-      renderedMwNodes.clear();
-      unreadMsgIds.clear();
-      updateUnreadBadge();
 
       const msgs = [];
       chatSnap.forEach(child => {
@@ -1269,23 +1268,26 @@ function toggleAcc(id) {
       resolvedMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
 
       const fragment = document.createDocumentFragment();
+      let hasNewNodes = false;
       resolvedMsgs.forEach(m => {
-        if (displayedMsgIds.has(m.id)) return;
-        const el = cMsg(m, false);
-        el.dataset.ts = getMsgTime(m);
-        fragment.appendChild(el);
-        displayedMsgIds.add(m.id);
-        if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
+        if (!displayedMsgIds.has(m.id)) {
+          const el = cMsg(m, false);
+          el.dataset.ts = getMsgTime(m);
+          fragment.appendChild(el);
+          displayedMsgIds.add(m.id);
+          hasNewNodes = true;
+        }
+        const msgTime = getMsgTime(m);
+        if (msgTime > latestDisplayedTs) latestDisplayedTs = msgTime;
       });
 
-      if (D.tli && fragment.children.length > 0) {
+      if (D.tli && hasNewNodes) {
         D.tli.appendChild(fragment);
+        const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 80);
+        if (isBottom) scBottom(true);
       }
-      isFirstLoad = false;
-      scBottom(true);
       updateJumpBtns();
 
-      // 4. ライブリスナーのクエリも最新タイムスタンプに追従して再バインド
       if (chatQuery) chatQuery.off("child_added");
       chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(latestDisplayedTs + 1);
       chatQuery.on("child_added", async child => {
