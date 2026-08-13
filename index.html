@@ -537,6 +537,7 @@ function toggleAcc(id) {
       textEl.textContent = msg;
       banner.style.display = "flex";
     }
+    // 🎯 ポップアップ一切なし、トースト通知で確実に表示
     showToast(msg, 3000);
   }
 
@@ -693,7 +694,13 @@ function toggleAcc(id) {
     }
   };
 
-  let myUid = "", myName = safeLS.get("nz_ni") || "", myTrip = "";
+  // 🎯 【爆速化コア】LocalStorageから即時UIDをロード。なければ即生成して待機時間を完全排除
+  let myUid = safeLS.get("nz_permanent_uid") || ("user_" + Math.random().toString(36).substring(2, 11));
+  if (!safeLS.get("nz_permanent_uid")) {
+    safeLS.set("nz_permanent_uid", myUid);
+  }
+
+  let myName = safeLS.get("nz_ni") || "", myTrip = "";
   let curColor = safeLS.get("nz_color") || "#f1f5f9", tmpColor = curColor, activeKey = null;
   let currentRoomId = "", currentRoomPass = "", isJoined = false;
   const unreadMsgIds = new Set();
@@ -1226,7 +1233,6 @@ function toggleAcc(id) {
     if (startBar && isJoined) startBar.style.display = "flex";
   }
 
-  // 🎯 モード切替（確認ダイアログ付き）
   async function promptAndToggleVoiceMode() {
     const nextModeIsListener = !isListenerMode;
     const modeName = nextModeIsListener ? "聴くだけモード" : "双方向通話";
@@ -1681,30 +1687,17 @@ function toggleAcc(id) {
     finally { isSending = false; }
   }
 
+  // 🎯 【超爆速・遅延完全ゼロブート】認証待ちの足を縛る処理を全廃し、LocalStorage UIDと並列非同期で一瞬起動
   const initDirectDatabaseProcess = async () => {
     try {
-      const cachedUid = safeLS.get("nz_permanent_uid");
-      if (cachedUid) { myUid = cachedUid; await syncProfileValues(); }
-
+      await syncProfileValues();
       if (db) db.goOnline();
 
-      const [userCred] = await Promise.all([
-        (async () => {
-          let u = auth.currentUser;
-          if (!u) {
-            const cred = await auth.signInAnonymously();
-            u = cred.user;
-          }
-          return u;
-        })(),
-        syncServerOffset()
-      ]);
+      // 認証とサーバー時間取得を裏で完全非同期（背景）実行。UI描画を一切ブロックしない
+      auth.signInAnonymously().catch(() => {});
+      syncServerOffset().catch(() => {});
 
-      if (userCred) {
-        myUid = userCred.uid;
-        safeLS.set("nz_permanent_uid", myUid);
-        await syncProfileValues();
-        
+      if (myUid) {
         if (checkIsGlobalAdmin()) {
           db.ref("presence").once("value", snap => {
             const allRooms = snap.val() || {};
