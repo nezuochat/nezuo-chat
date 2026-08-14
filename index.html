@@ -275,7 +275,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       <div id="adminAccordion">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bd); padding-bottom: 4px;">
           <span id="adminAccordionTitle" style="font-size: 12px; font-weight: bold; color: var(--tx);">⚙️ ホスト設定パネル</span>
-          <button class="btn" id="adminAccordionCloseBtn" style="background: rgba(255,255,255,0.08); width: 22px; height: 22px; border-radius: 50%; font-size: 11px; padding:0; display:flex; align-items:center; justify-content:center;">✕</button>
+          <button class="btn" id="adminAccordionCloseBtn" style="background: rgba(255,255,255,0.08); width: 22px; height: 22px; border-radius: 50%; font-size: 11px; padding:0; display:flex; align-items:center; justify-content:center;">タップして閉じる</button>
         </div>
 
         <div id="admGeneralSettingsGroup" style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
@@ -310,8 +310,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           <div>
             <label style="font-size:9.5px; font-weight:bold; color: var(--mu); display:block; margin-bottom:2px;">📋 事前承認トリップ追加 (7文字)</label>
             <div style="display: flex; gap: 5px; position: relative;">
-              <input type="text" id="admTripInput" class="inp" placeholder="例: ◆AbCdEf" maxlength="7" autocomplete="off" style="height:26px; font-size:11px; flex: 1; padding: 2px 22px 2px 6px;">
-              <button id="admTripClearBtn" style="position: absolute; right: 50px; top: 3px; background: none; border: none; color: var(--mu); font-size: 13px; font-weight: bold; cursor: pointer; padding: 2px 4px;" title="クリア">×</button>
+              <input type="text" id="admTripInput" class="inp" placeholder="例: ◆AbCdEf" maxlength="7" autocomplete="off" style="height:26px; font-size:11px; width: 120px; padding: 2px 22px 2px 6px;">
+              <button id="admTripClearBtn" style="position: absolute; left: 95px; top: 3px; background: none; border: none; color: var(--mu); font-size: 13px; font-weight: bold; cursor: pointer; padding: 2px 4px;" title="クリア">×</button>
               <button class="btn" id="admTripAddBtn" style="background: var(--in); color: #fff; font-size: 10px; height: 26px; width: 44px; font-weight: bold; border-radius: 4px;">追加</button>
             </div>
             <div id="admTripList" style="background:var(--s2); border:1px solid var(--bd); border-radius:5px; max-height:45px; overflow-y:auto; padding:3px; font-size:10px; display:flex; flex-direction:column; gap:2px; font-family: monospace; margin-top: 2px;"></div>
@@ -474,12 +474,16 @@ function toggleAcc(id) {
     safeLS.remove("nz_lobby_notice");
   }
 
-  // 🎯 【アグレッシブ強制再取得＆爆速復帰パイプライン】タブ切替・スマホホーム画面復帰時に即座に一括同期
+  // 🎯 【超堅牢・爆速復帰パイプライン】古い残存表示を完全排除し、復帰した瞬間に画面をクリーンにして一括高速同期
   if (typeof document !== 'undefined') {
     const triggerAggressiveSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
+          if (D.tli) D.tli.innerHTML = "";
+          displayedMsgIds.clear();
+          renderedMwNodes.clear();
+          
           await loadRoomDataAndRender(true);
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
@@ -1246,13 +1250,12 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🎯 【極限爆速化＆完全並列復号パイプライン】入室時も再接続時も1秒未満で一瞬表示
+  // 🎯 【極限爆速 ＆ 完全並列化 ＆ 鉄壁の時系列ソート】
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
     try {
       if (isResume) db.goOnline();
       
-      // サーバー時間とデータを並列で同時一括フェッチして無駄な待機時間を完全排除
       await Promise.all([
         syncServerOffset(),
         (async () => {
@@ -1271,11 +1274,12 @@ function toggleAcc(id) {
           renderPresence(members);
           checkAndTriggerExitForInactiveUsers(members);
 
-          // 2. ログの全件一括再読み込み（DocumentFragmentで一気にアトミック置換）
+          // 2. ログの全件一括再読み込み（完全クリアで残留防止）
           if (D.tli) D.tli.innerHTML = "";
           displayedMsgIds.clear();
           renderedMwNodes.clear();
           unreadMsgIds.clear();
+          latestDisplayedTs = 0;
           updateUnreadBadge();
 
           const msgs = [];
@@ -1284,7 +1288,7 @@ function toggleAcc(id) {
             if (m) { m.id = child.key; msgs.push(m); }
           });
 
-          // 🎯 復号処理を完全並列（Promise.all）で同時実行してCPUブロックをゼロにする
+          // 🎯 復号処理を完全並列（Promise.all）で同時実行
           const decryptedPromises = msgs.map(async m => {
             m.m = await E2EE.decrypt(m.m, activeKey);
             m.n = await E2EE.decrypt(m.n, activeKey);
@@ -1292,8 +1296,8 @@ function toggleAcc(id) {
             return m;
           });
           const resolvedMsgs = await Promise.all(decryptedPromises);
-          
-          // 🎯 取得したメッセージをタイムスタンプ（時刻）順に厳密にソート（時系列の統一）
+
+          // 🎯 タイムスタンプ順（昇順）に厳密にソート（全削除後も逆転させない）
           resolvedMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
 
           const fragment = document.createDocumentFragment();
@@ -1313,7 +1317,7 @@ function toggleAcc(id) {
           scBottom(true);
           updateJumpBtns();
 
-          // 3. ライブリスナー（追加 ＆ 削除）の再設定
+          // 3. ライブリスナーの再設定
           if (chatQuery) chatQuery.off("child_added");
           db.ref(`chat/${currentRoomId}`).off("child_removed");
 
@@ -1379,7 +1383,7 @@ function toggleAcc(id) {
       if (serverClearTime && serverClearTime > localLastClearedTime) {
         localLastClearedTime = serverClearTime;
         if (D.tli) D.tli.innerHTML = "";
-        displayedMsgIds.clear(); renderedMwNodes.clear(); unreadMsgIds.clear(); updateUnreadBadge();
+        displayedMsgIds.clear(); renderedMwNodes.clear(); unreadMsgIds.clear(); latestDisplayedTs = 0; updateUnreadBadge();
         if (chatQuery) {
           chatQuery.off(); db.ref(`chat/${currentRoomId}`).off("child_removed");
           chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(serverClearTime + 1);
@@ -1489,7 +1493,6 @@ function toggleAcc(id) {
     lastSendTime = Date.now(); isSending = true;
 
     try {
-      // 認証が切れている場合のセーフティ再認証
       if (!auth.currentUser) {
         await auth.signInAnonymously().catch(() => {});
       }
