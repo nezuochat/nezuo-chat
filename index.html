@@ -1251,7 +1251,6 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🎯 【完全爆速・古い残存表示を完全排除したアトミック一括再描画】
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
     try {
@@ -1263,7 +1262,6 @@ function toggleAcc(id) {
         db.ref(`presence/${currentRoomId}`).once("value")
       ]);
       
-      // 1. プレゼンスの同期
       const list = presSnap.val() || {}, members = {};
       for (const [id, u] of Object.entries(list)) {
         if (u && u.n && typeof u.t === "number") members[id] = { id, ...u };
@@ -1273,7 +1271,6 @@ function toggleAcc(id) {
       renderPresence(members);
       checkAndTriggerExitForInactiveUsers(members);
 
-      // 2. ログの全件一括再読み込み（古い内容を残さず、DocumentFragmentで一気にアトミック置換）
       if (D.tli) D.tli.innerHTML = "";
       displayedMsgIds.clear();
       renderedMwNodes.clear();
@@ -1312,7 +1309,6 @@ function toggleAcc(id) {
       scBottom(true);
       updateJumpBtns();
 
-      // 3. ライブリスナー（追加 ＆ 削除）の再設定
       if (chatQuery) chatQuery.off("child_added");
       db.ref(`chat/${currentRoomId}`).off("child_removed");
 
