@@ -315,7 +315,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       <div id="voicePanel">
         <span id="voiceStatusText">📞 接続中</span>
         <div class="voice-btns">
-          <select id="micSelect" class="v-btn" style="background:var(--bg); color:var(--tx); max-width: 110px;" title="マイク選択"></select>
+          <select id="micSelect" class="v-btn" style="background:var(--bg); color:var(--tx); max-width: 125px;" title="マイク選択"></select>
           <button class="v-btn" id="vSwitchModeBtn">切替: 聴くだけ</button>
           <button class="v-btn" id="vMuteBtn">ミュート: OFF</button>
           <button class="v-btn danger" id="vLeaveBtn">終了</button>
@@ -468,7 +468,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
 
       <div class="lobby-sec" style="border-color: #fb923c;">
-        <h2 style="color: #fdba74; font-size: 11px;">🏢 常設公式部屋</h2>
+        <h2 style="color: #fdba74; font-size: 11px;">🏢 常設公式部屋 (合言葉・入室制限対応)</h2>
         <button class="btn" id="btnJoinOfficial" style="background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; font-size: 13px; font-weight: 900; height: 38px; width: 100%; border-radius: 6px;" disabled>🏢 常設公式部屋に入る</button>
       </div>
     </div>
@@ -1086,6 +1086,7 @@ function toggleAcc(id) {
     }
   }
 
+  // 🎯 【こだわりマイク選択・日本語ラベル自動整形】
   async function updateMicDeviceList() {
     const micSelect = $("micSelect");
     if (!micSelect) return;
@@ -1101,14 +1102,27 @@ function toggleAcc(id) {
         return;
       }
       audioInputs.forEach((device, index) => {
+        let label = device.label || `マイク ${index + 1}`;
+        // スマホやPCの一般的なマイクをより分かりやすい日本語表記に補正
+        if (/bluetooth|airpods|wireless|ヘッドセット/i.test(label)) {
+          label = `🎧 ワイヤレス/ヘッドセット`;
+        } else if (/earphone|wired|イヤホン/i.test(label)) {
+          label = `🎙️ 有線イヤホンマイク`;
+        } else if (/builtin|internal|内蔵/i.test(label) || index === 0) {
+          label = `💻 本体内蔵マイク`;
+        } else {
+          label = `🎙️ ${label.substring(0, 14)}`;
+        }
+
         const opt = document.createElement("option");
         opt.value = device.deviceId;
-        opt.textContent = device.label || `マイク ${index + 1}`;
+        opt.textContent = label;
         if (device.deviceId === selectedAudioDeviceId) {
           opt.selected = true;
         }
         micSelect.appendChild(opt);
       });
+
       micSelect.onchange = async () => {
         selectedAudioDeviceId = micSelect.value;
         if (isVoiceActive && !isListenerMode) {
@@ -1190,6 +1204,7 @@ function toggleAcc(id) {
       if (!isListenerMode) {
         localStream = await navigator.mediaDevices.getUserMedia(constraints);
       } else {
+        // 🎯 聴くだけモード時は完全無音トラックを生成し、「ぶーん」という電子ノイズの発振を完全にブロック
         const ctx = new (window.AudioContext || window.webkitAudioContext)();
         const dst = ctx.createMediaStreamDestination();
         localStream = dst.stream;
