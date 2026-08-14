@@ -69,37 +69,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 #chatScreen { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 
-/* 🎙️ チャット内音声コントロールパネル */
-#voicePanel {
-  display: none;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(16, 185, 129, 0.12);
-  border-bottom: 1px solid rgba(16, 185, 129, 0.35);
-  padding: 6px 12px;
-  flex-shrink: 0;
-  font-size: 11px;
-  font-weight: bold;
-  color: #34d399;
-}
-.voice-btns { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
-.v-btn { background: var(--bg); border: 1px solid var(--bd); color: var(--tx); padding: 3px 7px; border-radius: 4px; font-size: 10px; font-weight: bold; }
-.v-btn.active { background: var(--em); color: #fff; border-color: var(--em); }
-.v-btn.danger { background: rgba(244,63,94,0.2); color: #fda4af; border-color: rgba(244,63,94,0.4); }
-
-#voiceStartBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: var(--s2);
-  border-bottom: 1px solid var(--bd);
-  padding: 5px 12px;
-  flex-shrink: 0;
-  font-size: 10.5px;
-  font-weight: bold;
-  color: var(--mu);
-}
-
 /* ホストパネル */
 #adminAccordion {
   display: none;
@@ -302,26 +271,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     <!-- チャット画面 -->
     <div id="chatScreen" style="display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
       
-      <!-- 🎙️ チャット内：音声通話開始バー（未接続時） -->
-      <div id="voiceStartBar">
-        <span>🎙️ 音声通話 / リスナー</span>
-        <div class="voice-btns">
-          <button class="v-btn active" id="startCallBtn">📞 双方向通話を開始</button>
-          <button class="v-btn" id="startListenBtn">🎧 聴くだけを開始</button>
-        </div>
-      </div>
-
-      <!-- 🎙️ チャット内：通話コントロールパネル（接続中） -->
-      <div id="voicePanel">
-        <span id="voiceStatusText">📞 接続中</span>
-        <div class="voice-btns">
-          <select id="micSelect" class="v-btn" style="background:var(--bg); color:var(--tx); max-width: 125px;" title="マイク選択"></select>
-          <button class="v-btn" id="vSwitchModeBtn">切替: 聴くだけ</button>
-          <button class="v-btn" id="vMuteBtn">ミュート: OFF</button>
-          <button class="v-btn danger" id="vLeaveBtn">終了</button>
-        </div>
-      </div>
-
       <!-- ホストパネル -->
       <div id="adminAccordion">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bd); padding-bottom: 4px;">
@@ -513,20 +462,6 @@ function toggleAcc(id) {
   let hasEnteredLogged = false;
   let autoExitIntervalId = null;
 
-  // 🎙️ WebRTC 音声通話ステート
-  let localStream = null;
-  let peerConnection = null;
-  let isVoiceActive = false;
-  let isListenerMode = false;
-  let isMicMuted = false;
-  let signalingRef = null;
-  let remoteAudioElement = null;
-  let selectedAudioDeviceId = "";
-
-  const ICE_SERVERS = {
-    iceServers: [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }]
-  };
-
   const checkIsGlobalAdmin = () => (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
 
   function showLobbyNotice(msg) {
@@ -538,7 +473,7 @@ function toggleAcc(id) {
     safeLS.remove("nz_lobby_notice");
   }
 
-  // 🎯 【アグレッシブ強制再取得＆爆速復帰パイプライン】タブ切替・スマホホーム画面復帰時に即座に一括同期
+  // 🎯 【超爆速・アグレッシブ強制再取得パイプライン】タブ切り替え・スマホホーム画面復帰時に一瞬で全件同期
   if (typeof document !== 'undefined') {
     const triggerAggressiveSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -842,18 +777,14 @@ function toggleAcc(id) {
     if ($("inviteBtn")) $("inviteBtn").style.display = "none";
     if ($("pl")) $("pl").style.display = "none";
     if ($("pcnt")) $("pcnt").style.display = "none";
-    if ($("voicePanel")) $("voicePanel").style.display = "none";
-    if ($("voiceStartBar")) $("voiceStartBar").style.display = "none";
 
     if (state === "chat") {
       if ($("chatScreen")) $("chatScreen").style.display = "flex";
       if ($("exBtn")) $("exBtn").style.display = "inline-flex";
       if ($("inviteBtn")) $("inviteBtn").style.display = "inline-flex";
-      if ($("voiceStartBar")) $("voiceStartBar").style.display = "flex";
       if (logoTitle && rawRoomId) logoTitle.innerHTML = `NEZUO CHAT<span class="sub-room">${rawRoomId === "official" ? "常設公式部屋" : rawRoomId}</span>`;
       if (!isSilent) showToast("🚪 部屋に入室しました");
     } else {
-      leaveVoiceCall();
       if ($("lobbyScreen")) $("lobbyScreen").style.display = "flex";
       if ($("roomStatusBadges")) $("roomStatusBadges").style.display = "none";
       if ($("adminBtnContainer")) $("adminBtnContainer").style.display = "none";
@@ -1077,270 +1008,6 @@ function toggleAcc(id) {
     setTimeout(() => scBottom(true), 50);
   }
 
-  // 🎙️ チャット内：通話開始・リスナー開始トリガー（確認ダイアログ付き）
-  async function promptAndInitVoice(isListener) {
-    const modeTitle = isListener ? "聴くだけモード(リスナー)" : "双方向音声通話";
-    const ok = await customConfirm("通話の確認", `この部屋で${modeTitle}を開始しますか？`, "開始する", "キャンセル");
-    if (ok) {
-      initVoiceCall(isListener);
-    }
-  }
-
-  // 🎯 【こだわりマイク選択・日本語ラベル自動整形】
-  async function updateMicDeviceList() {
-    const micSelect = $("micSelect");
-    if (!micSelect) return;
-    try {
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const audioInputs = devices.filter(d => d.kind === 'audioinput');
-      micSelect.innerHTML = "";
-      if (audioInputs.length === 0) {
-        const opt = document.createElement("option");
-        opt.value = "";
-        opt.textContent = "標準マイク";
-        micSelect.appendChild(opt);
-        return;
-      }
-      audioInputs.forEach((device, index) => {
-        let label = device.label || `マイク ${index + 1}`;
-        // スマホやPCの一般的なマイクをより分かりやすい日本語表記に補正
-        if (/bluetooth|airpods|wireless|ヘッドセット/i.test(label)) {
-          label = `🎧 ワイヤレス/ヘッドセット`;
-        } else if (/earphone|wired|イヤホン/i.test(label)) {
-          label = `🎙️ 有線イヤホンマイク`;
-        } else if (/builtin|internal|内蔵/i.test(label) || index === 0) {
-          label = `💻 本体内蔵マイク`;
-        } else {
-          label = `🎙️ ${label.substring(0, 14)}`;
-        }
-
-        const opt = document.createElement("option");
-        opt.value = device.deviceId;
-        opt.textContent = label;
-        if (device.deviceId === selectedAudioDeviceId) {
-          opt.selected = true;
-        }
-        micSelect.appendChild(opt);
-      });
-
-      micSelect.onchange = async () => {
-        selectedAudioDeviceId = micSelect.value;
-        if (isVoiceActive && !isListenerMode) {
-          showToast("🎙️ マイクを切り替えています...");
-          await restartVoiceStream();
-        }
-      };
-    } catch (e) {}
-  }
-
-  async function restartVoiceStream() {
-    if (!isVoiceActive || isListenerMode) return;
-    try {
-      if (localStream) {
-        localStream.getTracks().forEach(t => t.stop());
-      }
-      const constraints = {
-        audio: {
-          deviceId: selectedAudioDeviceId ? { exact: selectedAudioDeviceId } : undefined,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          channelCount: 1
-        },
-        video: false
-      };
-      localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      if (isMicMuted) {
-        localStream.getAudioTracks().forEach(t => t.enabled = false);
-      }
-      if (peerConnection) {
-        const senders = peerConnection.getSenders();
-        const audioSender = senders.find(s => s.track && s.track.kind === 'audio');
-        if (audioSender) {
-          audioSender.replaceTrack(localStream.getAudioTracks()[0]);
-        }
-      }
-      showToast("🎙️ マイクを切り替えました");
-    } catch (e) {
-      showToast("⚠️ マイクの切り替えに失敗しました。");
-    }
-  }
-
-  async function initVoiceCall(listenerMode) {
-    if (!isJoined || !currentRoomId) return;
-    isListenerMode = listenerMode;
-    isVoiceActive = true;
-    isMicMuted = listenerMode;
-
-    const startBar = $("voiceStartBar");
-    const panel = $("voicePanel");
-    const statusTxt = $("voiceStatusText");
-    const switchBtn = $("vSwitchModeBtn");
-    const muteBtn = $("vMuteBtn");
-
-    if (startBar) startBar.style.display = "none";
-    if (panel) panel.style.display = "flex";
-    if (statusTxt) statusTxt.textContent = isListenerMode ? "🎧 聴くだけモード中" : "📞 双方向通話中";
-    if (switchBtn) switchBtn.textContent = isListenerMode ? "切替: 双方向" : "切替: 聴くだけ";
-    if (muteBtn) {
-      muteBtn.textContent = isMicMuted ? "ミュート: ON" : "ミュート: OFF";
-      muteBtn.classList.toggle("active", isMicMuted);
-    }
-
-    try {
-      await updateMicDeviceList();
-
-      const constraints = {
-        audio: {
-          deviceId: selectedAudioDeviceId ? { exact: selectedAudioDeviceId } : undefined,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          channelCount: 1
-        },
-        video: false
-      };
-
-      if (!isListenerMode) {
-        localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      } else {
-        // 🎯 聴くだけモード時は完全無音トラックを生成し、「ぶーん」という電子ノイズの発振を完全にブロック
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const dst = ctx.createMediaStreamDestination();
-        localStream = dst.stream;
-      }
-
-      setupWebRtcSignaling();
-      showToast(isListenerMode ? "🎧 聴くだけモードで接続しました" : "🎙️ 双方向通話を開始しました");
-    } catch (err) {
-      showToast("⚠️ マイクのアクセスが拒否されたか、利用できません。");
-      leaveVoiceCall();
-    }
-  }
-
-  function setupWebRtcSignaling() {
-    if (!db || !currentRoomId || !myUid) return;
-    signalingRef = db.ref(`voice/${currentRoomId}`);
-
-    if (!remoteAudioElement) {
-      remoteAudioElement = document.createElement("audio");
-      remoteAudioElement.autoplay = true;
-      document.body.appendChild(remoteAudioElement);
-    }
-
-    peerConnection = new RTCPeerConnection(ICE_SERVERS);
-
-    if (localStream) {
-      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
-    }
-
-    peerConnection.ontrack = (event) => {
-      if (event.streams && event.streams[0]) {
-        remoteAudioElement.srcObject = event.streams[0];
-        remoteAudioElement.play().catch(()=>{});
-      }
-    };
-
-    peerConnection.onicecandidate = (event) => {
-      if (event.candidate) {
-        signalingRef.child(`candidates/${myUid}`).push(event.candidate.toJSON()).catch(()=>{});
-      }
-    };
-
-    signalingRef.child(`offer/${myUid}`).on("value", async snap => {
-      const offer = snap.val();
-      if (!offer || peerConnection.signalingState !== "stable") return;
-      try {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await peerConnection.createAnswer();
-        await peerConnection.setLocalDescription(answer);
-        await signalingRef.child(`answer/${myUid}`).set(answer);
-      } catch (e) {}
-    });
-
-    signalingRef.child(`answer/${myUid}`).on("value", async snap => {
-      const answer = snap.val();
-      if (!answer || peerConnection.signalingState === "stable") return;
-      try {
-        await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-      } catch (e) {}
-    });
-
-    signalingRef.child(`candidates`).on("child_added", snap => {
-      const candMap = snap.val() || {};
-      Object.entries(candMap).forEach(([uid, cand]) => {
-        if (uid !== myUid && peerConnection && cand) {
-          peerConnection.addIceCandidate(new RTCIceCandidate(cand)).catch(()=>{});
-        }
-      });
-    });
-
-    setTimeout(async () => {
-      if (!peerConnection) return;
-      try {
-        const offer = await peerConnection.createOffer();
-        await peerConnection.setLocalDescription(offer);
-        await signalingRef.child(`offer/${myUid}`).set(offer);
-      } catch (e) {}
-    }, 1000);
-  }
-
-  function leaveVoiceCall() {
-    isVoiceActive = false;
-    isListenerMode = false;
-    isMicMuted = false;
-
-    if (localStream) {
-      localStream.getTracks().forEach(t => t.stop());
-      localStream = null;
-    }
-    if (peerConnection) {
-      peerConnection.close();
-      peerConnection = null;
-    }
-    if (remoteAudioElement) {
-      remoteAudioElement.srcObject = null;
-    }
-    if (db && currentRoomId && myUid) {
-      db.ref(`voice/${currentRoomId}/offer/${myUid}`).remove().catch(()=>{});
-      db.ref(`voice/${currentRoomId}/answer/${myUid}`).remove().catch(()=>{});
-      db.ref(`voice/${currentRoomId}/candidates/${myUid}`).remove().catch(()=>{});
-    }
-    const panel = $("voicePanel");
-    const startBar = $("voiceStartBar");
-    if (panel) panel.style.display = "none";
-    if (startBar && isJoined) startBar.style.display = "flex";
-  }
-
-  async function promptAndToggleVoiceMode() {
-    const nextModeIsListener = !isListenerMode;
-    const modeName = nextModeIsListener ? "聴くだけモード" : "双方向通話";
-    const ok = await customConfirm("モード切替の確認", `「${modeName}」に切り替えますか？`, "切り替える", "キャンセル");
-    if (!ok) return;
-
-    leaveVoiceCall();
-    initVoiceCall(nextModeIsListener);
-  }
-
-  async function toggleMicrophoneMute() {
-    if (isListenerMode) {
-      showToast("⚠️ 聴くだけモード中はマイクを利用できません。");
-      return;
-    }
-    isMicMuted = !isMicMuted;
-    if (localStream) {
-      localStream.getAudioTracks().forEach(track => {
-        track.enabled = !isMicMuted;
-      });
-    }
-    const muteBtn = $("vMuteBtn");
-    if (muteBtn) {
-      muteBtn.textContent = isMicMuted ? "ミュート: ON" : "ミュート: OFF";
-      muteBtn.classList.toggle("active", isMicMuted);
-    }
-    showToast(isMicMuted ? "🔇 マイクをミュートしました" : "🎙️ マイクのミュートを解除しました");
-  }
-
   function scBottom(force = false) {
     if (!D.tl) return;
     requestAnimationFrame(() => {
@@ -1562,6 +1229,7 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
+  // 🎯 【極限爆速・DocumentFragment一括描画パイプライン】チラつきゼロを実現
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
     try {
@@ -1573,6 +1241,7 @@ function toggleAcc(id) {
         db.ref(`presence/${currentRoomId}`).once("value")
       ]);
       
+      // 1. プレゼンスの同期
       const list = presSnap.val() || {}, members = {};
       for (const [id, u] of Object.entries(list)) {
         if (u && u.n && typeof u.t === "number") members[id] = { id, ...u };
@@ -1582,6 +1251,7 @@ function toggleAcc(id) {
       renderPresence(members);
       checkAndTriggerExitForInactiveUsers(members);
 
+      // 2. ログの全件一括再読み込み（DocumentFragmentで一気にDOM反映し白パカ防止）
       if (D.tli) D.tli.innerHTML = "";
       displayedMsgIds.clear();
       renderedMwNodes.clear();
@@ -1620,6 +1290,7 @@ function toggleAcc(id) {
       scBottom(true);
       updateJumpBtns();
 
+      // 3. ライブリスナーの再設定
       if (chatQuery) chatQuery.off("child_added");
       chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(latestDisplayedTs + 1);
       chatQuery.on("child_added", async child => {
@@ -1870,40 +1541,6 @@ function toggleAcc(id) {
 
     if (D.exBtn) D.exBtn.addEventListener("click", (e) => { e.preventDefault(); customConfirm("退室確認", "本当にこの部屋から退室しますか？", "退室する", "キャンセル", true).then(ok => { if (ok) doExit(false); }); });
     if (D.sdBtn) D.sdBtn.addEventListener("click", (e) => { e.preventDefault(); sendMessage(); });
-
-    // 🎙️ チャット内：通話開始・リスナー開始・切替・ミュート・終了ボタンのバインド
-    if ($("startCallBtn")) {
-      $("startCallBtn").addEventListener("click", (e) => {
-        e.preventDefault();
-        promptAndInitVoice(false);
-      });
-    }
-    if ($("startListenBtn")) {
-      $("startListenBtn").addEventListener("click", (e) => {
-        e.preventDefault();
-        promptAndInitVoice(true);
-      });
-    }
-    if ($("vSwitchModeBtn")) {
-      $("vSwitchModeBtn").addEventListener("click", (e) => {
-        e.preventDefault();
-        promptAndToggleVoiceMode();
-      });
-    }
-    if ($("vMuteBtn")) {
-      $("vMuteBtn").addEventListener("click", (e) => {
-        e.preventDefault();
-        toggleMicrophoneMute();
-      });
-    }
-    if ($("vLeaveBtn")) {
-      $("vLeaveBtn").addEventListener("click", (e) => {
-        e.preventDefault();
-        customConfirm("通話終了", "音声通話・リスナーモードを終了しますか？", "終了する", "キャンセル", true).then(ok => {
-          if (ok) leaveVoiceCall();
-        });
-      });
-    }
 
     if (D.mi) {
       D.mi.addEventListener("input", () => { updateClrMsgBtnVisibility(); D.mi.style.height = "auto"; D.mi.style.height = Math.min(D.mi.scrollHeight, 120) + "px"; });
