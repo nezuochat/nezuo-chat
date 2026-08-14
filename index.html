@@ -473,7 +473,7 @@ function toggleAcc(id) {
     safeLS.remove("nz_lobby_notice");
   }
 
-  // 🎯 【超爆速・アグレッシブ強制再取得パイプライン】タブ切り替え・スマホホーム画面復帰時に一瞬で全件同期
+  // 🎯 【アグレッシブ強制再取得＆爆速復帰パイプライン】タブ切替・スマホホーム画面復帰時に即座に一括同期
   if (typeof document !== 'undefined') {
     const triggerAggressiveSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -1229,7 +1229,7 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🎯 【極限爆速・DocumentFragment一括描画パイプライン】チラつきゼロを実現
+  // 🎯 【完全爆速・DocumentFragment一括描画 ＆ 削除リアルタイム同期（child_removed）】
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
     try {
@@ -1290,12 +1290,26 @@ function toggleAcc(id) {
       scBottom(true);
       updateJumpBtns();
 
-      // 3. ライブリスナーの再設定
+      // 3. ライブリスナー（追加 ＆ 削除）の再設定
       if (chatQuery) chatQuery.off("child_added");
+      db.ref(`chat/${currentRoomId}`).off("child_removed");
+
       chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(latestDisplayedTs + 1);
       chatQuery.on("child_added", async child => {
         const m = child.val();
         if (m) { m.id = child.key; await syncSingleMessage(m, true); }
+      });
+
+      db.ref(`chat/${currentRoomId}`).on("child_removed", child => {
+        const el = renderedMwNodes.get(child.key);
+        if (el) {
+          el.remove();
+          renderedMwNodes.delete(child.key);
+          displayedMsgIds.delete(child.key);
+          unreadMsgIds.delete(child.key);
+          updateUnreadBadge();
+          updateJumpBtns();
+        }
       });
 
     } catch (e) {}
