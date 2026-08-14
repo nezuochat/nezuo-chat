@@ -94,20 +94,41 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #playerContent{ width:100%;max-width:480px;background:#000;display:flex;justify-content:center;align-items:center;position:relative;margin:0 auto;overflow:hidden; }
 #playerCloseBtn{background:rgba(244, 63, 94, 0.15) !important;border:1px solid rgba(244, 63, 94, 0.4) !important;color: #fda4af !important;font-weight: 900 !important;padding: 4px 10px !important;font-size: 12px !important;border-radius: 5px;}
 
-#tl{flex:1;min-height:0;overflow-y:scroll;padding:12px;background-color:#0d1117;will-change:scroll-position;-webkit-overflow-scrolling:touch;}
-#tl-inner{display:flex;flex-direction:column;justify-content:flex-end;gap:0;width:100%;max-width:800px;margin:0 auto;min-height:100%}
+#tl{flex:1;min-height:0;overflow-y:scroll;padding:12px 16px;background-color:#0e1626;will-change:scroll-position;-webkit-overflow-scrolling:touch;}
+#tl-inner{display:flex;flex-direction:column;justify-content:flex-end;gap:10px;width:100%;max-width:800px;margin:0 auto;min-height:100%}
 
-.mw{position:relative;display:flex;flex-direction:column;width:100%;padding:10px 12px;border-bottom:1px solid rgba(51,65,85,.18);}
-.mw.new-msg-anim{animation:slideInUp .06s ease-out forwards}
-.mm{display:flex;align-items:center;gap:6px;font-size:12px;margin-bottom:4px;width:100%;overflow:hidden;white-space:nowrap}
+/* 💬 LINE風チャットデザイン（ユーザー選択カラー対応バブル） */
+.mw{position:relative;display:flex;flex-direction:column;width:100%;padding:2px 0;}
+.mw.new-msg-anim{animation:slideInUp .08s ease-out forwards}
+
+.mw.is-mine {align-items: flex-end;}
+.mw.is-mine .mm {flex-direction: row-reverse;}
+.mw.is-mine .mm-name {display: none;}
+.mw.is-mine .msg-del-btn {right: auto; left: -46px;}
+
+.mw.is-other {align-items: flex-start;}
+
+.mm{display:flex;align-items:center;gap:6px;font-size:11.5px;margin-bottom:2px;max-width:100%;overflow:hidden;white-space:nowrap}
 .mm-name{font-weight:bold;overflow:hidden;text-overflow:ellipsis;color:var(--usr-color)}
-.mm-trip{font-size:10.5px;margin-left:2px;overflow:hidden;text-overflow:ellipsis;color:var(--mu)}
-.ts{color:var(--mu);opacity:.6;font-size:9.5px;margin-left:auto;font-family:monospace}
-.mb, .mb a {user-select: text !important;-webkit-user-select: text !important;}
-.mb{align-self:start;font-size:14.5px;line-height:1.5;max-width:100%;word-break:break-all;white-space:pre-wrap;color:var(--tx);padding-left:10px;margin-bottom:2px;border-left:2px solid var(--usr-color);}
+.mm-trip{font-size:10px;margin-left:2px;overflow:hidden;text-overflow:ellipsis;color:var(--mu);opacity:0.8}
+.ts{color:var(--mu);opacity:.6;font-size:9.5px;margin-left:6px;font-family:monospace}
 
-.sys-msg{position:relative;text-align:center;font-size:11.5px;font-weight:bold;color:var(--mu);margin:8px 0;background:rgba(255,255,255,.02);padding:8px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.04);word-break:break-all;line-height:1.4}
-.sys-ts{display:block;font-size:10px;color:var(--mu);opacity:.75;font-family:monospace;margin-top:4px}
+.mb-bubble {
+  position:relative;
+  font-size:14px;
+  line-height:1.45;
+  padding:8px 12px;
+  max-width:78%;
+  word-break:break-all;
+  white-space:pre-wrap;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  border-radius: 12px;
+}
+
+.sys-msg{position:relative;text-align:center;font-size:11px;font-weight:bold;color:var(--mu);margin:6px auto;background:rgba(255,255,255,.04);padding:4px 12px;border-radius:10px;max-width:85%;word-break:break-all;line-height:1.4}
+.sys-ts{display:inline-block;font-size:9.5px;color:var(--mu);opacity:.75;font-family:monospace;margin-left:4px}
 
 #ib{display:flex;flex-direction:column;padding:6px calc(8px + env(safe-area-inset-right,0px)) calc(6px + var(--safe)) calc(8px + env(safe-area-inset-left,0px));background:var(--sf);border-top:1px solid var(--bd);gap:4px}
 #ibToolbar{width:100%;align-items:flex-end;display:flex;gap:8px}
@@ -123,7 +144,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .bclrm.show{opacity:1;pointer-events:auto}
 .bclrm:hover,.bclrm:active{background:rgba(244,63,94,0.15);border-color:rgba(244,63,94,0.3);color:var(--ro)}
 
-.bsd{width:44px;height:44px;border-radius:50%;background:var(--in);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(79,70,229,0.35);border:1px solid rgba(255,255,255,0.08)}
+.bsd{width:44px;height:44px;border-radius:50%;background:var(--in);color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 10px rgba(79,70,229,0.35);border:1px solid rgba(255,255,255,0.1)}
 .bsd:hover{background:var(--i2)}
 .bsd:disabled{opacity:.6;cursor:not-allowed}
 .bsd svg{width:18px;height:18px;transform:rotate(45deg);margin-top:-1px;margin-left:-2px}
@@ -275,7 +296,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       <div id="adminAccordion">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bd); padding-bottom: 4px;">
           <span id="adminAccordionTitle" style="font-size: 12px; font-weight: bold; color: var(--tx);">⚙️ ホスト設定パネル</span>
-          <button class="btn" id="adminAccordionCloseBtn" style="background: rgba(255,255,255,0.08); width: 22px; height: 22px; border-radius: 50%; font-size: 11px; padding:0; display:flex; align-items:center; justify-content:center;">タップして閉じる</button>
+          <button class="btn" id="adminAccordionCloseBtn" style="background: rgba(255,255,255,0.08); width: auto; height: 22px; border-radius: 4px; font-size: 10.5px; padding:0 8px; display:flex; align-items:center; justify-content:center;">タップして閉じる</button>
         </div>
 
         <div id="admGeneralSettingsGroup" style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
@@ -310,8 +331,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           <div>
             <label style="font-size:9.5px; font-weight:bold; color: var(--mu); display:block; margin-bottom:2px;">📋 事前承認トリップ追加 (7文字)</label>
             <div style="display: flex; gap: 5px; position: relative;">
-              <input type="text" id="admTripInput" class="inp" placeholder="例: ◆AbCdEf" maxlength="7" autocomplete="off" style="height:26px; font-size:11px; width: 120px; padding: 2px 22px 2px 6px;">
-              <button id="admTripClearBtn" style="position: absolute; left: 95px; top: 3px; background: none; border: none; color: var(--mu); font-size: 13px; font-weight: bold; cursor: pointer; padding: 2px 4px;" title="クリア">×</button>
+              <input type="text" id="admTripInput" class="inp" placeholder="例: ◆AbCdEf" maxlength="7" autocomplete="off" style="height:26px; font-size:11px; width: 140px; padding: 2px 22px 2px 6px;">
+              <button id="admTripClearBtn" style="position: absolute; left: 115px; top: 3px; background: none; border: none; color: var(--mu); font-size: 13px; font-weight: bold; cursor: pointer; padding: 2px 4px;" title="クリア">×</button>
               <button class="btn" id="admTripAddBtn" style="background: var(--in); color: #fff; font-size: 10px; height: 26px; width: 44px; font-weight: bold; border-radius: 4px;">追加</button>
             </div>
             <div id="admTripList" style="background:var(--s2); border:1px solid var(--bd); border-radius:5px; max-height:45px; overflow-y:auto; padding:3px; font-size:10px; display:flex; flex-direction:column; gap:2px; font-family: monospace; margin-top: 2px;"></div>
@@ -1086,7 +1107,8 @@ function toggleAcc(id) {
 
   function cMsg(m, isNewIncoming = false) {
     const el = document.createElement("div");
-    el.className = "mw" + (isNewIncoming ? " new-msg-anim" : "");
+    const isMine = (m.u === myUid && m.u !== "" && m.u !== "system");
+    el.className = "mw " + (isMine ? "is-mine" : "is-other") + (isNewIncoming ? " new-msg-anim" : "");
     el.setAttribute("data-mid", m.id);
     const msgTime = getMsgTime(m);
     el.dataset.ts = msgTime; el.dataset.rawMsg = m.m; el.dataset.uid = m.u || "";
@@ -1103,20 +1125,25 @@ function toggleAcc(id) {
     const name = m.n || "名無し", trip = m.p || "", color = m.c || "#f1f5f9";
     const isDeletable = (m.u === myUid && m.u !== "") || (myUid === roomSettings.creatorUid) || checkIsGlobalAdmin();
 
+    // 🎯 【LINE風チャットデザイン・ユーザーカラー反映】選んだカラーが吹き出しに美しく馴染む設計
+    const bubbleStyle = isMine 
+      ? `background: ${color} !important; color: #000 !important; font-weight: 500;` 
+      : `background: #1e293b !important; color: var(--tx) !important; border-left: 3px solid ${color};`;
+
     el.innerHTML = `
       <div class="mm">
         <span class="mm-name" style="color: ${color}">${escapeHtml(name)}</span>
         <span class="mm-trip" style="display: ${trip ? 'inline' : 'none'}">${escapeHtml(trip)}</span>
         <span class="ts">${fDT(msgTime)}</span>
       </div>
-      <div class="mb" style="border-left: 2px solid ${color};"></div>
+      <div class="mb-bubble" style="${bubbleStyle}"></div>
     `;
-    const mb = el.querySelector(".mb");
+    const mbBubble = el.querySelector(".mb-bubble");
     if (m.m) {
-      const sp = document.createElement("span"); sp.textContent = m.m; mb.appendChild(sp);
+      const sp = document.createElement("span"); sp.textContent = m.m; mbBubble.appendChild(sp);
       if (m.m.includes("http")) {
         const urls = m.m.match(UR);
-        if (urls) urls.forEach(u => { const media = createMediaContainer(u); if (media) mb.appendChild(media); });
+        if (urls) urls.forEach(u => { const media = createMediaContainer(u); if (media) mbBubble.appendChild(media); });
       }
     }
     if (isDeletable) {
@@ -1250,7 +1277,7 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🎯 【極限爆速 ＆ 完全並列化 ＆ 鉄壁の時系列ソート】
+  // 🎯 【極限爆速＆完全並列復号パイプライン】入室時も再接続時も1秒未満で一瞬表示
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
     try {
@@ -1484,7 +1511,6 @@ function toggleAcc(id) {
     if ($("admPassContainer")) $("admPassContainer").style.display = roomSettings.passcode ? "flex" : "none";
   }
 
-  // 🎯 【発言できない不具合の完全防止】送信エラー時のフラグ自動解除 ＆ 認証切れの自動修復
   async function sendMessage() {
     if (!isJoined || !db || isSending) return;
     const text = D.mi.value.trim();
@@ -1516,7 +1542,7 @@ function toggleAcc(id) {
       showToast("❌ メッセージの送信に失敗しました。再接続を試みます。");
       if (db) db.goOnline();
     } finally {
-      isSending = false; // 🎯 フラグがスタックしないよう確実に解除
+      isSending = false;
     }
   }
 
@@ -1625,7 +1651,6 @@ function toggleAcc(id) {
     if (D.exBtn) D.exBtn.addEventListener("click", (e) => { e.preventDefault(); customConfirm("退室確認", "本当にこの部屋から退室しますか？", "退室する", "キャンセル", true).then(ok => { if (ok) doExit(false); }); });
     if (D.sdBtn) D.sdBtn.addEventListener("click", (e) => { e.preventDefault(); sendMessage(); });
 
-    // 📋 事前承認トリップのクリアボタン
     if ($("admTripClearBtn") && $("admTripInput")) {
       $("admTripClearBtn").addEventListener("click", (e) => {
         e.preventDefault();
