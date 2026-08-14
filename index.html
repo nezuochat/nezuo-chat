@@ -306,8 +306,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       <div id="voiceStartBar">
         <span>🎙️ 音声通話 / リスナー</span>
         <div class="voice-btns">
-          <button class="v-btn active" id="startCallBtn">📞 双方向通話</button>
-          <button class="v-btn" id="startListenBtn">🎧 聴くだけ</button>
+          <button class="v-btn active" id="startCallBtn">📞 双方向通話を開始</button>
+          <button class="v-btn" id="startListenBtn">🎧 聴くだけを開始</button>
         </div>
       </div>
 
@@ -315,6 +315,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       <div id="voicePanel">
         <span id="voiceStatusText">📞 接続中</span>
         <div class="voice-btns">
+          <select id="micSelect" class="v-btn" style="background:var(--bg); color:var(--tx); max-width: 110px;" title="マイク選択"></select>
           <button class="v-btn" id="vSwitchModeBtn">切替: 聴くだけ</button>
           <button class="v-btn" id="vMuteBtn">ミュート: OFF</button>
           <button class="v-btn danger" id="vLeaveBtn">終了</button>
@@ -419,10 +420,8 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
     <!-- ロビー画面 -->
     <div id="lobbyScreen" style="display: none; flex: 1; overflow-y: auto; padding: 10px 12px; background: #0d1117; flex-direction: column; gap: 10px;">
-      <div id="lobbyNoticeBanner" style="display: none; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.4); border-radius: 8px; padding: 10px 12px; align-items: center; justify-content: space-between; gap: 8px;">
-        <span id="lobbyNoticeText" style="font-size: 11.5px; font-weight: bold; color: #fda4af; line-height: 1.4;"></span>
-        <button id="lobbyNoticeCloseBtn" style="background: none; border: none; color: #fda4af; font-size: 14px; font-weight: bold; cursor: pointer; padding: 2px 6px;">✕</button>
-      </div>
+      
+      <!-- 🎯 ロビー上部の通知バナーは完全廃止してクリーン化 -->
 
       <div class="lobby-sec">
         <h2>👤 ユーザー設定 (必須入力)</h2>
@@ -522,6 +521,7 @@ function toggleAcc(id) {
   let isMicMuted = false;
   let signalingRef = null;
   let remoteAudioElement = null;
+  let selectedAudioDeviceId = "";
 
   const ICE_SERVERS = {
     iceServers: [{ urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] }]
@@ -531,25 +531,16 @@ function toggleAcc(id) {
 
   function showLobbyNotice(msg) {
     safeLS.set("nz_lobby_notice", msg);
-    const banner = $("lobbyNoticeBanner");
-    const textEl = $("lobbyNoticeText");
-    if (banner && textEl) {
-      textEl.textContent = msg;
-      banner.style.display = "flex";
-    }
-    // 🎯 ポップアップ一切なし、トースト通知で確実に表示
     showToast(msg, 3000);
   }
 
   function clearLobbyNotice() {
     safeLS.remove("nz_lobby_notice");
-    const banner = $("lobbyNoticeBanner");
-    if (banner) banner.style.display = "none";
   }
 
-  // 🎯 【全接続対応・完全一括読み込み爆速パイプライン】
+  // 🎯 【アグレッシブ強制再取得＆爆速復帰パイプライン】タブ切替・スマホホーム画面復帰時に即座に一括同期
   if (typeof document !== 'undefined') {
-    document.addEventListener("visibilitychange", async () => {
+    const triggerAggressiveSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
@@ -560,7 +551,11 @@ function toggleAcc(id) {
         }
         checkAutoExitOnResume();
       }
-    });
+    };
+
+    document.addEventListener("visibilitychange", triggerAggressiveSync);
+    window.addEventListener("pageshow", triggerAggressiveSync);
+    window.addEventListener("focus", triggerAggressiveSync);
   }
 
   (function initInitialScreenState() {
@@ -569,11 +564,6 @@ function toggleAcc(id) {
     const sessionStart = parseInt(safeLS.get("nz_session_start_time") || "0");
     const lastPost = parseInt(safeLS.get("nz_last_post_time") || "0");
     const baselineTime = Math.max(sessionStart, lastPost);
-    
-    const savedNotice = safeLS.get("nz_lobby_notice");
-    if (savedNotice) {
-      setTimeout(() => showLobbyNotice(savedNotice), 100);
-    }
 
     if (wasJoined && lastRoomId && (Date.now() - baselineTime < 180000)) {
       const chatScr = document.getElementById("chatScreen");
@@ -1096,6 +1086,72 @@ function toggleAcc(id) {
     }
   }
 
+  async function updateMicDeviceList() {
+    const micSelect = $("micSelect");
+    if (!micSelect) return;
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputs = devices.filter(d => d.kind === 'audioinput');
+      micSelect.innerHTML = "";
+      if (audioInputs.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "標準マイク";
+        micSelect.appendChild(opt);
+        return;
+      }
+      audioInputs.forEach((device, index) => {
+        const opt = document.createElement("option");
+        opt.value = device.deviceId;
+        opt.textContent = device.label || `マイク ${index + 1}`;
+        if (device.deviceId === selectedAudioDeviceId) {
+          opt.selected = true;
+        }
+        micSelect.appendChild(opt);
+      });
+      micSelect.onchange = async () => {
+        selectedAudioDeviceId = micSelect.value;
+        if (isVoiceActive && !isListenerMode) {
+          showToast("🎙️ マイクを切り替えています...");
+          await restartVoiceStream();
+        }
+      };
+    } catch (e) {}
+  }
+
+  async function restartVoiceStream() {
+    if (!isVoiceActive || isListenerMode) return;
+    try {
+      if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+      }
+      const constraints = {
+        audio: {
+          deviceId: selectedAudioDeviceId ? { exact: selectedAudioDeviceId } : undefined,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1
+        },
+        video: false
+      };
+      localStream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (isMicMuted) {
+        localStream.getAudioTracks().forEach(t => t.enabled = false);
+      }
+      if (peerConnection) {
+        const senders = peerConnection.getSenders();
+        const audioSender = senders.find(s => s.track && s.track.kind === 'audio');
+        if (audioSender) {
+          audioSender.replaceTrack(localStream.getAudioTracks()[0]);
+        }
+      }
+      showToast("🎙️ マイクを切り替えました");
+    } catch (e) {
+      showToast("⚠️ マイクの切り替えに失敗しました。");
+    }
+  }
+
   async function initVoiceCall(listenerMode) {
     if (!isJoined || !currentRoomId) return;
     isListenerMode = listenerMode;
@@ -1118,8 +1174,16 @@ function toggleAcc(id) {
     }
 
     try {
+      await updateMicDeviceList();
+
       const constraints = {
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true, channelCount: 1 },
+        audio: {
+          deviceId: selectedAudioDeviceId ? { exact: selectedAudioDeviceId } : undefined,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: 1
+        },
         video: false
       };
 
@@ -1687,13 +1751,11 @@ function toggleAcc(id) {
     finally { isSending = false; }
   }
 
-  // 🎯 【超爆速・遅延完全ゼロブート】認証待ちの足を縛る処理を全廃し、LocalStorage UIDと並列非同期で一瞬起動
   const initDirectDatabaseProcess = async () => {
     try {
       await syncProfileValues();
       if (db) db.goOnline();
 
-      // 認証とサーバー時間取得を裏で完全非同期（背景）実行。UI描画を一切ブロックしない
       auth.signInAnonymously().catch(() => {});
       syncServerOffset().catch(() => {});
 
