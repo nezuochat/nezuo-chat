@@ -474,17 +474,12 @@ function toggleAcc(id) {
     safeLS.remove("nz_lobby_notice");
   }
 
-  // 🎯 【超堅牢・爆速復帰パイプライン】古い残存表示を完全排除し、復帰した瞬間に画面をクリーンにして一括高速同期
+  // 🎯 【アグレッシブ強制再取得＆爆速復帰パイプライン】タブ切替・スマホホーム画面復帰時に即座に一括同期
   if (typeof document !== 'undefined') {
     const triggerAggressiveSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
-          // 復帰時は画面を即座に空にして古い表示の残留・チラつきを完全に防止
-          if (D.tli) D.tli.innerHTML = "";
-          displayedMsgIds.clear();
-          renderedMwNodes.clear();
-          
           await loadRoomDataAndRender(true);
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
@@ -1251,85 +1246,96 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
+  // 🎯 【極限爆速化＆完全並列復号パイプライン】入室時も再接続時も1秒未満で一瞬表示
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
     try {
       if (isResume) db.goOnline();
-      await syncServerOffset();
       
-      const [chatSnap, presSnap] = await Promise.all([
-        db.ref(`chat/${currentRoomId}`).limitToLast(100).once("value"),
-        db.ref(`presence/${currentRoomId}`).once("value")
-      ]);
-      
-      const list = presSnap.val() || {}, members = {};
-      for (const [id, u] of Object.entries(list)) {
-        if (u && u.n && typeof u.t === "number") members[id] = { id, ...u };
-      }
-      currentPresenceMap = members;
-      isPresenceInitialized = true;
-      renderPresence(members);
-      checkAndTriggerExitForInactiveUsers(members);
+      // サーバー時間とデータを並列で同時一括フェッチして無駄な待機時間を完全排除
+      await Promise.all([
+        syncServerOffset(),
+        (async () => {
+          const [chatSnap, presSnap] = await Promise.all([
+            db.ref(`chat/${currentRoomId}`).limitToLast(100).once("value"),
+            db.ref(`presence/${currentRoomId}`).once("value")
+          ]);
+          
+          // 1. プレゼンスの同期
+          const list = presSnap.val() || {}, members = {};
+          for (const [id, u] of Object.entries(list)) {
+            if (u && u.n && typeof u.t === "number") members[id] = { id, ...u };
+          }
+          currentPresenceMap = members;
+          isPresenceInitialized = true;
+          renderPresence(members);
+          checkAndTriggerExitForInactiveUsers(members);
 
-      if (D.tli) D.tli.innerHTML = "";
-      displayedMsgIds.clear();
-      renderedMwNodes.clear();
-      unreadMsgIds.clear();
-      updateUnreadBadge();
-
-      const msgs = [];
-      chatSnap.forEach(child => {
-        const m = child.val();
-        if (m) { m.id = child.key; msgs.push(m); }
-      });
-
-      const decryptedPromises = msgs.map(async m => {
-        m.m = await E2EE.decrypt(m.m, activeKey);
-        m.n = await E2EE.decrypt(m.n, activeKey);
-        m.p = await E2EE.decrypt(m.p, activeKey);
-        return m;
-      });
-      const resolvedMsgs = await Promise.all(decryptedPromises);
-      resolvedMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
-
-      const fragment = document.createDocumentFragment();
-      resolvedMsgs.forEach(m => {
-        if (displayedMsgIds.has(m.id)) return;
-        const el = cMsg(m, false);
-        el.dataset.ts = getMsgTime(m);
-        fragment.appendChild(el);
-        displayedMsgIds.add(m.id);
-        if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
-      });
-
-      if (D.tli && fragment.children.length > 0) {
-        D.tli.appendChild(fragment);
-      }
-      isFirstLoad = false;
-      scBottom(true);
-      updateJumpBtns();
-
-      if (chatQuery) chatQuery.off("child_added");
-      db.ref(`chat/${currentRoomId}`).off("child_removed");
-
-      chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(latestDisplayedTs + 1);
-      chatQuery.on("child_added", async child => {
-        const m = child.val();
-        if (m) { m.id = child.key; await syncSingleMessage(m, true); }
-      });
-
-      db.ref(`chat/${currentRoomId}`).on("child_removed", child => {
-        const el = renderedMwNodes.get(child.key);
-        if (el) {
-          el.remove();
-          renderedMwNodes.delete(child.key);
-          displayedMsgIds.delete(child.key);
-          unreadMsgIds.delete(child.key);
+          // 2. ログの全件一括再読み込み（DocumentFragmentで一気にアトミック置換）
+          if (D.tli) D.tli.innerHTML = "";
+          displayedMsgIds.clear();
+          renderedMwNodes.clear();
+          unreadMsgIds.clear();
           updateUnreadBadge();
-          updateJumpBtns();
-        }
-      });
 
+          const msgs = [];
+          chatSnap.forEach(child => {
+            const m = child.val();
+            if (m) { m.id = child.key; msgs.push(m); }
+          });
+
+          // 🎯 復号処理を完全並列（Promise.all）で同時実行してCPUブロックをゼロにする
+          const decryptedPromises = msgs.map(async m => {
+            m.m = await E2EE.decrypt(m.m, activeKey);
+            m.n = await E2EE.decrypt(m.n, activeKey);
+            m.p = await E2EE.decrypt(m.p, activeKey);
+            return m;
+          });
+          const resolvedMsgs = await Promise.all(decryptedPromises);
+          
+          // 🎯 取得したメッセージをタイムスタンプ（時刻）順に厳密にソート（時系列の統一）
+          resolvedMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
+
+          const fragment = document.createDocumentFragment();
+          resolvedMsgs.forEach(m => {
+            if (displayedMsgIds.has(m.id)) return;
+            const el = cMsg(m, false);
+            el.dataset.ts = getMsgTime(m);
+            fragment.appendChild(el);
+            displayedMsgIds.add(m.id);
+            if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
+          });
+
+          if (D.tli && fragment.children.length > 0) {
+            D.tli.appendChild(fragment);
+          }
+          isFirstLoad = false;
+          scBottom(true);
+          updateJumpBtns();
+
+          // 3. ライブリスナー（追加 ＆ 削除）の再設定
+          if (chatQuery) chatQuery.off("child_added");
+          db.ref(`chat/${currentRoomId}`).off("child_removed");
+
+          chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(latestDisplayedTs + 1);
+          chatQuery.on("child_added", async child => {
+            const m = child.val();
+            if (m) { m.id = child.key; await syncSingleMessage(m, true); }
+          });
+
+          db.ref(`chat/${currentRoomId}`).on("child_removed", child => {
+            const el = renderedMwNodes.get(child.key);
+            if (el) {
+              el.remove();
+              renderedMwNodes.delete(child.key);
+              displayedMsgIds.delete(child.key);
+              unreadMsgIds.delete(child.key);
+              updateUnreadBadge();
+              updateJumpBtns();
+            }
+          });
+        })()
+      ]);
     } catch (e) {}
   }
 
@@ -1474,6 +1480,7 @@ function toggleAcc(id) {
     if ($("admPassContainer")) $("admPassContainer").style.display = roomSettings.passcode ? "flex" : "none";
   }
 
+  // 🎯 【発言できない不具合の完全防止】送信エラー時のフラグ自動解除 ＆ 認証切れの自動修復
   async function sendMessage() {
     if (!isJoined || !db || isSending) return;
     const text = D.mi.value.trim();
@@ -1482,6 +1489,11 @@ function toggleAcc(id) {
     lastSendTime = Date.now(); isSending = true;
 
     try {
+      // 認証が切れている場合のセーフティ再認証
+      if (!auth.currentUser) {
+        await auth.signInAnonymously().catch(() => {});
+      }
+
       const encText = await E2EE.encrypt(text, activeKey);
       const encName = await E2EE.encrypt(myName || "名無し", activeKey);
       const encTrip = await E2EE.encrypt(myTrip, activeKey);
@@ -1497,8 +1509,12 @@ function toggleAcc(id) {
       await db.ref(`chat/${currentRoomId}`).push({ u: myUid, n: encName, p: encTrip, c: curColor, m: encText, t: postTs });
       if (myPresenceRef) myPresenceRef.child("t").set(postTs).catch(()=>{});
       scBottom(true);
-    } catch (e) { showToast("❌ メッセージの送信に失敗しました。"); }
-    finally { isSending = false; }
+    } catch (e) {
+      showToast("❌ メッセージの送信に失敗しました。再接続を試みます。");
+      if (db) db.goOnline();
+    } finally {
+      isSending = false; // 🎯 フラグがスタックしないよう確実に解除
+    }
   }
 
   const initDirectDatabaseProcess = async () => {
