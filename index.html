@@ -900,6 +900,7 @@ function toggleAcc(id) {
 
   const processedExits = new Set();
   
+  // ⏱️ 【自動退室ログの正確な時刻同期】ユーザーの最終活動時刻(u.t)＋3分（AUTO_EXIT_MS）に厳密に一致させる
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
 
@@ -912,10 +913,11 @@ function toggleAcc(id) {
         if (processedExits.has(exitKey)) continue;
         processedExits.add(exitKey);
 
+        // 💡 最終発言時刻（u.t）に正確に3分（180,000ms）を足した時間を、退室ログのタイムスタンプとする
         const exactExpiryTime = u.t + AUTO_EXIT_MS;
 
         db.ref(`presence/${currentRoomId}/${id}`).transaction(currentData => {
-          if (currentData !== null) {
+          if (currentData !== null && currentData.t === u.t) {
             return null; 
           }
           return; 
@@ -1350,7 +1352,6 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【ローカルファースト＋アトミック・レンダー】開いた瞬間にキャッシュからログ・入室者リストを0秒で一瞬表示
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
