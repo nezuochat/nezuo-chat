@@ -502,7 +502,6 @@ function toggleAcc(id) {
     safeLS.remove("nz_lobby_notice");
   }
 
-  // 🧹 【グローバル管理者専用：全部屋・全員の完全ゾンビデータ自動お掃除エンジン】
   async function runAdminZombieCleanup() {
     if (!db || !checkIsGlobalAdmin()) return;
     try {
@@ -532,13 +531,12 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🌐 【プロ仕様：ビジビリティ連動型・差分爆速同期パイプライン】
+  // 🌐 【プロ仕様：タブ復帰＆高速同期パイプライン】
   if (typeof document !== 'undefined') {
     const triggerAggressiveSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
-          // 💡 【高速化の極意】全消去せず、裏で最新差分だけをスマートに同期する
           await loadRoomDataAndRender(true);
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
@@ -560,7 +558,7 @@ function toggleAcc(id) {
     window.addEventListener("focus", triggerAggressiveSync);
   }
 
-  // 🚀 【キャッシュレス・ゼロチラつきコールドスタート初期化】
+  // 🚀 【キャッシュレス・ゼロチラつき初期化】
   (function initInitialScreenState() {
     const wasJoined = safeLS.get("nz_is_joined") === "true";
     const lastRoomId = safeLS.get("nz_last_room_id");
@@ -856,7 +854,7 @@ function toggleAcc(id) {
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
   const updateSessionStartTime = time => safeLS.set("nz_session_start_time", time.toString());
 
-  // 🛡️ 【分散協調型＆自己防衛：絶対的にお知らせログを1回だけ出す自動退室エンジン】
+  // 🛡️ 【自動退室エンジン：必ず「ログを出してから退室する」絶対順序保証】
   let smartTimerId = null;
   const processedExits = new Set();
 
@@ -868,7 +866,6 @@ function toggleAcc(id) {
       if (!isJoined || document.visibilityState !== "visible") return;
       
       const nowTrue = getTrueTime();
-      // 1. 自己防衛チェック（自分の端末から自ら確実に退室・ログ書き込みを行う）
       const sessionStart = parseInt(safeLS.get("nz_session_start_time") || nowTrue.toString(), 10);
       const lastPost = parseInt(safeLS.get("nz_last_post_time") || sessionStart.toString(), 10);
       const myBaseline = Math.max(sessionStart, lastPost);
@@ -878,7 +875,6 @@ function toggleAcc(id) {
         return;
       }
 
-      // 2. 他者監視チェック（部屋にいる他の放置メンバーを代理でお掃除・ログ書き込み）
       if (currentPresenceMap && Object.keys(currentPresenceMap).length > 0) {
         checkAndTriggerExitForInactiveUsers(currentPresenceMap);
       }
@@ -908,15 +904,17 @@ function toggleAcc(id) {
         try {
           const pRef = db.ref(`presence/${currentRoomId}/${id}`);
           const pSnap = await pRef.once("value");
-          // 💡 【排他制御】データがまだ存在していれば（＝他の誰にも処理されていなければ）実行権獲得
           if (pSnap.exists()) {
-            await pRef.remove();
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
+              // 💡 【超重要】まずサーバーへシステムログの書き込みを完全完了（await）させる
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
               await db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exactExpiryTime });
               
+              // ログ書き込み完了後に存在データを削除
+              await pRef.remove();
+
               if (id === myUid) {
                 if (currentRoomId !== "official") {
                   const presSnap = await db.ref(`presence/${currentRoomId}`).once("value");
@@ -926,6 +924,10 @@ function toggleAcc(id) {
                     if (remU && remU.t && (nowTrue - remU.t < 1800000)) activeRemaining++;
                   }
                   if (activeRemaining === 0) {
+                    await db.ref(`chat/${currentRoomId}`).remove().catch(()=>{});
+                    await db.ref(`settings/${currentRoomId}`).remove().catch(()=>{});
+                    await db.ref(`presence/${currentRoomId}`).remove().catch(()=>{});
+                    await db.ref(`banlist/${currentRoomId}`).remove().catch(()=>{});
                     showLobbyNotice("⏱️ 3分間発言がなかったため自動退室し、誰もいなくなったため部屋データを完全に消去しました。");
                   } else {
                     showLobbyNotice("⏱️ 3分間発言がなかったため、自動退室しました。");
@@ -974,6 +976,7 @@ function toggleAcc(id) {
     }
   }
 
+  // 🚪 【ログを出してからロビーへ戻る絶対順序制御】
   async function doExit(isAuto = false) {
     const cleanUid = myUid, cleanName = (myName || "").trim(), cleanTrip = myTrip || "", oldRoomId = currentRoomId, wasJoined = isJoined;
     isJoined = false; 
@@ -981,25 +984,31 @@ function toggleAcc(id) {
     hasEnteredLogged = false;
     safeLS.remove("nz_is_joined"); safeLS.remove("nz_last_post_time"); safeLS.remove("nz_session_start_time"); safeLS.remove("nz_current_room_id");
 
-    const finishAndClean = () => {
-      removeFirebaseListeners(); switchScreen("lobby");
-      if (D.mi) D.mi.blur();
+    const finishAndClean = async () => {
       if (oldRoomId && db) {
         if (cleanUid) db.ref(`banlist/${oldRoomId}/${cleanUid}`).off("value");
         db.ref(`settings/${oldRoomId}`).off("value");
-        db.ref(`presence/${oldRoomId}/${cleanUid}`).remove().then(() => {
-          checkRoomSelfDestruct(oldRoomId);
-        }).catch(()=>{});
+        await db.ref(`presence/${oldRoomId}/${cleanUid}`).remove().catch(()=>{});
+        checkRoomSelfDestruct(oldRoomId);
       }
+      removeFirebaseListeners(); 
+      switchScreen("lobby");
+      if (D.mi) D.mi.blur();
       const noticeMsg = isAuto ? "⏱️ 3分間発言がなかったため、自動退室しました。" : "🚪 退室しました。";
       showLobbyNotice(noticeMsg);
     };
 
     if (wasJoined && cleanName && db) {
       const expiryTime = getTrueTime();
-      const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が自動退室しました (3分間発言がなかったため)" : " が退室しました"), activeKey);
-      db.ref(`chat/${oldRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: expiryTime }).then(finishAndClean).catch(finishAndClean);
-    } else finishAndClean();
+      try {
+        const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + (isAuto ? " が自動退室しました (3分間発言がなかったため)" : " が退室しました"), activeKey);
+        // 💡 確実にサーバーにログが書き込まれるのを待ってから（await）クリーンアップへ進む
+        await db.ref(`chat/${oldRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: expiryTime });
+      } catch(e) {}
+      await finishAndClean();
+    } else {
+      await finishAndClean();
+    }
   }
 
   async function joinRoom(options = {}) {
@@ -1297,6 +1306,7 @@ function toggleAcc(id) {
     updateJumpBtns();
   }
 
+  // ⚡ 【爆速入室者リスト：チップのuid直結ダイレクト・アップサート】
   function renderPresence(serverListMap) {
     if (!isPresenceInitialized) return;
     const sorted = Object.values(serverListMap).filter(m => m && m.n).sort((a, b) => a.id.localeCompare(b.id));
@@ -1363,7 +1373,7 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【プロ仕様：完全並列フェッチ ＆ 差分スマート統合爆速描画パイプライン】
+  // 🚀 【爆速ログ表示：完全並列復号 ＆ DocumentFragment 一括描画】
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
@@ -1393,6 +1403,7 @@ function toggleAcc(id) {
             if (m) { m.id = child.key; msgs.push(m); }
           });
 
+          // 💡 100件すべての復号を完全並列化（Promise.all）してCPU負荷を極小化
           const decryptedPromises = msgs.map(async m => {
             m.m = await E2EE.decrypt(m.m, activeKey);
             m.n = await E2EE.decrypt(m.n, activeKey);
@@ -1403,7 +1414,6 @@ function toggleAcc(id) {
 
           resolvedMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
 
-          // 💡 【チラつき完全防止の差分マージ描画】画面にあるものは保持し、足りない新着のみ追加
           const fragment = document.createDocumentFragment();
           let addedCount = 0;
 
@@ -1419,7 +1429,7 @@ function toggleAcc(id) {
 
           if (isFirstLoad && D.tli) {
             D.tli.innerHTML = "";
-            D.tli.appendChild(fragment);
+            D.tli.appendChild(fragment); // 💡 DOMへの挿入は最後の1回のみ
             isFirstLoad = false;
             scBottom(true);
           } else if (addedCount > 0 && D.tli) {
@@ -1592,6 +1602,7 @@ function toggleAcc(id) {
     if ($("admPassContainer")) $("admPassContainer").style.display = roomSettings.passcode ? "flex" : "none";
   }
 
+  // ⚡ 【オプティミスティックUI（楽観的送信）：送信ボタンを押した瞬間爆速反映】
   async function sendMessage() {
     if (!isJoined || !db || isSending) return;
     const text = D.mi.value.trim();
@@ -1604,21 +1615,45 @@ function toggleAcc(id) {
         await auth.signInAnonymously().catch(() => {});
       }
 
-      const encText = await E2EE.encrypt(text, activeKey);
-      const encName = await E2EE.encrypt(myName || "名無し", activeKey);
-      const encTrip = await E2EE.encrypt(myTrip, activeKey);
       const keepOpen = D.kbKeepOpenChk && D.kbKeepOpenChk.checked;
-
       D.mi.value = ""; updateClrMsgBtnVisibility(); D.mi.style.height = "auto";
       if (keepOpen) D.mi.focus(); else D.mi.blur();
       
       const trueNow = getTrueTime();
       updateLastPostTime(trueNow);
 
+      const fakeId = "temp_" + Math.random().toString(36).substring(2, 9);
+      const tempMsg = {
+        id: fakeId,
+        u: myUid,
+        n: myName || "名無し",
+        p: myTrip,
+        c: curColor,
+        m: text,
+        t: trueNow
+      };
+
+      // 💡 サーバーレスポンスを待たず、即座にローカル描画＆最下部へスクロール
+      await syncSingleMessage(tempMsg, true);
+
+      const encText = await E2EE.encrypt(text, activeKey);
+      const encName = await E2EE.encrypt(myName || "名無し", activeKey);
+      const encTrip = await E2EE.encrypt(myTrip, activeKey);
+
       const postTs = firebase.database.ServerValue.TIMESTAMP;
-      await db.ref(`chat/${currentRoomId}`).push({ u: myUid, n: encName, p: encTrip, c: curColor, m: encText, t: postTs });
+      const newRef = await db.ref(`chat/${currentRoomId}`).push({ u: myUid, n: encName, p: encTrip, c: curColor, m: encText, t: postTs });
+      
+      // 仮IDで描画したDOMを実際のサーバーキーへ置換
+      const tempEl = renderedMwNodes.get(fakeId);
+      if (tempEl) {
+        renderedMwNodes.delete(fakeId);
+        displayedMsgIds.delete(fakeId);
+        tempEl.dataset.mid = newRef.key;
+        renderedMwNodes.set(newRef.key, tempEl);
+        displayedMsgIds.add(newRef.key);
+      }
+
       if (myPresenceRef) myPresenceRef.child("t").set(postTs).catch(()=>{});
-      scBottom(true);
     } catch (e) {
       showToast("❌ メッセージの送信に失敗しました。再接続を試みます。");
       if (db) db.goOnline();
