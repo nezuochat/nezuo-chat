@@ -900,7 +900,7 @@ function toggleAcc(id) {
 
   const processedExits = new Set();
   
-  // ⏱️ 【自動退室の確実な成功 ＆ ログの重複防止 ＆ 最終発言時刻の正確な時系列同期】
+  // ⏱️ 【自動退室の確実な成功 ＆ ログの重複防止 ＆ 最終発言時刻の正確な時系列同期 ＋ 消滅判定トーストの使い分け】
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
 
@@ -927,7 +927,23 @@ function toggleAcc(id) {
               await db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exactExpiryTime });
               
               if (id === myUid) {
-                showLobbyNotice("⏱️ 3分間発言がなかったため、自動退室しました。");
+                // 部屋消滅も同時に起きたかチェック
+                if (currentRoomId !== "official") {
+                  const presSnap = await db.ref(`presence/${currentRoomId}`).once("value");
+                  const remaining = presSnap.val() || {};
+                  let activeRemaining = 0;
+                  for (const [remId, remU] of Object.entries(remaining)) {
+                    if (remU && remU.t && (nowTrue - remU.t < 1800000)) activeRemaining++;
+                  }
+                  if (activeRemaining === 0) {
+                    // 自動退室 ＋ 部屋消滅の複合トースト
+                    showLobbyNotice("⏱️ 3分間発言がなかったため自動退室し、誰もいなくなったため部屋データを完全に消去しました。");
+                  } else {
+                    showLobbyNotice("⏱️ 3分間発言がなかったため、自動退室しました。");
+                  }
+                } else {
+                  showLobbyNotice("⏱️ 3分間発言がなかったため、自動退室しました。");
+                }
               }
             }
           }
@@ -1622,13 +1638,11 @@ function toggleAcc(id) {
 
   const initDirectDatabaseProcess = async () => {
     try {
-      await Promise.all([
-        syncProfileValues(),
-        auth.signInAnonymously().catch(() => {}),
-        syncServerOffset().catch(() => {})
-      ]);
-
+      syncProfileValues();
       if (db) db.goOnline();
+
+      const authPromise = auth.currentUser ? Promise.resolve() : auth.signInAnonymously().catch(() => {});
+      const offsetPromise = syncServerOffset().catch(() => {});
 
       if (myUid) {
         const wasJoined = (safeLS.get("nz_is_joined") === "true");
@@ -1645,6 +1659,8 @@ function toggleAcc(id) {
         }
         validateLobbyInputs();
       }
+
+      await Promise.all([authPromise, offsetPromise]);
     } catch (err) {
       switchScreen("lobby");
     }
@@ -1833,7 +1849,8 @@ function toggleAcc(id) {
             updates[`banlist/${roomIdRef}`] = null;
 
             await db.ref().update(updates);
-            showToast("🗑️ 部屋を解散しました");
+            // 🗑️ 部屋解散ボタンのトースト最適化
+            showToast("🗑️ 部屋を解散し、すべてのデータを完全に消去しました。");
           } catch (err) {
             showToast("⚠️ 部屋の解散に失敗しました");
           }
