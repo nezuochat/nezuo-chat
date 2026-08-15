@@ -900,7 +900,7 @@ function toggleAcc(id) {
 
   const processedExits = new Set();
   
-  // ⏱️ 【自動退室ログの正確な時系列同期】最終発言時刻（u.t）を基準に正確に3分後を算出
+  // ⏱️ 【自動退室の確実な成功 ＆ ログの重複防止 ＆ 最終発言時刻の正確な時系列同期】
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
 
@@ -915,25 +915,23 @@ function toggleAcc(id) {
 
         const exactExpiryTime = u.t + AUTO_EXIT_MS;
 
-        db.ref(`presence/${currentRoomId}/${id}`).transaction(currentData => {
-          if (currentData !== null && currentData.t === u.t) {
-            return null; 
-          }
-          return; 
-        }, async (error, committed) => {
-          if (!error && committed) {
+        try {
+          const pRef = db.ref(`presence/${currentRoomId}/${id}`);
+          const pSnap = await pRef.once("value");
+          if (pSnap.exists()) {
+            await pRef.remove();
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
-              db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exactExpiryTime }).catch(()=>{});
+              await db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exactExpiryTime });
               
               if (id === myUid) {
                 showLobbyNotice("⏱️ 3分間発言がなかったため、自動退室しました。");
               }
             }
           }
-        });
+        } catch (e) {}
       }
     }
   }
@@ -1351,7 +1349,6 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【ローカルファースト ＋ 楽観的並列読み込み（2回目以降の認証待ちゼロ・爆速表示）】
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
@@ -1361,27 +1358,6 @@ function toggleAcc(id) {
     renderedMwNodes.clear();
     unreadMsgIds.clear();
     updateUnreadBadge();
-
-    const cacheKey = `nz_cache_chat_${currentRoomId}`;
-    try {
-      const cachedRaw = safeLS.get(cacheKey);
-      if (cachedRaw && isFirstLoad) {
-        const cachedMsgs = JSON.parse(cachedRaw);
-        if (Array.isArray(cachedMsgs) && cachedMsgs.length > 0) {
-          const frag = document.createDocumentFragment();
-          cachedMsgs.forEach(m => {
-            if (displayedMsgIds.has(m.id)) return;
-            const el = cMsg(m, false);
-            el.dataset.ts = getMsgTime(m);
-            frag.appendChild(el);
-            displayedMsgIds.add(m.id);
-            if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
-          });
-          if (D.tli) D.tli.appendChild(frag);
-          scBottom(true);
-        }
-      }
-    } catch (e) {}
 
     try {
       if (isResume) db.goOnline();
@@ -1424,8 +1400,6 @@ function toggleAcc(id) {
           const resolvedMsgs = await Promise.all(decryptedPromises);
 
           resolvedMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
-
-          try { safeLS.set(cacheKey, JSON.stringify(resolvedMsgs.slice(-30))); } catch (e) {}
 
           const fragment = document.createDocumentFragment();
           resolvedMsgs.forEach(m => {
@@ -1646,17 +1620,16 @@ function toggleAcc(id) {
     }
   }
 
-  // 🚀 【楽観的接続（2回目以降の認証待ちゼロ化）】
   const initDirectDatabaseProcess = async () => {
     try {
-      syncProfileValues();
+      await Promise.all([
+        syncProfileValues(),
+        auth.signInAnonymously().catch(() => {}),
+        syncServerOffset().catch(() => {})
+      ]);
+
       if (db) db.goOnline();
 
-      // 初回は認証をしっかり行い、2回目以降はバックグラウンドで並列実行してブロックさせない
-      const authPromise = auth.currentUser ? Promise.resolve() : auth.signInAnonymously().catch(() => {});
-      const offsetPromise = syncServerOffset().catch(() => {});
-      
-      // UIの復元判定は認証の完了を待たずに即座に走らせる
       if (myUid) {
         const wasJoined = (safeLS.get("nz_is_joined") === "true");
         const lastRoomId = safeLS.get("nz_last_room_id");
@@ -1672,8 +1645,6 @@ function toggleAcc(id) {
         }
         validateLobbyInputs();
       }
-
-      await Promise.all([authPromise, offsetPromise]);
     } catch (err) {
       switchScreen("lobby");
     }
