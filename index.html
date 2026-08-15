@@ -241,7 +241,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   </div>
 </div>
 
-<!-- 💬 削除確認モーダル（プレビュー：名前・ID・時刻・本文、改行2段） -->
+<!-- 💬 削除確認モーダル（プレビュー：名前・ID・時刻・本文、改行1段） -->
 <div id="confirmMod" class="mod-overlay">
   <div class="gc" style="max-width: 320px; padding: 16px;">
     <div id="confirmTitle" style="font-size: 13px; font-weight: bold; margin-bottom: 6px;">確認</div>
@@ -453,7 +453,6 @@ function toggleAcc(id) {
   const ADMIN_UID = "J64MocsPo0QD7hSwZpQgEeDdO6X2";
   const ADMIN_TRIPS = ["◆L5NYox", "◆ZJBSxz"];
 
-  // 🚀 【変数の初期化順序の適正化】Cannot access 'myUid' before initialization を完全に防止
   let myUid = safeLS_get("nz_permanent_uid") || ("user_" + Math.random().toString(36).substring(2, 11));
   if (!safeLS_get("nz_permanent_uid")) {
     safeLS_set("nz_permanent_uid", myUid);
@@ -514,7 +513,6 @@ function toggleAcc(id) {
     safeLS.remove("nz_lobby_notice");
   }
 
-  // 🧹 【管理者がロビーを見たときのゾンビ（自動退室者）一括掃除処理】
   async function runAdminZombieCleanup() {
     if (!db || !checkIsGlobalAdmin()) return;
     try {
@@ -648,7 +646,6 @@ function toggleAcc(id) {
     });
   }
 
-  // 🚀 【爆速化・メモリキャッシュ付きE2EE】
   const E2EE = {
     hasCrypto: (typeof window !== 'undefined' && window.crypto && window.crypto.subtle),
     keyCache: new Map(),
@@ -904,7 +901,6 @@ function toggleAcc(id) {
 
   const processedExits = new Set();
   
-  // ⏱️ 【自動退室ログの正確な時刻同期】ユーザーの最終活動時刻 + AUTO_EXIT_MS に正確に合わせることで時系列ズレを完全防止
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
 
@@ -917,7 +913,7 @@ function toggleAcc(id) {
         if (processedExits.has(exitKey)) continue;
         processedExits.add(exitKey);
 
-        const exactExpiryTime = u.t + AUTO_EXIT_MS; // 最後の活動時刻から正確に3分後をログのタイムスタンプとする
+        const exactExpiryTime = u.t + AUTO_EXIT_MS;
 
         db.ref(`presence/${currentRoomId}/${id}`).transaction(currentData => {
           if (currentData !== null) {
@@ -1140,14 +1136,14 @@ function toggleAcc(id) {
     updateJumpBtns();
   }
 
-  // 🚀 【長押し削除機能 ＆ プレビュー付き確認（名前・ID・時刻・本文全て、改行2段）】
+  // 🚀 【長押し削除機能 ＆ プレビュー付き確認（改行1段に調整）】
   const setupLongPressDelete = (el, msgId, rawText, msgName, msgTrip, msgTime) => {
     let pressTimer = null;
     const triggerDelete = async () => {
       const timeStr = fDT(msgTime);
       const tripStr = msgTrip ? ` ${msgTrip}` : "";
       const previewBlock = `[${msgName}${tripStr}] [${timeStr}]\n\n${rawText}`;
-      const confirmMsg = `以下のメッセージを本当に削除しますか？\n\n\n${previewBlock}`;
+      const confirmMsg = `以下のメッセージを本当に削除しますか？\n\n${previewBlock}`; // 改行を1つ少なく修正
       
       if (!await customConfirm("メッセージ削除の確認", confirmMsg, "削除する", "キャンセル", true)) return;
       
@@ -1355,7 +1351,6 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【アトミック・レンダー＆完全並列化 ＋ ローカルストレージ先読みキャッシュ（0秒表示）】
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
@@ -1643,7 +1638,6 @@ function toggleAcc(id) {
     }
   }
 
-  // 🚀 【認証＆入室の爆速化パイプライン】
   const initDirectDatabaseProcess = async () => {
     try {
       await Promise.all([
