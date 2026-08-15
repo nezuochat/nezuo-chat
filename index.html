@@ -277,6 +277,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
               </button>
             </div>
             <button class="bclr" id="clrBtn" title="色設定"><span class="bclr-dot" id="clrDot"></span> 色</button>
+            <!-- 🏢 公式部屋のときは招待ボタンを完全に非表示 -->
             <button class="btn" id="inviteBtn" style="display: none;">🔗 招待</button>
             <button class="btn" id="exBtn" style="background: rgba(244,63,94,0.15); border: 1px solid rgba(244,63,94,0.3); color: #fda4af; display: none;">退室</button>
           </div>
@@ -287,7 +288,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     <!-- チャット画面 -->
     <div id="chatScreen" style="display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
       
-      <!-- ⚙️ 管理パネル（閉じるボタンなし・最適化された左詰めレイアウト） -->
+      <!-- ⚙️ 管理パネル（閉じるボタンなし・左詰め最適配置） -->
       <div id="adminAccordion">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bd); padding-bottom: 4px;">
           <span id="adminAccordionTitle" style="font-size: 12px; font-weight: bold; color: var(--tx);">⚙️ 管理設定パネル</span>
@@ -431,8 +432,9 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         </div>
       </div>
 
+      <!-- 🏢 (合言葉・入室制限対応・消滅なし) の表記を完全に削除 -->
       <div class="lobby-sec" style="border-color: #fb923c;">
-        <h2 style="color: #fdba74; font-size: 11px;">🏢 常設公式部屋 (合言葉・入室制限対応・消滅なし)</h2>
+        <h2 style="color: #fdba74; font-size: 11px;">🏢 常設公式部屋</h2>
         <button class="btn" id="btnJoinOfficial" style="background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; font-size: 13px; font-weight: 900; height: 38px; width: 100%; border-radius: 6px;" disabled>🏢 常設公式部屋に入る</button>
       </div>
     </div>
@@ -451,10 +453,20 @@ function toggleAcc(id) {
   const ADMIN_UID = "J64MocsPo0QD7hSwZpQgEeDdO6X2";
   const ADMIN_TRIPS = ["◆L5NYox", "◆ZJBSxz"];
 
+  // 🚀 【変数の初期化順序の適正化】Cannot access 'myUid' before initialization を完全に防止
+  let myUid = safeLS_get("nz_permanent_uid") || ("user_" + Math.random().toString(36).substring(2, 11));
+  if (!safeLS_get("nz_permanent_uid")) {
+    safeLS_set("nz_permanent_uid", myUid);
+  }
+
+  function safeLS_get(key) { try { return localStorage.getItem(key); } catch (e) { return null; } }
+  function safeLS_set(key, val) { try { localStorage.setItem(key, val); } catch (e) {} }
+  function safeLS_remove(key) { try { localStorage.removeItem(key); } catch (e) {} }
+
   const safeLS = {
-    get(key) { try { return localStorage.getItem(key); } catch (e) { return null; } },
-    set(key, val) { try { localStorage.setItem(key, val); } catch (e) {} },
-    remove(key) { try { localStorage.removeItem(key); } catch (e) {} }
+    get: safeLS_get,
+    set: safeLS_set,
+    remove: safeLS_remove
   };
 
   const firebaseConfig = {
@@ -477,6 +489,20 @@ function toggleAcc(id) {
   let hasEnteredLogged = false;
   let autoExitIntervalId = null;
 
+  let myName = safeLS.get("nz_ni") || "", myTrip = "";
+  let curColor = safeLS.get("nz_color") || "#f1f5f9", tmpColor = curColor, activeKey = null;
+  let currentRoomId = "", currentRoomPass = "", isJoined = false;
+  const unreadMsgIds = new Set();
+  let serverTimeOffset = 0, isOffsetLoaded = false;
+  const displayedMsgIds = new Set();
+  let isFirstLoad = true, isFirebaseListenersBound = false, isPresenceInitialized = false;
+  let isSending = false, lastSendTime = 0, scale = 1, panX = 0, panY = 0;
+  let currentPresenceMap = {}, isConnectedBound = false;
+  let roomSettings = { passcode: "", newEntriesDisabled: false, approvedTrips: {}, creatorUid: "" };
+  let localLastClearedTime = 0;
+  const AUTO_EXIT_MS = 180000;
+  const UR = /(https?:\/\/[^\s\n<>"]+)/gi;
+
   const checkIsGlobalAdmin = () => (myUid === ADMIN_UID || ADMIN_TRIPS.includes(myTrip));
 
   function showLobbyNotice(msg) {
@@ -488,7 +514,7 @@ function toggleAcc(id) {
     safeLS.remove("nz_lobby_notice");
   }
 
-  // 🧹 【管理者がロビーを見たときのゾンビ（自動退室）一括掃除処理】
+  // 🧹 【管理者がロビーを見たときのゾンビ（自動退室者）一括掃除処理】
   async function runAdminZombieCleanup() {
     if (!db || !checkIsGlobalAdmin()) return;
     try {
@@ -501,7 +527,6 @@ function toggleAcc(id) {
         let activeCount = 0;
 
         for (const [uId, uData] of Object.entries(members)) {
-          // 3分(180000ms)以上放置されたゾンビユーザーをピンポイントで削除
           if (uData && uData.t && (now - uData.t >= 180000)) {
             db.ref(`presence/${roomId}/${uId}`).remove().catch(()=>{});
           } else {
@@ -509,7 +534,6 @@ function toggleAcc(id) {
           }
         }
 
-        // 入室者0人になった一般部屋は部屋データごとまるごと完全消去（公式部屋は絶対に消さない）
         if (activeCount === 0 && roomId !== "official") {
           db.ref(`chat/${roomId}`).remove().catch(()=>{});
           db.ref(`settings/${roomId}`).remove().catch(()=>{});
@@ -558,7 +582,7 @@ function toggleAcc(id) {
     } else {
       const lobbyScr = document.getElementById("lobbyScreen");
       if (lobbyScr) lobbyScr.style.display = "flex";
-      runAdminZombieCleanup(); // 管理者がロビーを見たときにゾンビ掃除実行
+      runAdminZombieCleanup();
     }
   })();
 
@@ -675,25 +699,6 @@ function toggleAcc(id) {
       } catch (e) { return "[復号失敗: パスワード不一致]"; }
     }
   };
-
-  let myUid = safeLS.get("nz_permanent_uid") || ("user_" + Math.random().toString(36).substring(2, 11));
-  if (!safeLS.get("nz_permanent_uid")) {
-    safeLS.set("nz_permanent_uid", myUid);
-  }
-
-  let myName = safeLS.get("nz_ni") || "", myTrip = "";
-  let curColor = safeLS.get("nz_color") || "#f1f5f9", tmpColor = curColor, activeKey = null;
-  let currentRoomId = "", currentRoomPass = "", isJoined = false;
-  const unreadMsgIds = new Set();
-  let serverTimeOffset = 0, isOffsetLoaded = false;
-  const displayedMsgIds = new Set();
-  let isFirstLoad = true, isFirebaseListenersBound = false, isPresenceInitialized = false;
-  let isSending = false, lastSendTime = 0, scale = 1, panX = 0, panY = 0;
-  let currentPresenceMap = {}, isConnectedBound = false;
-  let roomSettings = { passcode: "", newEntriesDisabled: false, approvedTrips: {}, creatorUid: "" };
-  let localLastClearedTime = 0;
-  const AUTO_EXIT_MS = 180000;
-  const UR = /(https?:\/\/[^\s\n<>"]+)/gi;
 
   const COLORS = [
     {v:"#f1f5f9",n:"ホワイト"},{v:"#94a3b8",n:"グレー"},{v:"#38bdf8",n:"スカイ"},{v:"#06b6d4",n:"シアン"},
@@ -841,7 +846,9 @@ function toggleAcc(id) {
     if (state === "chat") {
       if ($("chatScreen")) $("chatScreen").style.display = "flex";
       if ($("exBtn")) $("exBtn").style.display = "inline-flex";
-      if ($("inviteBtn")) $("inviteBtn").style.display = "inline-flex";
+      if ($("inviteBtn")) {
+        $("inviteBtn").style.display = (rawRoomId === "official") ? "none" : "inline-flex";
+      }
       if (logoTitle && rawRoomId) logoTitle.innerHTML = `NEZUO CHAT<span class="sub-room">${rawRoomId === "official" ? "常設公式部屋" : rawRoomId}</span>`;
       if (!isSilent) showToast("🚪 部屋に入室しました");
     } else {
@@ -849,7 +856,7 @@ function toggleAcc(id) {
       if ($("roomStatusBadges")) $("roomStatusBadges").style.display = "none";
       if ($("adminBtnContainer")) $("adminBtnContainer").style.display = "none";
       if (logoTitle) logoTitle.textContent = "NEZUO CHAT";
-      runAdminZombieCleanup(); // ロビーに戻ったときにもゾンビ掃除を実行
+      runAdminZombieCleanup();
     }
   }
 
@@ -897,6 +904,7 @@ function toggleAcc(id) {
 
   const processedExits = new Set();
   
+  // ⏱️ 【自動退室ログの正確な時刻同期】ユーザーの最終活動時刻 + AUTO_EXIT_MS に正確に合わせることで時系列ズレを完全防止
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
 
@@ -909,7 +917,7 @@ function toggleAcc(id) {
         if (processedExits.has(exitKey)) continue;
         processedExits.add(exitKey);
 
-        const exactExpiryTime = u.t + AUTO_EXIT_MS;
+        const exactExpiryTime = u.t + AUTO_EXIT_MS; // 最後の活動時刻から正確に3分後をログのタイムスタンプとする
 
         db.ref(`presence/${currentRoomId}/${id}`).transaction(currentData => {
           if (currentData !== null) {
@@ -935,7 +943,7 @@ function toggleAcc(id) {
   }
 
   function checkRoomSelfDestruct(roomId) {
-    if (!db || !roomId || roomId === "official") return; // 公式部屋は絶対に消滅しない
+    if (!db || !roomId || roomId === "official") return;
     db.ref(`presence/${roomId}`).once("value", snap => {
       const list = snap.val() || {};
       const now = getTrueTime();
@@ -1023,7 +1031,6 @@ function toggleAcc(id) {
 
     const hasApprovedTrip = (safeRoomPath === "official" ? checkIsGlobalAdmin() : Object.values(roomSettings.approvedTrips).includes(myTrip));
     const isGlobalAdmin = checkIsGlobalAdmin();
-    // 🔒 【権限分離】一般部屋はホストのみが管理。公式部屋はグローバル管理者のみ。
     const isHostOrAdmin = (safeRoomPath === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid));
 
     if (!options.silent && roomSettings.newEntriesDisabled && !hasApprovedTrip && !isHostOrAdmin) { alert("現在、新規の入室が制限されています。"); return; }
@@ -1196,7 +1203,6 @@ function toggleAcc(id) {
     }
 
     const name = m.n || "名無し", trip = m.p || "", color = m.c || "#f1f5f9";
-    // 🔒 【権限判定】自分のメッセージ、またはその部屋のホスト、またはグローバル管理者であれば削除可能
     const isDeletable = (m.u === myUid && m.u !== "") || (myUid === roomSettings.creatorUid) || checkIsGlobalAdmin();
 
     const bubbleStyle = isMine 
@@ -1349,9 +1355,31 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【ログと入室者リストを一瞬（爆速）で表示する並列ロードパイプライン】
+  // 🚀 【アトミック・レンダー＆完全並列化 ＋ ローカルストレージ先読みキャッシュ（0秒表示）】
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
+
+    const cacheKey = `nz_cache_chat_${currentRoomId}`;
+    try {
+      const cachedRaw = safeLS.get(cacheKey);
+      if (cachedRaw && isFirstLoad) {
+        const cachedMsgs = JSON.parse(cachedRaw);
+        if (Array.isArray(cachedMsgs) && cachedMsgs.length > 0) {
+          const frag = document.createDocumentFragment();
+          cachedMsgs.forEach(m => {
+            if (displayedMsgIds.has(m.id)) return;
+            const el = cMsg(m, false);
+            el.dataset.ts = getMsgTime(m);
+            frag.appendChild(el);
+            displayedMsgIds.add(m.id);
+            if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
+          });
+          if (D.tli) D.tli.appendChild(frag);
+          scBottom(true);
+        }
+      }
+    } catch (e) {}
+
     try {
       if (isResume) db.goOnline();
       
@@ -1376,7 +1404,6 @@ function toggleAcc(id) {
           displayedMsgIds.clear();
           renderedMwNodes.clear();
           unreadMsgIds.clear();
-          latestDisplayedTs = 0;
           updateUnreadBadge();
 
           const msgs = [];
@@ -1385,7 +1412,6 @@ function toggleAcc(id) {
             if (m) { m.id = child.key; msgs.push(m); }
           });
 
-          // 🚀 復号処理を完全並列（Promise.all）化して一瞬でレンダリング
           const decryptedPromises = msgs.map(async m => {
             m.m = await E2EE.decrypt(m.m, activeKey);
             m.n = await E2EE.decrypt(m.n, activeKey);
@@ -1395,6 +1421,8 @@ function toggleAcc(id) {
           const resolvedMsgs = await Promise.all(decryptedPromises);
 
           resolvedMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
+
+          try { safeLS.set(cacheKey, JSON.stringify(resolvedMsgs.slice(-30))); } catch (e) {}
 
           const fragment = document.createDocumentFragment();
           resolvedMsgs.forEach(m => {
@@ -1406,7 +1434,8 @@ function toggleAcc(id) {
             if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
           });
 
-          if (D.tli && fragment.children.length > 0) {
+          if (D.tli) {
+            D.tli.innerHTML = "";
             D.tli.appendChild(fragment);
           }
           isFirstLoad = false;
@@ -1562,7 +1591,7 @@ function toggleAcc(id) {
     const isGlobalAdmin = checkIsGlobalAdmin();
     if (currentRoomId === "official") {
       $("adminBtnContainer").style.display = isGlobalAdmin ? "inline-flex" : "none";
-      if ($("admDestroyRoomContainer")) $("admDestroyRoomContainer").style.display = "none"; // 公式部屋は解散ボタン非表示
+      if ($("admDestroyRoomContainer")) $("admDestroyRoomContainer").style.display = "none";
     } else {
       $("adminBtnContainer").style.display = (myUid === roomSettings.creatorUid) ? "inline-flex" : "none";
       if ($("admDestroyRoomContainer")) $("admDestroyRoomContainer").style.display = (myUid === roomSettings.creatorUid) ? "flex" : "none";
