@@ -432,7 +432,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
         </div>
       </div>
 
-      <!-- 🏢 余計な表記を完全になくしたすっきりした常設公式部屋セクション -->
       <div class="lobby-sec" style="border-color: #fb923c;">
         <h2 style="color: #fdba74; font-size: 11px;">🏢 常設公式部屋</h2>
         <button class="btn" id="btnJoinOfficial" style="background: linear-gradient(135deg, #f97316, #ea580c); color: #fff; font-size: 13px; font-weight: 900; height: 38px; width: 100%; border-radius: 6px;" disabled>🏢 常設公式部屋に入る</button>
@@ -1351,11 +1350,10 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【完全リセット＆アトミック・レンダー】古い部屋の情報やチラつきを完全に排除して最新を表示
+  // 🚀 【ローカルファースト＋アトミック・レンダー】開いた瞬間にキャッシュからログ・入室者リストを0秒で一瞬表示
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
-    // 入室時の完全リセット（前回の部屋の残像・チラつきを完全防止）
     if (D.tli) D.tli.innerHTML = "";
     if (D.pl) D.pl.innerHTML = "";
     displayedMsgIds.clear();
