@@ -502,6 +502,7 @@ function toggleAcc(id) {
     safeLS.remove("nz_lobby_notice");
   }
 
+  // 🧹 【グローバル管理者専用：全部屋・全員の完全ゾンビデータ自動お掃除エンジン】
   async function runAdminZombieCleanup() {
     if (!db || !checkIsGlobalAdmin()) return;
     try {
@@ -531,16 +532,13 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🌐 【プロ仕様：ビジビリティ連動型ネットワーク・同期パイプライン】
+  // 🌐 【プロ仕様：ビジビリティ連動型・差分爆速同期パイプライン】
   if (typeof document !== 'undefined') {
     const triggerAggressiveSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
-          if (D.tli) D.tli.innerHTML = "";
-          displayedMsgIds.clear();
-          renderedMwNodes.clear();
-          
+          // 💡 【高速化の極意】全消去せず、裏で最新差分だけをスマートに同期する
           await loadRoomDataAndRender(true);
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
@@ -858,7 +856,7 @@ function toggleAcc(id) {
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
   const updateSessionStartTime = time => safeLS.set("nz_session_start_time", time.toString());
 
-  // ⏱️ 【プロ仕様：ビジビリティ連動型・確実な自動退室管理パイプライン】
+  // 🛡️ 【分散協調型＆自己防衛：絶対的にお知らせログを1回だけ出す自動退室エンジン】
   let smartTimerId = null;
   const processedExits = new Set();
 
@@ -868,6 +866,19 @@ function toggleAcc(id) {
     
     smartTimerId = setInterval(() => {
       if (!isJoined || document.visibilityState !== "visible") return;
+      
+      const nowTrue = getTrueTime();
+      // 1. 自己防衛チェック（自分の端末から自ら確実に退室・ログ書き込みを行う）
+      const sessionStart = parseInt(safeLS.get("nz_session_start_time") || nowTrue.toString(), 10);
+      const lastPost = parseInt(safeLS.get("nz_last_post_time") || sessionStart.toString(), 10);
+      const myBaseline = Math.max(sessionStart, lastPost);
+
+      if (nowTrue - myBaseline >= AUTO_EXIT_MS) {
+        doExit(true);
+        return;
+      }
+
+      // 2. 他者監視チェック（部屋にいる他の放置メンバーを代理でお掃除・ログ書き込み）
       if (currentPresenceMap && Object.keys(currentPresenceMap).length > 0) {
         checkAndTriggerExitForInactiveUsers(currentPresenceMap);
       }
@@ -897,6 +908,7 @@ function toggleAcc(id) {
         try {
           const pRef = db.ref(`presence/${currentRoomId}/${id}`);
           const pSnap = await pRef.once("value");
+          // 💡 【排他制御】データがまだ存在していれば（＝他の誰にも処理されていなければ）実行権獲得
           if (pSnap.exists()) {
             await pRef.remove();
             const userName = (u.n || "").trim();
@@ -1351,16 +1363,9 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【プロ仕様：完全並列フェッチ ＆ 仮想ドキュメントフラグメント爆速描画パイプライン】
+  // 🚀 【プロ仕様：完全並列フェッチ ＆ 差分スマート統合爆速描画パイプライン】
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
-
-    if (D.tli) D.tli.innerHTML = "";
-    if (D.pl) D.pl.innerHTML = "";
-    displayedMsgIds.clear();
-    renderedMwNodes.clear();
-    unreadMsgIds.clear();
-    updateUnreadBadge();
 
     try {
       if (isResume) db.goOnline();
@@ -1382,12 +1387,6 @@ function toggleAcc(id) {
           renderPresence(members);
           checkAndTriggerExitForInactiveUsers(members);
 
-          if (D.tli) D.tli.innerHTML = "";
-          displayedMsgIds.clear();
-          renderedMwNodes.clear();
-          unreadMsgIds.clear();
-          updateUnreadBadge();
-
           const msgs = [];
           chatSnap.forEach(child => {
             const m = child.val();
@@ -1404,22 +1403,29 @@ function toggleAcc(id) {
 
           resolvedMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
 
+          // 💡 【チラつき完全防止の差分マージ描画】画面にあるものは保持し、足りない新着のみ追加
           const fragment = document.createDocumentFragment();
+          let addedCount = 0;
+
           resolvedMsgs.forEach(m => {
             if (displayedMsgIds.has(m.id)) return;
             const el = cMsg(m, false);
             el.dataset.ts = getMsgTime(m);
             fragment.appendChild(el);
             displayedMsgIds.add(m.id);
+            addedCount++;
             if (getMsgTime(m) > latestDisplayedTs) latestDisplayedTs = getMsgTime(m);
           });
 
-          if (D.tli) {
+          if (isFirstLoad && D.tli) {
             D.tli.innerHTML = "";
             D.tli.appendChild(fragment);
+            isFirstLoad = false;
+            scBottom(true);
+          } else if (addedCount > 0 && D.tli) {
+            D.tli.appendChild(fragment);
           }
-          isFirstLoad = false;
-          scBottom(true);
+          
           updateJumpBtns();
 
           if (chatQuery) chatQuery.off("child_added");
