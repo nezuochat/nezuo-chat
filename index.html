@@ -69,14 +69,14 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 
 #chatScreen { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; }
 
-/* 管理パネル（閉じるボタンなし） */
+/* ⚙️ 管理パネル（レイアウト最適化・左詰め） */
 #adminAccordion {
   display: none;
   flex-direction: column;
   background: var(--sf);
   border-bottom: 1px solid var(--bd);
   padding: 10px 14px;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   animation: slideDown 0.15s ease-out forwards;
@@ -124,7 +124,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   user-select: text !important;
   -webkit-user-select: text !important;
   border-radius: 12px;
-  cursor: pointer; /* 長押し対象 */
+  cursor: pointer;
 }
 
 .sys-msg{position:relative;text-align:center;font-size:11px;font-weight:bold;color:var(--mu);margin:6px auto;background:rgba(255,255,255,.04);padding:4px 12px;border-radius:10px;max-width:85%;word-break:break-all;line-height:1.4}
@@ -241,10 +241,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   </div>
 </div>
 
+<!-- 💬 削除確認モーダル（プレビュー：名前・ID・時刻・本文、改行2段） -->
 <div id="confirmMod" class="mod-overlay">
-  <div class="gc" style="max-width: 300px; padding: 14px;">
+  <div class="gc" style="max-width: 320px; padding: 16px;">
     <div id="confirmTitle" style="font-size: 13px; font-weight: bold; margin-bottom: 6px;">確認</div>
-    <div id="confirmMessage" style="font-size: 12px; color: var(--mu); margin-bottom: 14px; line-height: 1.4; word-break: break-all;"></div>
+    <div id="confirmMessage" style="font-size: 12px; color: var(--mu); margin-bottom: 14px; line-height: 1.5; word-break: break-all; white-space: pre-wrap;"></div>
     <div class="clr-btns">
       <button class="clr-cancel" id="confirmCancelBtn" style="height: 32px; font-size: 12px;">キャンセル</button>
       <button class="clr-ok" id="confirmOkBtn" style="height: 32px; font-size: 12px;">OK</button>
@@ -286,27 +287,28 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
     <!-- チャット画面 -->
     <div id="chatScreen" style="display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
       
-      <!-- 管理パネル (閉じるボタンなし) -->
+      <!-- ⚙️ 管理パネル（閉じるボタンなし・最適化された左詰めレイアウト） -->
       <div id="adminAccordion">
         <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--bd); padding-bottom: 4px;">
           <span id="adminAccordionTitle" style="font-size: 12px; font-weight: bold; color: var(--tx);">⚙️ 管理設定パネル</span>
         </div>
 
-        <div id="admGeneralSettingsGroup" style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
-          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 6px; font-size: 10.5px; font-weight: bold;">
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <input type="checkbox" id="admStopJoin" style="width: 13px; height: 13px; accent-color: var(--in); cursor: pointer;">
+        <!-- 🎛️ 新規制限 ＆ 合言葉モード（左詰め・最適配置） -->
+        <div id="admGeneralSettingsGroup" style="display: flex; flex-direction: column; gap: 8px; width: 100%;">
+          <div style="display: flex; align-items: center; justify-content: flex-start; gap: 16px; font-size: 11px; font-weight: bold;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <input type="checkbox" id="admStopJoin" style="width: 14px; height: 14px; accent-color: var(--in); cursor: pointer;">
               <label for="admStopJoin" style="color: var(--tx); cursor: pointer; user-select: none;">新規制限</label>
             </div>
-            <div style="display: flex; align-items: center; gap: 4px;">
-              <input type="checkbox" id="admPassToggle" style="width: 13px; height: 13px; accent-color: var(--in); cursor: pointer;">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <input type="checkbox" id="admPassToggle" style="width: 14px; height: 14px; accent-color: var(--in); cursor: pointer;">
               <label for="admPassToggle" style="color: var(--tx); cursor: pointer; user-select: none;">合言葉あり</label>
             </div>
           </div>
 
-          <div id="admPassContainer" style="display: none; align-items: center; gap: 6px; width: 100%;">
-            <input type="text" id="admPass" class="inp" placeholder="合言葉を入力..." autocomplete="off" style="height:26px; font-size:11px; flex: 1; padding: 2px 6px;">
-            <button class="btn" id="admPassSaveBtn" style="background: var(--in); color: #fff; font-size: 10px; height: 26px; width: 44px; font-weight: bold; border-radius: 4px;">適用</button>
+          <div id="admPassContainer" style="display: none; align-items: center; gap: 6px; width: 100%; max-width: 320px;">
+            <input type="text" id="admPass" class="inp" placeholder="合言葉を入力..." autocomplete="off" style="height:28px; font-size:11.5px; flex: 1; padding: 2px 8px;">
+            <button class="btn" id="admPassSaveBtn" style="background: var(--in); color: #fff; font-size: 10.5px; height: 28px; width: 50px; font-weight: bold; border-radius: 4px;">適用</button>
           </div>
         </div>
 
@@ -315,7 +317,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
           <button class="btn" id="admMembersToggleBtn" style="background: var(--s2); border: 1px solid var(--bd); color: var(--tx); font-size: 10px; height: 26px; flex: 1; font-weight: bold; border-radius: 4px;">👥 メンバー管理</button>
         </div>
 
-        <!-- 🗑️ ホスト専用：部屋解散ボタン（一般プライベート部屋のみ表示、公式部屋は消滅しないため非表示） -->
+        <!-- 🗑️ ホスト専用：部屋解散ボタン（一般プライベート部屋のみ表示、公式部屋は非表示） -->
         <div id="admDestroyRoomContainer" style="display: none; width: 100%; margin-top: 2px;">
           <button class="btn" id="admDestroyRoomBtn" style="background: rgba(244,63,94,0.2); border: 1px solid rgba(244,63,94,0.5); color: #fda4af; font-size: 10px; height: 26px; width: 100%; font-weight: bold; border-radius: 4px;">🗑️ 部屋を解散してデータを完全消去</button>
         </div>
@@ -486,6 +488,38 @@ function toggleAcc(id) {
     safeLS.remove("nz_lobby_notice");
   }
 
+  // 🧹 【管理者がロビーを見たときのゾンビ（自動退室）一括掃除処理】
+  async function runAdminZombieCleanup() {
+    if (!db || !checkIsGlobalAdmin()) return;
+    try {
+      const snap = await db.ref("presence").once("value");
+      const allRooms = snap.val() || {};
+      const now = Date.now();
+
+      for (const [roomId, members] of Object.entries(allRooms)) {
+        if (!members) continue;
+        let activeCount = 0;
+
+        for (const [uId, uData] of Object.entries(members)) {
+          // 3分(180000ms)以上放置されたゾンビユーザーをピンポイントで削除
+          if (uData && uData.t && (now - uData.t >= 180000)) {
+            db.ref(`presence/${roomId}/${uId}`).remove().catch(()=>{});
+          } else {
+            activeCount++;
+          }
+        }
+
+        // 入室者0人になった一般部屋は部屋データごとまるごと完全消去（公式部屋は絶対に消さない）
+        if (activeCount === 0 && roomId !== "official") {
+          db.ref(`chat/${roomId}`).remove().catch(()=>{});
+          db.ref(`settings/${roomId}`).remove().catch(()=>{});
+          db.ref(`presence/${roomId}`).remove().catch(()=>{});
+          db.ref(`banlist/${roomId}`).remove().catch(()=>{});
+        }
+      }
+    } catch (e) {}
+  }
+
   if (typeof document !== 'undefined') {
     const triggerAggressiveSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -524,6 +558,7 @@ function toggleAcc(id) {
     } else {
       const lobbyScr = document.getElementById("lobbyScreen");
       if (lobbyScr) lobbyScr.style.display = "flex";
+      runAdminZombieCleanup(); // 管理者がロビーを見たときにゾンビ掃除実行
     }
   })();
 
@@ -814,6 +849,7 @@ function toggleAcc(id) {
       if ($("roomStatusBadges")) $("roomStatusBadges").style.display = "none";
       if ($("adminBtnContainer")) $("adminBtnContainer").style.display = "none";
       if (logoTitle) logoTitle.textContent = "NEZUO CHAT";
+      runAdminZombieCleanup(); // ロビーに戻ったときにもゾンビ掃除を実行
     }
   }
 
@@ -987,11 +1023,11 @@ function toggleAcc(id) {
 
     const hasApprovedTrip = (safeRoomPath === "official" ? checkIsGlobalAdmin() : Object.values(roomSettings.approvedTrips).includes(myTrip));
     const isGlobalAdmin = checkIsGlobalAdmin();
-    // 公式部屋の管理者はグローバル管理者のみ。一般部屋は作成者またはグローバル管理者。
-    const isOwnerOrAdmin = (safeRoomPath === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid || isGlobalAdmin));
+    // 🔒 【権限分離】一般部屋はホストのみが管理。公式部屋はグローバル管理者のみ。
+    const isHostOrAdmin = (safeRoomPath === "official" ? isGlobalAdmin : (myUid === roomSettings.creatorUid));
 
-    if (!options.silent && roomSettings.newEntriesDisabled && !hasApprovedTrip && !isOwnerOrAdmin) { alert("現在、新規の入室が制限されています。"); return; }
-    if (!options.silent && roomSettings.passcode && !hasApprovedTrip && !isOwnerOrAdmin) {
+    if (!options.silent && roomSettings.newEntriesDisabled && !hasApprovedTrip && !isHostOrAdmin) { alert("現在、新規の入室が制限されています。"); return; }
+    if (!options.silent && roomSettings.passcode && !hasApprovedTrip && !isHostOrAdmin) {
       const userPass = prompt("部屋の合言葉を入力してください：");
       if (userPass !== roomSettings.passcode) { alert("合言葉が一致しません。"); return; }
     }
@@ -1077,9 +1113,6 @@ function toggleAcc(id) {
     insertMessageInOrder(el);
     const msgTime = getMsgTime(m);
 
-    // 🚀 【スマート・オートスクロール判定】
-    // 最下部にいる時(または自分の発言): 自動で一番下に追従。未読はたまらない。
-    // 過去ログを遡って見ている時: スクロール位置を変えず、裏で未読カウントと未読バッジをインクリメント。
     const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 80);
 
     if (!isFirstLoad && m.u !== myUid && m.u !== "system" && msgTime > latestDisplayedTs) {
@@ -1100,15 +1133,26 @@ function toggleAcc(id) {
     updateJumpBtns();
   }
 
-  // 🚀 【長押しによる削除機能 ＆ プレビュー付き確認ダイアログ】
-  const setupLongPressDelete = (el, msgId, rawText) => {
+  // 🚀 【長押し削除機能 ＆ プレビュー付き確認（名前・ID・時刻・本文全て、改行2段）】
+  const setupLongPressDelete = (el, msgId, rawText, msgName, msgTrip, msgTime) => {
     let pressTimer = null;
     const triggerDelete = async () => {
-      const previewText = rawText.length > 30 ? rawText.substring(0, 30) + "..." : rawText;
-      const confirmMsg = `以下のメッセージを本当に削除しますか？\n\n「${previewText}」`;
+      const timeStr = fDT(msgTime);
+      const tripStr = msgTrip ? ` ${msgTrip}` : "";
+      const previewBlock = `[${msgName}${tripStr}] [${timeStr}]\n\n${rawText}`;
+      const confirmMsg = `以下のメッセージを本当に削除しますか？\n\n\n${previewBlock}`;
+      
       if (!await customConfirm("メッセージ削除の確認", confirmMsg, "削除する", "キャンセル", true)) return;
       
-      if (el) { el.remove(); renderedMwNodes.delete(msgId); displayedMsgIds.delete(msgId); unreadMsgIds.delete(msgId); updateUnreadBadge(); updateJumpBtns(); }
+      if (el) {
+        const mwParent = el.closest(".mw");
+        if (mwParent) {
+          mwParent.remove();
+        } else {
+          el.remove();
+        }
+        renderedMwNodes.delete(msgId); displayedMsgIds.delete(msgId); unreadMsgIds.delete(msgId); updateUnreadBadge(); updateJumpBtns();
+      }
       db.ref(`chat/${currentRoomId}/${msgId}`).remove().then(() => showToast("メッセージを削除しました。")).catch(() => showToast("削除に失敗しました。"));
     };
 
@@ -1116,7 +1160,7 @@ function toggleAcc(id) {
       if (pressTimer) clearTimeout(pressTimer);
       pressTimer = setTimeout(() => {
         triggerDelete();
-      }, 500); // 0.5秒の長押し
+      }, 500);
     };
 
     const cancelPress = () => {
@@ -1152,6 +1196,7 @@ function toggleAcc(id) {
     }
 
     const name = m.n || "名無し", trip = m.p || "", color = m.c || "#f1f5f9";
+    // 🔒 【権限判定】自分のメッセージ、またはその部屋のホスト、またはグローバル管理者であれば削除可能
     const isDeletable = (m.u === myUid && m.u !== "") || (myUid === roomSettings.creatorUid) || checkIsGlobalAdmin();
 
     const bubbleStyle = isMine 
@@ -1175,9 +1220,8 @@ function toggleAcc(id) {
       }
     }
 
-    // 🚀 【長押し削除のバインド（削除権限がある人のみ）】
     if (isDeletable) {
-      setupLongPressDelete(mbBubble, m.id, m.m);
+      setupLongPressDelete(mbBubble, m.id, m.m, name, trip, msgTime);
     }
 
     renderedMwNodes.set(m.id, el); displayedMsgIds.add(m.id);
@@ -1261,7 +1305,7 @@ function toggleAcc(id) {
       } else {
         chip = document.createElement("span"); chip.className = "chip"; chip.dataset.uid = m.id;
         chip.style.color = color; chip.style.borderColor = color; chip.textContent = text;
-        const canBan = currentRoomId === "official" ? checkIsGlobalAdmin() : (myUid === roomSettings.creatorUid || checkIsGlobalAdmin());
+        const canBan = currentRoomId === "official" ? checkIsGlobalAdmin() : (myUid === roomSettings.creatorUid);
         if (canBan && m.id !== myUid) {
           chip.title = "このユーザーを追放(BAN)"; chip.style.cursor = "pointer";
           chip.addEventListener("click", () => {
@@ -1277,7 +1321,7 @@ function toggleAcc(id) {
   }
 
   const banUser = function(targetUid, targetName, targetTrip) {
-    const canBan = currentRoomId === "official" ? checkIsGlobalAdmin() : (myUid === roomSettings.creatorUid || checkIsGlobalAdmin());
+    const canBan = currentRoomId === "official" ? checkIsGlobalAdmin() : (myUid === roomSettings.creatorUid);
     if (!db || !canBan) return;
     db.ref(`banlist/${currentRoomId}/${targetUid}`).set({ n: targetName, p: targetTrip, t: firebase.database.ServerValue.TIMESTAMP }).then(() => {
       showToast(`${targetName} をBANしました。`); db.ref(`presence/${currentRoomId}/${targetUid}`).remove().catch(()=>{});
@@ -1285,7 +1329,7 @@ function toggleAcc(id) {
   };
 
   const unbanUser = function(targetUid, targetName) {
-    const canBan = currentRoomId === "official" ? checkIsGlobalAdmin() : (myUid === roomSettings.creatorUid || checkIsGlobalAdmin());
+    const canBan = currentRoomId === "official" ? checkIsGlobalAdmin() : (myUid === roomSettings.creatorUid);
     if (!db || !canBan) return;
     db.ref(`banlist/${currentRoomId}/${targetUid}`).remove().then(() => {
       showToast(`${targetName || 'ユーザー'} のBANを解除しました。`);
@@ -1305,7 +1349,7 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【極限爆速＆完全並列復号パイプライン（一瞬で表示）】
+  // 🚀 【ログと入室者リストを一瞬（爆速）で表示する並列ロードパイプライン】
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
     try {
@@ -1341,7 +1385,7 @@ function toggleAcc(id) {
             if (m) { m.id = child.key; msgs.push(m); }
           });
 
-          // 🚀 復号を完全並列処理（Promise.all）で一括高速化
+          // 🚀 復号処理を完全並列（Promise.all）化して一瞬でレンダリング
           const decryptedPromises = msgs.map(async m => {
             m.m = await E2EE.decrypt(m.m, activeKey);
             m.n = await E2EE.decrypt(m.n, activeKey);
@@ -1450,7 +1494,7 @@ function toggleAcc(id) {
       if (currentRoomId === "official") {
         $("adminBtnContainer").style.display = isGlobalAdmin ? "inline-flex" : "none";
       } else {
-        $("adminBtnContainer").style.display = (myUid === roomSettings.creatorUid || isGlobalAdmin) ? "inline-flex" : "none";
+        $("adminBtnContainer").style.display = (myUid === roomSettings.creatorUid) ? "inline-flex" : "none";
       }
     });
 
@@ -1518,17 +1562,17 @@ function toggleAcc(id) {
     const isGlobalAdmin = checkIsGlobalAdmin();
     if (currentRoomId === "official") {
       $("adminBtnContainer").style.display = isGlobalAdmin ? "inline-flex" : "none";
-      if ($("admDestroyRoomContainer")) $("admDestroyRoomContainer").style.display = "none"; // 公式部屋は絶対に解散ボタン非表示
+      if ($("admDestroyRoomContainer")) $("admDestroyRoomContainer").style.display = "none"; // 公式部屋は解散ボタン非表示
     } else {
-      $("adminBtnContainer").style.display = (myUid === roomSettings.creatorUid || isGlobalAdmin) ? "inline-flex" : "none";
-      if ($("admDestroyRoomContainer")) $("admDestroyRoomContainer").style.display = (myUid === roomSettings.creatorUid || isGlobalAdmin) ? "flex" : "none";
+      $("adminBtnContainer").style.display = (myUid === roomSettings.creatorUid) ? "inline-flex" : "none";
+      if ($("admDestroyRoomContainer")) $("admDestroyRoomContainer").style.display = (myUid === roomSettings.creatorUid) ? "flex" : "none";
     }
   }
 
   function updateAdminAccordionFields() {
     const isOfficial = (currentRoomId === "official");
     if ($("adminAccordionTitle")) $("adminAccordionTitle").textContent = isOfficial ? "⚙️ 公式部屋 管理パネル" : "⚙️ ホスト設定パネル";
-    if ($("admGeneralSettingsGroup")) $("admGeneralSettingsGroup").style.display = "flex"; // 公式部屋でも新規制限・合言葉設定を表示
+    if ($("admGeneralSettingsGroup")) $("admGeneralSettingsGroup").style.display = "flex";
     if ($("admStopJoin")) $("admStopJoin").checked = roomSettings.newEntriesDisabled;
     if ($("admPassToggle")) $("admPassToggle").checked = !!roomSettings.passcode;
     if ($("admPass")) $("admPass").value = roomSettings.passcode || "";
@@ -1573,7 +1617,6 @@ function toggleAcc(id) {
   // 🚀 【認証＆入室の爆速化パイプライン】
   const initDirectDatabaseProcess = async () => {
     try {
-      // プロフィール同期とバックグラウンド匿名認証を完全並列化で爆速化
       await Promise.all([
         syncProfileValues(),
         auth.signInAnonymously().catch(() => {}),
@@ -1583,30 +1626,6 @@ function toggleAcc(id) {
       if (db) db.goOnline();
 
       if (myUid) {
-        if (checkIsGlobalAdmin()) {
-          db.ref("presence").once("value", snap => {
-            const allRooms = snap.val() || {};
-            const now = getTrueTime();
-            for (const [roomId, members] of Object.entries(allRooms)) {
-              if (!members || roomId === "official") continue; // 公式部屋は消去対象外
-              let hasActive = false;
-              for (const [uId, uData] of Object.entries(members)) {
-                if (uData && uData.t && (now - uData.t < 1800000)) {
-                  hasActive = true;
-                } else {
-                  db.ref(`presence/${roomId}/${uId}`).remove().catch(()=>{});
-                }
-              }
-              if (!hasActive) {
-                db.ref(`chat/${roomId}`).remove().catch(()=>{});
-                db.ref(`settings/${roomId}`).remove().catch(()=>{});
-                db.ref(`presence/${roomId}`).remove().catch(()=>{});
-                db.ref(`banlist/${roomId}`).remove().catch(()=>{});
-              }
-            }
-          }).catch(()=>{});
-        }
-
         const wasJoined = (safeLS.get("nz_is_joined") === "true");
         const lastRoomId = safeLS.get("nz_last_room_id");
         const lastRoomPass = safeLS.get("nz_last_room_pass");
