@@ -900,7 +900,7 @@ function toggleAcc(id) {
 
   const processedExits = new Set();
   
-  // ⏱️ 【自動退室ログの正確な時刻同期】ユーザーの最終活動時刻(u.t)＋3分（AUTO_EXIT_MS）に厳密に一致させる
+  // ⏱️ 【自動退室ログの正確な時系列同期】最終発言時刻（u.t）を基準に正確に3分後を算出
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
 
@@ -913,7 +913,6 @@ function toggleAcc(id) {
         if (processedExits.has(exitKey)) continue;
         processedExits.add(exitKey);
 
-        // 💡 最終発言時刻（u.t）に正確に3分（180,000ms）を足した時間を、退室ログのタイムスタンプとする
         const exactExpiryTime = u.t + AUTO_EXIT_MS;
 
         db.ref(`presence/${currentRoomId}/${id}`).transaction(currentData => {
@@ -1352,6 +1351,7 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
+  // 🚀 【ローカルファースト ＋ 楽観的並列読み込み（2回目以降の認証待ちゼロ・爆速表示）】
   async function loadRoomDataAndRender(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
@@ -1646,16 +1646,17 @@ function toggleAcc(id) {
     }
   }
 
+  // 🚀 【楽観的接続（2回目以降の認証待ちゼロ化）】
   const initDirectDatabaseProcess = async () => {
     try {
-      await Promise.all([
-        syncProfileValues(),
-        auth.signInAnonymously().catch(() => {}),
-        syncServerOffset().catch(() => {})
-      ]);
-
+      syncProfileValues();
       if (db) db.goOnline();
 
+      // 初回は認証をしっかり行い、2回目以降はバックグラウンドで並列実行してブロックさせない
+      const authPromise = auth.currentUser ? Promise.resolve() : auth.signInAnonymously().catch(() => {});
+      const offsetPromise = syncServerOffset().catch(() => {});
+      
+      // UIの復元判定は認証の完了を待たずに即座に走らせる
       if (myUid) {
         const wasJoined = (safeLS.get("nz_is_joined") === "true");
         const lastRoomId = safeLS.get("nz_last_room_id");
@@ -1671,6 +1672,8 @@ function toggleAcc(id) {
         }
         validateLobbyInputs();
       }
+
+      await Promise.all([authPromise, offsetPromise]);
     } catch (err) {
       switchScreen("lobby");
     }
