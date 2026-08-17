@@ -67,7 +67,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #lobbyTripPrev { font-size: 11px; font-weight: bold; color: var(--usr-color); text-align: center; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1.5px solid var(--usr-color); }
 
-/* ⚡ チャット画面：初期状態を完全シームレスに隠蔽 */
+/* ⚡ チャット画面：初期状態を完全シームレスに隠蔽して残像シャットアウト */
 #chatScreen { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; position: relative; }
 #chatScreen.is-loading #tl,
 #chatScreen.is-loading #pl {
@@ -77,7 +77,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #chatScreen:not(.is-loading) #tl,
 #chatScreen:not(.is-loading) #pl {
   opacity: 1;
-  transition: opacity 0.1s ease-in;
+  transition: opacity 0.08s ease-in;
 }
 
 /* ⚙️ 管理パネル */
@@ -545,7 +545,7 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🌐 【接続経路完全共通化パイプライン】スリープ復帰、バックグラウンド復帰、リロード時は全ルート共通で最新状態を一括クリーン同期
+  // 🌐 【完全統一同期パイプライン】スリープ復帰、バックグラウンド、リロード時全ルートで最速クリーン同期
   if (typeof document !== 'undefined') {
     const triggerUniversalSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -870,7 +870,7 @@ function toggleAcc(id) {
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
   const updateSessionStartTime = time => safeLS.set("nz_session_start_time", time.toString());
 
-  // 🛡️ 【自動退室エンジン：トランザクション排他制御によるログの重複・二重投稿の完全根絶】
+  // 🛡️ 【マスター端末管理・トランザクション排他制御による自動退室エンジン】
   let smartTimerId = null;
 
   function startSmartAutoExitChecker() {
@@ -905,6 +905,11 @@ function toggleAcc(id) {
   
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
+    
+    // 💡 部屋にいるメンバーの中で、UID文字列が最も若い「マスター端末」のみが自動退室の判定・ログ書き込みを行う（重複を完全防止）
+    const activeUids = Object.keys(membersMap).sort();
+    if (activeUids.length === 0 || activeUids[0] !== myUid) return;
+
     const nowTrue = getTrueTime();
     
     for (const [id, u] of Object.entries(membersMap)) {
@@ -914,9 +919,9 @@ function toggleAcc(id) {
         try {
           const result = await pRef.transaction((currentData) => {
             if (currentData !== null && (nowTrue - currentData.t >= AUTO_EXIT_MS)) {
-              return null;
+              return null; // アトミックに削除成功
             }
-            return undefined;
+            return undefined; // 既に処理済み
           });
 
           if (result.committed) {
@@ -1094,6 +1099,9 @@ function toggleAcc(id) {
     safeLS.set("nz_last_room_pass", lobbyRoomPass); 
     safeLS.set("nz_current_room_id", currentRoomId);
     
+    // 💡 入室処理時、サーバー時間差（Offset）の取得が100%完了するまでawaitで確実に待機
+    await syncServerOffset();
+
     const nowTrue = getTrueTime();
     updateSessionStartTime(nowTrue);
     updateLastPostTime(nowTrue);
@@ -1390,7 +1398,7 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【完全クリーンリロード型・時刻通り完全ソート爆速同期】
+  // 🚀 【完全クリーンリロード型・マルチキーによる完全な時系列順序保証爆速同期】
   async function loadFullRoomDataAndSync(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
@@ -1405,7 +1413,6 @@ function toggleAcc(id) {
       await Promise.all([
         syncServerOffset(),
         (async () => {
-          // 💡 orderByChild("t") を用いて、サーバーのタイムスタンプ順（時系列順）に厳密に最新100件を取得
           const [chatSnap, presSnap] = await Promise.all([
             db.ref(`chat/${currentRoomId}`).orderByChild("t").limitToLast(100).once("value"),
             db.ref(`presence/${currentRoomId}`).once("value")
@@ -1435,8 +1442,12 @@ function toggleAcc(id) {
           });
           const resolvedMsgs = await Promise.all(decryptedPromises);
 
-          // 💡 取得したメッセージを時刻（t）順に確実にソート
-          resolvedMsgs.sort((a, b) => getMsgTime(a) - getMsgTime(b));
+          // 💡 【マルチキー・コンパレータ】時刻（t）が全く同じミリ秒であっても、メッセージIDの文字列順で二時ソートをかけ、順序の逆転やバラつきを100%防止
+          resolvedMsgs.sort((a, b) => {
+            const timeDiff = getMsgTime(a) - getMsgTime(b);
+            if (timeDiff !== 0) return timeDiff;
+            return a.id.localeCompare(b.id);
+          });
 
           const fragment = document.createDocumentFragment();
           resolvedMsgs.forEach(m => {
