@@ -67,7 +67,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #lobbyTripPrev { font-size: 11px; font-weight: bold; color: var(--usr-color); text-align: center; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1.5px solid var(--usr-color); }
 
-/* ⚡ チャット画面：初期状態を完全シームレスに隠蔽して残像シャットアウト */
+/* ⚡ チャット画面：接続経路に関わらず初期状態は完全シームレスに隠蔽して残像シャットアウト */
 #chatScreen { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; position: relative; }
 #chatScreen.is-loading #tl,
 #chatScreen.is-loading #pl {
@@ -293,7 +293,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
       </div>
     </div>
 
-    <!-- チャット画面（初期は is-loading で残像を完全に隠蔽） -->
+    <!-- チャット画面：初期状態は is-loading で完全に隠蔽 -->
     <div id="chatScreen" class="is-loading" style="display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden;">
 
       <!-- ⚙️ 管理パネル -->
@@ -545,13 +545,12 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🌐 【スマート・リロード接続パイプライン】スリープ復帰や再接続時は完全クリーンリロードを確実に実行
+  // 🌐 【接続経路完全共通化パイプライン】スリープ復帰やバックグラウンド復帰時は全ルート共通で最新状態を一括クリーン同期
   if (typeof document !== 'undefined') {
-    const triggerFullReloadSync = async () => {
+    const triggerUniversalSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
-          // 再接続時は入室時と同等のフルリロード（全件一括再描画）を実行してズレや残像を完全解消
           await loadFullRoomDataAndSync(true);
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
@@ -563,14 +562,14 @@ function toggleAcc(id) {
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
-        triggerFullReloadSync();
+        triggerUniversalSync();
         startSmartAutoExitChecker();
       } else {
         stopSmartAutoExitChecker();
       }
     });
-    window.addEventListener("pageshow", triggerFullReloadSync);
-    window.addEventListener("focus", triggerFullReloadSync);
+    window.addEventListener("pageshow", triggerUniversalSync);
+    window.addEventListener("focus", triggerUniversalSync);
   }
 
   (function initInitialScreenState() {
@@ -716,7 +715,6 @@ function toggleAcc(id) {
   const setGlobalColor = c => document.documentElement.style.setProperty("--usr-color", c);
   setGlobalColor(curColor);
 
-  // 🛡️ 【絶対基準：サーバー時間ベースの真の時刻算出】端末時計の狂いを完全に排除
   const getTrueTime = () => { const t = Date.now() + serverTimeOffset; return isNaN(t) ? Date.now() : t; };
   const getMsgTime = (m) => {
     if (m && m.t) {
@@ -872,9 +870,8 @@ function toggleAcc(id) {
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
   const updateSessionStartTime = time => safeLS.set("nz_session_start_time", time.toString());
 
-  // 🛡️ 【サーバー基準時間の自動退室エンジン】スマホの時計が狂っていても3分でピタリと動作
+  // 🛡️ 【自動退室エンジン：排他制御（トランザクション）によりログの二重書き込みを完全根絶】
   let smartTimerId = null;
-  const processedExits = new Set();
 
   function startSmartAutoExitChecker() {
     stopSmartAutoExitChecker();
@@ -912,23 +909,24 @@ function toggleAcc(id) {
     
     for (const [id, u] of Object.entries(membersMap)) {
       if (u && typeof u.t === "number" && (nowTrue - u.t >= AUTO_EXIT_MS)) {
-        const timeBlock = Math.floor(u.t / 1000000);
-        const exitKey = `${currentRoomId}_${id}_${timeBlock}`;
-        if (processedExits.has(exitKey)) continue;
-        processedExits.add(exitKey);
-
-        const exactExpiryTime = u.t + AUTO_EXIT_MS;
-
+        const pRef = db.ref(`presence/${currentRoomId}/${id}`);
+        
+        // 💡 データベースのトランザクションを用いて、「自分が最初にデータを削除できた場合のみ」システムログを書き込む（排他制御）
         try {
-          const pRef = db.ref(`presence/${currentRoomId}/${id}`);
-          const pSnap = await pRef.once("value");
-          if (pSnap.exists()) {
+          const result = await pRef.transaction((currentData) => {
+            if (currentData !== null && (nowTrue - currentData.t >= AUTO_EXIT_MS)) {
+              return null; // 削除成功（アトミック）
+            }
+            return undefined; // 既に他の端末に削除されている、あるいは状態が変わっている場合は中止
+          });
+
+          if (result.committed) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
+              const exactExpiryTime = u.t + AUTO_EXIT_MS;
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
               await db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exactExpiryTime });
-              await pRef.remove();
 
               if (id === myUid) {
                 if (currentRoomId !== "official") {
@@ -1393,14 +1391,13 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【完全クリーンリロード型：接続（入室・スリープ復帰）のたびに全件を一括取得して再描画】
+  // 🚀 【接続経路共通の完全クリーンリロード全件一括爆速同期】
   async function loadFullRoomDataAndSync(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
     try {
       if (isResume) db.goOnline();
       
-      // 再リロード時は前回のキャッシュ・描画・セットを完全に一度クリーンアップ
       displayedMsgIds.clear();
       processingMsgIds.clear();
       renderedMwNodes.clear();
@@ -1429,7 +1426,6 @@ function toggleAcc(id) {
             if (m) { m.id = child.key; msgs.push(m); }
           });
 
-          // 💡 完全並列一括復号で高速化
           const decryptedPromises = msgs.map(async m => {
             m.m = await E2EE.decrypt(m.m, activeKey);
             m.n = await E2EE.decrypt(m.n, activeKey);
@@ -1451,21 +1447,19 @@ function toggleAcc(id) {
           });
 
           if (D.tli) {
-            D.tli.appendChild(fragment); // 最後の1回だけDOMに一括挿入
+            D.tli.appendChild(fragment);
           }
           
           isFirstLoad = false;
           scBottom(true);
           updateJumpBtns();
 
-          // 💡 準備完了の瞬間、一気に画面を表示（残像・チラつきゼロ）
           const chatScr = $("chatScreen");
           if (chatScr) chatScr.classList.remove("is-loading");
 
           if (chatQuery) chatQuery.off("child_added");
           db.ref(`chat/${currentRoomId}`).off("child_removed");
 
-          // 以降は軽量な差分監視（child_added）に移行
           chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(latestDisplayedTs + 1);
           chatQuery.on("child_added", async child => {
             const m = child.val();
@@ -1628,7 +1622,6 @@ function toggleAcc(id) {
     if ($("admPassContainer")) $("admPassContainer").style.display = roomSettings.passcode ? "flex" : "none";
   }
 
-  // ⚡ 【二重表示ゼロ・ピュアプッシュ送信】
   async function sendMessage() {
     if (!isJoined || !db || isSending) return;
     const text = D.mi.value.trim();
@@ -1653,7 +1646,6 @@ function toggleAcc(id) {
       const encTrip = await E2EE.encrypt(myTrip, activeKey);
 
       const postTs = firebase.database.ServerValue.TIMESTAMP;
-      // 💡 サーバーへ直接プッシュ。差分監視（child_added）で自分の発言も正しく1回だけ描画されます
       await db.ref(`chat/${currentRoomId}`).push({ u: myUid, n: encName, p: encTrip, c: curColor, m: encText, t: postTs });
 
       if (myPresenceRef) myPresenceRef.child("t").set(postTs).catch(()=>{});
