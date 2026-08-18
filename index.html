@@ -563,7 +563,6 @@ function toggleAcc(id) {
     window.addEventListener("focus", triggerUniversalSync);
   }
 
-  // 🚀 高速起動処理（ショートカットからの起動遅延・白画面の排除）
   (async function initInitialScreenState() {
     const wasJoined = safeLS.get("nz_is_joined") === "true";
     const lastRoomId = safeLS.get("nz_last_room_id");
@@ -896,7 +895,7 @@ function toggleAcc(id) {
       if (currentPresenceMap && Object.keys(currentPresenceMap).length > 0) {
         checkAndTriggerExitForInactiveUsers(currentPresenceMap);
       }
-    }, 5000); // 💡 検知間隔を短縮して即時性を大幅向上
+    }, 4000);
   }
 
   function stopSmartAutoExitChecker() {
@@ -908,17 +907,10 @@ function toggleAcc(id) {
   
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
-    
-    const activeUids = Object.keys(membersMap).sort();
-    if (activeUids.length === 0) return;
-    const designatedLeaderUid = activeUids[0];
-    const isIAmLeader = (designatedLeaderUid === myUid);
     const nowTrue = getTrueTime();
     
     for (const [id, u] of Object.entries(membersMap)) {
       if (u && typeof u.t === "number" && (nowTrue - u.t >= AUTO_EXIT_MS)) {
-        if (!isIAmLeader && u.t + AUTO_EXIT_MS + 10000 > nowTrue) continue;
-
         const pRef = db.ref(`presence/${currentRoomId}/${id}`);
         try {
           const result = await pRef.transaction((currentData) => {
@@ -932,7 +924,7 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              const exactExpiryTime = u.t + AUTO_EXIT_MS;
+              const exactExpiryTime = getTrueTime();
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
               
               await db.ref(`chat/${currentRoomId}`).push({ 
@@ -1073,7 +1065,6 @@ function toggleAcc(id) {
     removeFirebaseListeners(); isFirstLoad = true;
     currentRoomId = safeRoomPath; currentRoomPass = lobbyRoomPass;
     
-    // 💡 暗号化キーの初期化（公式部屋はプレーン/簡易キー、カスタムはパスワードから導出）
     activeKey = await E2EE.deriveKey(safeRoomPath === "official" ? "official_secret_pass_2026" : lobbyRoomPass);
 
     try {
@@ -1154,16 +1145,11 @@ function toggleAcc(id) {
 
   let latestDisplayedTs = 0;
   
+  // 💡 サーバー信頼型・完全同期エンジン（仮ID不使用により二重表示のバグを構造的に根絶）
   async function syncSingleMessage(m, isNewIncoming = false) {
     if (!m || !m.id) return;
     
-    if (displayedMsgIds.has(m.id)) {
-      const existingEl = renderedMwNodes.get(m.id);
-      if (existingEl && !existingEl.classList.contains("optimistic")) existingEl.remove();
-      else if (existingEl && existingEl.classList.contains("optimistic")) return; // すでに楽観描画済みならスキップ
-      displayedMsgIds.delete(m.id);
-    }
-
+    if (displayedMsgIds.has(m.id)) return;
     if (processingMsgIds.has(m.id)) return;
     processingMsgIds.add(m.id);
 
@@ -1226,7 +1212,6 @@ function toggleAcc(id) {
     const isMine = (m.u === myUid && m.u !== "" && m.u !== "system");
     el.className = "mw " + (isMine ? "is-mine" : "is-other") + (isNewIncoming ? " new-msg-anim" : "");
     el.setAttribute("data-mid", m.id);
-    if (m.optimistic) el.classList.add("optimistic");
 
     const msgTime = getMsgTime(m);
     el.dataset.ts = msgTime; el.dataset.rawMsg = m.m; el.dataset.uid = m.u || "";
@@ -1402,7 +1387,6 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 高速データ同期＆バッチレンダリングエンジン
   async function loadFullRoomDataAndSync(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
@@ -1450,7 +1434,6 @@ function toggleAcc(id) {
       renderedMwNodes.clear();
       if (D.tli) D.tli.innerHTML = "";
 
-      // 💡 DocumentFragment による一括バッチ挿入でレンダリング速度を最大化
       const fragment = document.createDocumentFragment();
       resolvedMsgs.forEach(m => {
         if (displayedMsgIds.has(m.id)) return;
@@ -1535,7 +1518,7 @@ function toggleAcc(id) {
       if (serverClearTime && serverClearTime > localLastClearedTime) {
         localLastClearedTime = serverClearTime;
         if (D.tli) D.tli.innerHTML = "";
-        displayedMsgIds.clear(); processingMsgIds.clear(); renderedMwNodes.clear(); unreadMsgIds.clear(); latestDisplayedTs = 0; updateUnreadBadge();
+        displayedMsgIds.clear(); processingMsgIds.clear(); renderedMwNodes.clear(); unreadMsgIds.clear(); latestDisplayedTs = serverClearTime; updateUnreadBadge();
         if (chatQuery) {
           chatQuery.off(); db.ref(`chat/${currentRoomId}`).off("child_removed");
           chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(serverClearTime);
@@ -1604,7 +1587,7 @@ function toggleAcc(id) {
     if (D.pl) D.pl.innerHTML = ""; if ($("pcnt")) $("pcnt").style.display = "none";
   }
 
-  function applyRoomSettingsUI() {
+  applyRoomSettingsUI = function() {
     const badgesContainer = $("roomStatusBadges");
     if (badgesContainer) {
       badgesContainer.innerHTML = ""; let count = 0;
@@ -1632,7 +1615,7 @@ function toggleAcc(id) {
     if ($("admPassContainer")) $("admPassContainer").style.display = roomSettings.passcode ? "flex" : "none";
   }
 
-  // 🚀 楽観的UI更新（Optimistic UI）を実装した爆速メッセージ送信
+  // 💡 サーバー信頼型（仮ID完全廃止により二重表示を構造的にゼロにする送信ロジック）
   async function sendMessage() {
     if (!isJoined || !db || isSending) return;
     const text = D.mi.value.trim();
@@ -1650,36 +1633,14 @@ function toggleAcc(id) {
       const trueNow = getTrueTime();
       updateLastPostTime(trueNow);
 
-      const tempId = "opt_" + Math.random().toString(36).substring(2, 11);
-      const tempMsgObj = {
-        id: tempId,
-        u: myUid,
-        n: myName || "名無し",
-        p: myTrip,
-        c: curColor,
-        m: text,
-        t: trueNow,
-        optimistic: true
-      };
-
-      // 1. サーバー応答を待たずに即時画面に描画（ラグ0ms）
-      await syncSingleMessage(tempMsgObj, true);
-
       const encText = await E2EE.encrypt(text, activeKey);
       const encName = await E2EE.encrypt(myName || "名無し", activeKey);
       const encTrip = await E2EE.encrypt(myTrip, activeKey);
 
       const postTs = firebase.database.ServerValue.TIMESTAMP;
-      const newRef = await db.ref(`chat/${currentRoomId}`).push({ u: myUid, n: encName, p: encTrip, c: curColor, m: encText, t: postTs });
+      // 💡 サーバーへ送信し、サーバーの `child_added` イベント経由で描画を確定（二重表示のバグを完全消去）
+      await db.ref(`chat/${currentRoomId}`).push({ u: myUid, n: encName, p: encTrip, c: curColor, m: encText, t: postTs });
       
-      // 2. サーバー送信成功後に一時要素を本番IDに置き換え
-      const optEl = renderedMwNodes.get(tempId);
-      if (optEl) {
-        optEl.remove();
-        renderedMwNodes.delete(tempId);
-        displayedMsgIds.delete(tempId);
-      }
-
       if (myPresenceRef) myPresenceRef.child("t").set(postTs).catch(()=>{});
     } catch (e) {
       showToast("❌ メッセージの送信に失敗しました。");
@@ -1853,13 +1814,14 @@ function toggleAcc(id) {
           if (D.adminAccordion) D.adminAccordion.style.display = "none";
           try {
             const clearTs = getTrueTime();
+            localLastClearedTime = clearTs;
+
+            if (D.tli) D.tli.innerHTML = "";
+            displayedMsgIds.clear(); processingMsgIds.clear(); renderedMwNodes.clear(); unreadMsgIds.clear(); latestDisplayedTs = clearTs; updateUnreadBadge();
+
             const updates = {};
             updates[`chat/${currentRoomId}`] = null;
             updates[`settings/${currentRoomId}/last_cleared_at`] = clearTs;
-
-            if (D.tli) D.tli.innerHTML = "";
-            displayedMsgIds.clear(); processingMsgIds.clear(); renderedMwNodes.clear(); unreadMsgIds.clear(); latestDisplayedTs = 0; updateUnreadBadge();
-
             await db.ref().update(updates);
 
             const clearLogText = "[SYS]::🚨 [お知らせ] 管理者によってログが初期化されました";
