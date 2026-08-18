@@ -103,7 +103,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #playerContent{ width:100%;max-width:480px;background:#000;display:flex;justify-content:center;align-items:center;position:relative;margin:0 auto;overflow:hidden; }
 #playerCloseBtn{background:rgba(244, 63, 94, 0.15) !important;border:1px solid rgba(244, 63, 94, 0.4) !important;color: #fda4af !important;font-weight: 900 !important;padding: 4px 10px !important;font-size: 12px !important;border-radius: 5px;}
 
-/* 🔄 完全な正順（上が古く、下が新しい） */
+/* 🔄 完全に正しい正順（上が古く、下が新しい） */
 #tl{flex:1;min-height:0;overflow-y:scroll;padding:12px 16px;background-color:#0e1626;will-change:transform,scroll-position;-webkit-overflow-scrolling:touch;}
 #tl-inner{display:flex;flex-direction:column;justify-content:flex-start;gap:10px;width:100%;max-width:800px;margin:0 auto;min-height:100%}
 
@@ -909,7 +909,7 @@ function toggleAcc(id) {
     }
   }
   
-  // 🔄 厳密なリーダー選挙＆正確な期限算出による自動退室処理（重複なし・正確な時刻）
+  // 🔄 リーダー選挙＆正確な期限算出による自動退室処理（重複なし・正確な時刻）
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
     
@@ -940,7 +940,7 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              // 🔄 ご要望の仕様：入室後無発言なら入室時刻(=u.t)から+3分。発言がある場合は最終発言等から計算された正確な期限（u.t + AUTO_EXIT_MS）
+              // 🔄 ご要望の仕様：入室時刻(=u.t) または 最終活動時刻(=u.t) から正確に +3分
               const exactExpiryTime = u.t + AUTO_EXIT_MS;
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
               
@@ -1161,7 +1161,7 @@ function toggleAcc(id) {
     D.jumpDownBtn.disabled = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40;
   }
 
-  // 🔄 完全に厳密な時系列正順挿入（タイムスタンプ昇順・キー文字列順）
+  // 🔄 バイナリインサートによる厳密な時系列正順挿入
   function insertMessageInOrder(el) {
     if (!D.tli) return;
     const ts = parseInt(el.dataset.ts || "0", 10);
@@ -1231,6 +1231,7 @@ function toggleAcc(id) {
     }
   }
 
+  // 🔄 爆速化・遅延なしの個別削除処理（確認後即座にローカル＆リモート消去）
   const setupLongPressDelete = (el, msgId, rawText, msgName, msgTrip, msgTime) => {
     let pressTimer = null;
     const triggerDelete = async () => {
@@ -1241,26 +1242,21 @@ function toggleAcc(id) {
       
       if (!await customConfirm("メッセージ削除の確認", confirmMsg, "削除する", "キャンセル", true)) return;
       
+      // 即座にローカルDOMから排除して体感遅延をゼロにする
       if (el) {
         const mwParent = el.closest(".mw");
-        if (mwParent) {
-          mwParent.remove();
-        } else {
-          el.remove();
-        }
+        if (mwParent) mwParent.remove(); else el.remove();
         renderedMwNodes.delete(msgId); displayedMsgIds.delete(msgId); processingMsgIds.delete(msgId); unreadMsgIds.delete(msgId); updateUnreadBadge(); updateJumpBtns();
       }
-      db.ref(`chat/${currentRoomId}/${msgId}`).remove().then(() => showToast("メッセージを削除しました。")).catch(() => showToast("削除に失敗しました。"));
+      // リモート即時削除
+      db.ref(`chat/${currentRoomId}/${msgId}`).remove().catch(() => showToast("削除に失敗しました。"));
     };
 
     const startPress = () => {
       if (pressTimer) clearTimeout(pressTimer);
-      pressTimer = setTimeout(() => { triggerDelete(); }, 500);
+      pressTimer = setTimeout(() => { triggerDelete(); }, 400);
     };
-
-    const cancelPress = () => {
-      if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-    };
+    const cancelPress = () => { if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; } };
 
     el.addEventListener("touchstart", startPress, { passive: true });
     el.addEventListener("touchend", cancelPress);
@@ -1440,7 +1436,7 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🔄 キャッシュ不使用・DocumentFragmentによる一括高速描画＆チラつき・フリーズゼロの同期
+  // 🔄 キャッシュ不使用・DocumentFragmentによる爆速かつチラつきのない完全同期
   async function loadFullRoomDataAndSync(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
@@ -1581,7 +1577,7 @@ function toggleAcc(id) {
         displayedMsgIds.clear(); processingMsgIds.clear(); renderedMwNodes.clear(); unreadMsgIds.clear(); latestDisplayedTs = 0; updateUnreadBadge();
         if (chatQuery) {
           chatQuery.off(); db.ref(`chat/${currentRoomId}`).off("child_removed");
-          chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(serverClearTime + 1);
+          chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(serverClearTime);
           chatQuery.on("child_added", async child => { const m = child.val(); if (m) { m.id = child.key; await syncSingleMessage(m, true); } });
           db.ref(`chat/${currentRoomId}`).on("child_removed", child => {
             const el = renderedMwNodes.get(child.key);
@@ -1703,6 +1699,7 @@ function toggleAcc(id) {
       const encTrip = await E2EE.encrypt(myTrip, activeKey);
 
       const postTs = firebase.database.ServerValue.TIMESTAMP;
+      // 🔄 送信時はマルチスレッド遅延なく、親ノードpushにより全クライアントへ即座にchild_added発火
       await db.ref(`chat/${currentRoomId}`).push({ u: myUid, n: encName, p: encTrip, c: curColor, m: encText, t: postTs });
 
       if (myPresenceRef) myPresenceRef.child("t").set(postTs).catch(()=>{});
@@ -1898,7 +1895,7 @@ function toggleAcc(id) {
           if (!ok || !db || !currentRoomId) return;
           if (D.adminAccordion) D.adminAccordion.style.display = "none";
           try {
-            const clearTs = firebase.database.ServerValue.TIMESTAMP;
+            const clearTs = getTrueTime();
             const updates = {};
             updates[`chat/${currentRoomId}`] = null;
             updates[`settings/${currentRoomId}/last_cleared_at`] = clearTs;
