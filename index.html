@@ -67,7 +67,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #lobbyTripPrev { font-size: 11px; font-weight: bold; color: var(--usr-color); text-align: center; background: rgba(0,0,0,0.2); padding: 6px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1.5px solid var(--usr-color); }
 
-/* ⚡ チャット画面：完全シームレス・ゼロチラつきハードウェアアクセラレーション対応 */
 #chatScreen { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; position: relative; }
 #chatScreen.is-loading #tl,
 #chatScreen.is-loading #pl {
@@ -80,7 +79,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
   transition: opacity 0.06s cubic-bezier(0.1, 0.9, 0.2, 1);
 }
 
-/* ⚙️ 管理パネル */
 #adminAccordion {
   display: none;
   flex-direction: column;
@@ -105,10 +103,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #playerContent{ width:100%;max-width:480px;background:#000;display:flex;justify-content:center;align-items:center;position:relative;margin:0 auto;overflow:hidden; }
 #playerCloseBtn{background:rgba(244, 63, 94, 0.15) !important;border:1px solid rgba(244, 63, 94, 0.4) !important;color: #fda4af !important;font-weight: 900 !important;padding: 4px 10px !important;font-size: 12px !important;border-radius: 5px;}
 
+/* 🔄 タイムラインの逆転スクロール：上が古く、下が新しい（標準チャット形式） */
 #tl{flex:1;min-height:0;overflow-y:scroll;padding:12px 16px;background-color:#0e1626;will-change:transform,scroll-position;-webkit-overflow-scrolling:touch;}
-#tl-inner{display:flex;flex-direction:column;justify-content:flex-end;gap:10px;width:100%;max-width:800px;margin:0 auto;min-height:100%}
+#tl-inner{display:flex;flex-direction:column;justify-content:flex-start;gap:10px;width:100%;max-width:800px;margin:0 auto;min-height:100%}
 
-/* 💬 チャットバブルデザイン */
 .mw{position:relative;display:flex;flex-direction:column;width:100%;padding:2px 0;user-select:none;-webkit-user-select:none;}
 .mw.new-msg-anim{animation:slideInUp .08s cubic-bezier(0.1, 0.9, 0.2, 1) forwards}
 
@@ -491,6 +489,7 @@ function toggleAcc(id) {
   let myName = safeLS.get("nz_ni") || "", myTrip = "";
   let curColor = safeLS.get("nz_color") || "#f1f5f9", tmpColor = curColor;
   let currentRoomId = "", currentRoomPass = "", isJoined = false;
+  let activeKey = null;
   const unreadMsgIds = new Set();
   let serverTimeOffset = 0, isOffsetLoaded = false;
   
@@ -545,13 +544,11 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🌐 【全経路共通ユニバーサル同期：タブ切り替え・バックグラウンド復帰時も完全ノー遅延・即時復元】
   if (typeof document !== 'undefined') {
     const triggerUniversalSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
-          // タブ復帰時も最初に入室した時と同等スピードで一瞬で同期
           await loadFullRoomDataAndSync(true);
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
@@ -573,7 +570,6 @@ function toggleAcc(id) {
     window.addEventListener("focus", triggerUniversalSync);
   }
 
-  // 🚀 【起動時高速ディスパッチ：完全並列プリロード】
   (async function initInitialScreenState() {
     const wasJoined = safeLS.get("nz_is_joined") === "true";
     const lastRoomId = safeLS.get("nz_last_room_id");
@@ -879,7 +875,6 @@ function toggleAcc(id) {
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
   const updateSessionStartTime = time => safeLS.set("nz_session_start_time", time.toString());
 
-  // 🛡️ 【アトミックな重複完全防止・正確なきっちり3分後ログ自動退室エンジン】
   let smartTimerId = null;
 
   function startSmartAutoExitChecker() {
@@ -925,7 +920,6 @@ function toggleAcc(id) {
         const pRef = db.ref(`presence/${currentRoomId}/${id}`);
         
         try {
-          // トランザクションでアトミックに存在データを削除し、2重実行・重複ログを完全に防止
           const result = await pRef.transaction((currentData) => {
             if (currentData !== null && (nowTrue - currentData.t >= AUTO_EXIT_MS)) {
               return null;
@@ -937,7 +931,6 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              // ⏱️ 判定遅延や処理タイミングのブレを排除：基準時間（入室or発言時刻）＋きっちり3分をタイムスタンプに指定
               const exactExpiryTime = u.t + AUTO_EXIT_MS;
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
               await db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exactExpiryTime });
@@ -1149,7 +1142,7 @@ function toggleAcc(id) {
     D.jumpDownBtn.disabled = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40;
   }
 
-  // 🔄 【絶対的な時系列順序厳守のインサートロジック】タイムスタンプ昇順・ID昇順で完全にブレなくソート
+  // 🔄 正順ソート（上が古く、下が新しい：タイムスタンプ昇順・ID昇順）
   function insertMessageInOrder(el) {
     if (!D.tli) return;
     const ts = parseInt(el.dataset.ts || "0", 10);
@@ -1422,7 +1415,6 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【完全並列化＆DocumentFragment一括バッチ描画による超高速ロード】
   async function loadFullRoomDataAndSync(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
@@ -1474,14 +1466,13 @@ function toggleAcc(id) {
           });
           const resolvedMsgs = await Promise.all(decryptedPromises);
 
-          // 💡 タイムスタンプ順およびID順できっちり正しい順序にソート
+          // 🔄 正順ソート（古いものが上、新しいものが下）
           resolvedMsgs.sort((a, b) => {
             const timeDiff = getMsgTime(a) - getMsgTime(b);
             if (timeDiff !== 0) return timeDiff;
             return a.id.localeCompare(b.id);
           });
 
-          // ⚡ DocumentFragmentを用いた一括挿入によるカクつき・Reflowの完全排除と超高速化
           const fragment = document.createDocumentFragment();
           resolvedMsgs.forEach(m => {
             if (displayedMsgIds.has(m.id)) return;
