@@ -491,7 +491,6 @@ function toggleAcc(id) {
   let myName = safeLS.get("nz_ni") || "", myTrip = "";
   let curColor = safeLS.get("nz_color") || "#f1f5f9", tmpColor = curColor;
   let currentRoomId = "", currentRoomPass = "", isJoined = false;
-  let activeKey = null;
   const unreadMsgIds = new Set();
   let serverTimeOffset = 0, isOffsetLoaded = false;
   
@@ -546,7 +545,7 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🌐 【全経路共通ユニバーサル同期】ホーム画面ショートカット・ブラウザ起動・スリープ復帰など、どこから入っても完全一発爆速
+  // 🌐 【全経路共通ユニバーサル同期】高速化とレジュメ完全対応
   if (typeof document !== 'undefined') {
     const triggerUniversalSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -573,7 +572,7 @@ function toggleAcc(id) {
     window.addEventListener("focus", triggerUniversalSync);
   }
 
-  // 🚀 【起動時高速ディスパッチ】ホーム画面ショートカット等で再訪問した際、ストレージから即座に復帰セッションを構築
+  // 🚀 【起動時高速ディスパッチ】完全並列プリロード
   (async function initInitialScreenState() {
     const wasJoined = safeLS.get("nz_is_joined") === "true";
     const lastRoomId = safeLS.get("nz_last_room_id");
@@ -583,7 +582,6 @@ function toggleAcc(id) {
     const baselineTime = Math.max(sessionStart, lastPost);
 
     if (wasJoined && lastRoomId && lastRoomPass && (Date.now() - baselineTime < AUTO_EXIT_MS)) {
-      // 画面を最初からチャット用に表示し、裏側で即座にルーム接続を完了させる
       const chatScr = document.getElementById("chatScreen");
       if (chatScr) {
         chatScr.style.display = "flex";
@@ -592,8 +590,7 @@ function toggleAcc(id) {
       const logoTitle = document.getElementById("logoTitle");
       if (logoTitle) logoTitle.innerHTML = `NEZUO CHAT<span class="sub-room">${lastRoomId === "official" ? "常設公式部屋" : lastRoomId}</span>`;
 
-      // データベースの準備ができ次第、速やかにジョイン処理を完了
-      await syncServerOffset();
+      await Promise.all([syncServerOffset(), auth.currentUser ? Promise.resolve() : auth.signInAnonymously().catch(()=>{})]);
       await joinRoom({ roomId: lastRoomId, roomPass: lastRoomPass, silent: true });
     } else {
       const lobbyScr = document.getElementById("lobbyScreen");
@@ -881,7 +878,7 @@ function toggleAcc(id) {
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
   const updateSessionStartTime = time => safeLS.set("nz_session_start_time", time.toString());
 
-  // 🛡️ 【マスター端末排他制御による自動退室エンジン】
+  // 🛡️ 【排他トランザクション搭載・正確なきっちり3分後ログの自動退室エンジン】
   let smartTimerId = null;
 
   function startSmartAutoExitChecker() {
@@ -938,6 +935,7 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
+              // ⏱️ 判定遅延を排除し「きっちり3分後（入室・発言時刻 + 3分）」を正確なログ時刻に設定
               const exactExpiryTime = u.t + AUTO_EXIT_MS;
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
               await db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exactExpiryTime });
@@ -1090,7 +1088,6 @@ function toggleAcc(id) {
     removeFirebaseListeners(); isFirstLoad = true;
     currentRoomId = safeRoomPath; currentRoomPass = lobbyRoomPass;
     
-    // 🔑 復号キーの生成を最優先で確実に完了させる
     activeKey = await E2EE.deriveKey(lobbyRoomPass);
 
     try {
@@ -1150,7 +1147,6 @@ function toggleAcc(id) {
     D.jumpDownBtn.disabled = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40;
   }
 
-  // 💡 【超重要：最新が常に下になる正しいDOM挿入順序制御】
   function insertMessageInOrder(el) {
     if (!D.tli) return;
     const ts = parseInt(el.dataset.ts || "0", 10);
@@ -1423,7 +1419,7 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【完全クリーンリロード＆絶対順序厳守の爆速同期】
+  // 🚀 【完全並列化＆DocumentFragment一括描画による爆速同期】
   async function loadFullRoomDataAndSync(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
@@ -1475,13 +1471,13 @@ function toggleAcc(id) {
           });
           const resolvedMsgs = await Promise.all(decryptedPromises);
 
-          // 💡 【超厳密ソート】古い順（上）から新しい順（下）へ確実に並び替えるマルチキー・コンパレータ
           resolvedMsgs.sort((a, b) => {
             const timeDiff = getMsgTime(a) - getMsgTime(b);
             if (timeDiff !== 0) return timeDiff;
             return a.id.localeCompare(b.id);
           });
 
+          // ⚡ DocumentFragmentを用いた一括挿入によるカクつき・Reflowの完全排除
           const fragment = document.createDocumentFragment();
           resolvedMsgs.forEach(m => {
             if (displayedMsgIds.has(m.id)) return;
@@ -1725,7 +1721,6 @@ function toggleAcc(id) {
         const baselineTime = Math.max(sessionStart, lastPost);
 
         if (wasJoined && lastRoomId && lastRoomPass && (Date.now() - baselineTime < AUTO_EXIT_MS)) {
-          // 💡 ホーム画面ショートカットやブラウザショートカット等から直接開いた場合でも、即座にセッションを確立
           const chatScr = document.getElementById("chatScreen");
           if (chatScr) {
             chatScr.style.display = "flex";
@@ -1986,7 +1981,7 @@ function toggleAcc(id) {
       e.preventDefault();
       const rawParam = `r=${encodeURIComponent(safeLS.get("nz_last_room_id"))}&p=${encodeURIComponent(safeLS.get("nz_last_room_pass"))}`;
       const inviteUrl = window.location.origin + window.location.pathname + "#" + btoa(unescape(encodeURIComponent(rawParam)));
-      try { await navigator.inviteBtn.clipboard.writeText(inviteUrl); showToast("🔗 招待URLをコピーしました"); } catch(err) { alert("コピーに失敗しました：\n" + inviteUrl); }
+      try { await navigator.clipboard.writeText(inviteUrl); showToast("🔗 招待URLをコピーしました"); } catch(err) { alert("コピーに失敗しました：\n" + inviteUrl); }
     });
 
     D.joinBtn.addEventListener("click", (e) => { e.preventDefault(); joinRoom(); });
