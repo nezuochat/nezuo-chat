@@ -538,7 +538,7 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🚀 どの接続経路（ホーム画面ショートカット・PWA・バックグラウンド復帰）でも常に最新状態を即座に再同期
+  // 🚀 完全ノーキャッシュ：バックグラウンド復帰やショートカット・PWA起動時に即座に最新状態へ同期
   if (typeof document !== 'undefined') {
     const triggerUniversalSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
