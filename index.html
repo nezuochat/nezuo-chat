@@ -538,7 +538,7 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🚀 どの接続経路（ホーム画面ショートカット・PWA・復帰）でも常に最新を高速保証する同期トリガー
+  // 🚀 どの接続経路（ホーム画面ショートカット・PWA・バックグラウンド復帰）でも常に最新状態を即座に再同期
   if (typeof document !== 'undefined') {
     const triggerUniversalSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -927,7 +927,7 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              const exactExpiryTime = u.t + AUTO_EXIT_MS; // 💡 入室・最終発言時刻（u.t）を基準に正確に180,000ms後を指定
+              const exactExpiryTime = u.t + AUTO_EXIT_MS; // 💡 最終活動時刻（u.t）を基準に正確に180,000ms後を指定
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
               
               await db.ref(`chat/${currentRoomId}`).push({ 
