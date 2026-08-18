@@ -485,7 +485,8 @@ function toggleAcc(id) {
   let hasEnteredLogged = false;
 
   let myName = safeLS.get("nz_ni") || "", myTrip = "";
-  let curColor = safeLS.get("nz_color") || "#f1f5f9", tmpColor = curColor;
+  let curColor = safeLS.get("nz_color") || "#f1f5f9";
+  let tmpColor = curColor; // 💡 エラー解消のためtmpColorを正しく定義
   let currentRoomId = "", currentRoomPass = "", isJoined = false;
   let activeKey = null;
   const unreadMsgIds = new Set();
@@ -1145,7 +1146,6 @@ function toggleAcc(id) {
 
   let latestDisplayedTs = 0;
   
-  // 💡 サーバー信頼型・完全同期エンジン（仮ID不使用により二重表示のバグを構造的に根絶）
   async function syncSingleMessage(m, isNewIncoming = false) {
     if (!m || !m.id) return;
     
@@ -1587,7 +1587,7 @@ function toggleAcc(id) {
     if (D.pl) D.pl.innerHTML = ""; if ($("pcnt")) $("pcnt").style.display = "none";
   }
 
-  applyRoomSettingsUI = function() {
+  function applyRoomSettingsUI() {
     const badgesContainer = $("roomStatusBadges");
     if (badgesContainer) {
       badgesContainer.innerHTML = ""; let count = 0;
@@ -1615,7 +1615,6 @@ function toggleAcc(id) {
     if ($("admPassContainer")) $("admPassContainer").style.display = roomSettings.passcode ? "flex" : "none";
   }
 
-  // 💡 サーバー信頼型（仮ID完全廃止により二重表示を構造的にゼロにする送信ロジック）
   async function sendMessage() {
     if (!isJoined || !db || isSending) return;
     const text = D.mi.value.trim();
@@ -1638,7 +1637,6 @@ function toggleAcc(id) {
       const encTrip = await E2EE.encrypt(myTrip, activeKey);
 
       const postTs = firebase.database.ServerValue.TIMESTAMP;
-      // 💡 サーバーへ送信し、サーバーの `child_added` イベント経由で描画を確定（二重表示のバグを完全消去）
       await db.ref(`chat/${currentRoomId}`).push({ u: myUid, n: encName, p: encTrip, c: curColor, m: encText, t: postTs });
       
       if (myPresenceRef) myPresenceRef.child("t").set(postTs).catch(()=>{});
