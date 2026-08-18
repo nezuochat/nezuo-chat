@@ -545,12 +545,13 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🌐 【全経路共通ユニバーサル同期】高速化とレジュメ完全対応
+  // 🌐 【全経路共通ユニバーサル同期：タブ切り替え・バックグラウンド復帰時も完全ノー遅延・即時復元】
   if (typeof document !== 'undefined') {
     const triggerUniversalSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
+          // タブ復帰時も最初に入室した時と同等スピードで一瞬で同期
           await loadFullRoomDataAndSync(true);
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
@@ -572,7 +573,7 @@ function toggleAcc(id) {
     window.addEventListener("focus", triggerUniversalSync);
   }
 
-  // 🚀 【起動時高速ディスパッチ】完全並列プリロード
+  // 🚀 【起動時高速ディスパッチ：完全並列プリロード】
   (async function initInitialScreenState() {
     const wasJoined = safeLS.get("nz_is_joined") === "true";
     const lastRoomId = safeLS.get("nz_last_room_id");
@@ -878,7 +879,7 @@ function toggleAcc(id) {
   const updateLastPostTime = time => safeLS.set("nz_last_post_time", time.toString());
   const updateSessionStartTime = time => safeLS.set("nz_session_start_time", time.toString());
 
-  // 🛡️ 【排他トランザクション搭載・正確なきっちり3分後ログの自動退室エンジン】
+  // 🛡️ 【アトミックな重複完全防止・正確なきっちり3分後ログ自動退室エンジン】
   let smartTimerId = null;
 
   function startSmartAutoExitChecker() {
@@ -924,6 +925,7 @@ function toggleAcc(id) {
         const pRef = db.ref(`presence/${currentRoomId}/${id}`);
         
         try {
+          // トランザクションでアトミックに存在データを削除し、2重実行・重複ログを完全に防止
           const result = await pRef.transaction((currentData) => {
             if (currentData !== null && (nowTrue - currentData.t >= AUTO_EXIT_MS)) {
               return null;
@@ -935,7 +937,7 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              // ⏱️ 判定遅延を排除し「きっちり3分後（入室・発言時刻 + 3分）」を正確なログ時刻に設定
+              // ⏱️ 判定遅延や処理タイミングのブレを排除：基準時間（入室or発言時刻）＋きっちり3分をタイムスタンプに指定
               const exactExpiryTime = u.t + AUTO_EXIT_MS;
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
               await db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exactExpiryTime });
@@ -1147,6 +1149,7 @@ function toggleAcc(id) {
     D.jumpDownBtn.disabled = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40;
   }
 
+  // 🔄 【絶対的な時系列順序厳守のインサートロジック】タイムスタンプ昇順・ID昇順で完全にブレなくソート
   function insertMessageInOrder(el) {
     if (!D.tli) return;
     const ts = parseInt(el.dataset.ts || "0", 10);
@@ -1419,7 +1422,7 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🚀 【完全並列化＆DocumentFragment一括描画による爆速同期】
+  // 🚀 【完全並列化＆DocumentFragment一括バッチ描画による超高速ロード】
   async function loadFullRoomDataAndSync(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
@@ -1471,13 +1474,14 @@ function toggleAcc(id) {
           });
           const resolvedMsgs = await Promise.all(decryptedPromises);
 
+          // 💡 タイムスタンプ順およびID順できっちり正しい順序にソート
           resolvedMsgs.sort((a, b) => {
             const timeDiff = getMsgTime(a) - getMsgTime(b);
             if (timeDiff !== 0) return timeDiff;
             return a.id.localeCompare(b.id);
           });
 
-          // ⚡ DocumentFragmentを用いた一括挿入によるカクつき・Reflowの完全排除
+          // ⚡ DocumentFragmentを用いた一括挿入によるカクつき・Reflowの完全排除と超高速化
           const fragment = document.createDocumentFragment();
           resolvedMsgs.forEach(m => {
             if (displayedMsgIds.has(m.id)) return;
