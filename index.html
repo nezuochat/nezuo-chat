@@ -906,7 +906,7 @@ function toggleAcc(id) {
     }
   }
   
-  // 🚀 【完全決定版】自動退室ログの時刻（exactExpiryTime）を「最終活動時刻(u.t) + 3分」に完全固定し、時刻のズレを完全根絶
+  // 🚀 【完全決定版】自動退室時刻（exactExpiryTime）を「最終活動時刻(u.t) + 3分」に完全固定し、時刻のズレ・狂いを完全根絶
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
     const nowTrue = getTrueTime();
@@ -926,7 +926,7 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              const exactExpiryTime = u.t + AUTO_EXIT_MS; // 💡 入室・最終発言時刻（u.t）を基準に正確に180,000ms後をタイムスタンプに指定
+              const exactExpiryTime = u.t + AUTO_EXIT_MS; // 💡 入室・最終発言時刻（u.t）を基準に正確に180,000ms後を指定
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
               
               await db.ref(`chat/${currentRoomId}`).push({ 
@@ -1464,7 +1464,7 @@ function toggleAcc(id) {
         if (m) { m.id = child.key; await syncSingleMessage(m, true); }
       });
 
-      // 🚀 相手にも瞬時に反映される削除同期リスナー
+      // 🚀 再接続時や別クライアントでの削除を全員に即時反映させる
       db.ref(`chat/${currentRoomId}`).on("child_removed", child => {
         const el = renderedMwNodes.get(child.key);
         if (el) {
