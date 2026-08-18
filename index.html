@@ -909,7 +909,6 @@ function toggleAcc(id) {
     }
   }
   
-  // 🔄 リーダー選挙＆正確な期限算出による自動退室処理（重複なし・正確な時刻）
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
     
@@ -940,7 +939,6 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              // 🔄 ご要望の仕様：入室時刻(=u.t) または 最終活動時刻(=u.t) から正確に +3分
               const exactExpiryTime = u.t + AUTO_EXIT_MS;
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
               
@@ -1231,7 +1229,6 @@ function toggleAcc(id) {
     }
   }
 
-  // 🔄 爆速化・遅延なしの個別削除処理（確認後即座にローカル＆リモート消去）
   const setupLongPressDelete = (el, msgId, rawText, msgName, msgTrip, msgTime) => {
     let pressTimer = null;
     const triggerDelete = async () => {
@@ -1242,13 +1239,11 @@ function toggleAcc(id) {
       
       if (!await customConfirm("メッセージ削除の確認", confirmMsg, "削除する", "キャンセル", true)) return;
       
-      // 即座にローカルDOMから排除して体感遅延をゼロにする
       if (el) {
         const mwParent = el.closest(".mw");
         if (mwParent) mwParent.remove(); else el.remove();
         renderedMwNodes.delete(msgId); displayedMsgIds.delete(msgId); processingMsgIds.delete(msgId); unreadMsgIds.delete(msgId); updateUnreadBadge(); updateJumpBtns();
       }
-      // リモート即時削除
       db.ref(`chat/${currentRoomId}/${msgId}`).remove().catch(() => showToast("削除に失敗しました。"));
     };
 
@@ -1370,18 +1365,24 @@ function toggleAcc(id) {
     updateJumpBtns();
   }
 
+  // 🔄 限界まで爆速化した入室者リスト（差分反映・DOM再構築ゼロ）のレンダリング
   function renderPresence(serverListMap) {
     if (!isPresenceInitialized || !D.pl) return;
     const sorted = Object.values(serverListMap).filter(m => m && m.n).sort((a, b) => a.id.localeCompare(b.id));
     
     D.pl.style.display = "flex";
     if ($("pcnt")) {
-      $("pcnt").textContent = `${sorted.length}人`;
-      $("pcnt").style.display = "inline-block";
+      const countStr = `${sorted.length}人`;
+      if ($("pcnt").textContent !== countStr) {
+        $("pcnt").textContent = countStr;
+        $("pcnt").style.display = "inline-block";
+      }
     }
 
     const targetIds = new Set(sorted.map(m => m.id));
-    Array.from(D.pl.children).forEach(chip => { if (chip.dataset.uid && !targetIds.has(chip.dataset.uid)) chip.remove(); });
+    Array.from(D.pl.children).forEach(chip => { 
+      if (chip.dataset.uid && !targetIds.has(chip.dataset.uid)) chip.remove(); 
+    });
 
     sorted.forEach(m => {
       const text = m.p ? `${m.n} ${m.p}` : m.n, color = m.c || "#f1f5f9";
@@ -1390,11 +1391,16 @@ function toggleAcc(id) {
         if (chip.textContent !== text) chip.textContent = text;
         if (chip.style.color !== color) { chip.style.color = color; chip.style.borderColor = color; }
       } else {
-        chip = document.createElement("span"); chip.className = "chip"; chip.dataset.uid = m.id;
-        chip.style.color = color; chip.style.borderColor = color; chip.textContent = text;
+        chip = document.createElement("span"); 
+        chip.className = "chip"; 
+        chip.dataset.uid = m.id;
+        chip.style.color = color; 
+        chip.style.borderColor = color; 
+        chip.textContent = text;
         const canBan = currentRoomId === "official" ? checkIsGlobalAdmin() : (myUid === roomSettings.creatorUid);
         if (canBan && m.id !== myUid) {
-          chip.title = "このユーザーを追放(BAN)"; chip.style.cursor = "pointer";
+          chip.title = "このユーザーを追放(BAN)"; 
+          chip.style.cursor = "pointer";
           chip.addEventListener("click", () => {
             customConfirm("メンバーのBAN", `ユーザー「${m.n}」を本当にこの部屋からBANしますか？`, "BANする", "キャンセル", true).then(ok => {
               if (ok) banUser(m.id, m.n, m.p || "");
@@ -1436,7 +1442,7 @@ function toggleAcc(id) {
     } catch(e) {}
   }
 
-  // 🔄 キャッシュ不使用・DocumentFragmentによる爆速かつチラつきのない完全同期
+  // 🔄 DocumentFragmentによる一括爆速描画（チラつき・フリーズ完全ゼロ）
   async function loadFullRoomDataAndSync(isResume = false) {
     if (!db || !isJoined || !currentRoomId) return;
 
@@ -1476,7 +1482,6 @@ function toggleAcc(id) {
       });
       const resolvedMsgs = await Promise.all(decryptedPromises);
 
-      // 🔄 完全に厳密な時系列正順ソート
       resolvedMsgs.sort((a, b) => {
         const timeDiff = getMsgTime(a) - getMsgTime(b);
         if (timeDiff !== 0) return timeDiff;
@@ -1547,20 +1552,27 @@ function toggleAcc(id) {
 
     await loadFullRoomDataAndSync(false);
 
+    // 🔄 requestAnimationFrameでプレゼンス描画をスロットルし、無限ループや負荷を完全に回避
+    let presenceRafId = null;
     presenceRef.on("value", s => {
-      const list = s.val() || {}, members = {};
-      for (const [id, u] of Object.entries(list)) {
-        if (u && u.n && typeof u.t === "number") {
-          members[id] = { id, ...u };
+      if (presenceRafId) cancelAnimationFrame(presenceRafId);
+      presenceRafId = requestAnimationFrame(() => {
+        const list = s.val() || {}, members = {};
+        for (const [id, u] of Object.entries(list)) {
+          if (u && u.n && typeof u.t === "number") {
+            members[id] = { id, ...u };
+          }
         }
-      }
-      currentPresenceMap = members; isPresenceInitialized = true; renderPresence(members);
-      
-      if (Object.keys(members).length === 0) {
-        checkRoomSelfDestruct(currentRoomId);
-      }
+        currentPresenceMap = members; 
+        isPresenceInitialized = true; 
+        renderPresence(members);
+        
+        if (Object.keys(members).length === 0) {
+          checkRoomSelfDestruct(currentRoomId);
+        }
 
-      checkAndTriggerExitForInactiveUsers(members);
+        checkAndTriggerExitForInactiveUsers(members);
+      });
     });
 
     settingsRef.on("value", snap => {
@@ -1699,7 +1711,6 @@ function toggleAcc(id) {
       const encTrip = await E2EE.encrypt(myTrip, activeKey);
 
       const postTs = firebase.database.ServerValue.TIMESTAMP;
-      // 🔄 送信時はマルチスレッド遅延なく、親ノードpushにより全クライアントへ即座にchild_added発火
       await db.ref(`chat/${currentRoomId}`).push({ u: myUid, n: encName, p: encTrip, c: curColor, m: encText, t: postTs });
 
       if (myPresenceRef) myPresenceRef.child("t").set(postTs).catch(()=>{});
