@@ -538,6 +538,7 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
+  // 🚀 どの接続経路（ホーム画面ショートカット・PWA・復帰）でも常に最新を高速保証する同期トリガー
   if (typeof document !== 'undefined') {
     const triggerUniversalSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
