@@ -907,7 +907,7 @@ function toggleAcc(id) {
     }
   }
   
-  // 🔄 トランザクションと整列された順序監視による「全員がタブを閉じていても重複なく確実な自動退室ログ処理」
+  // 🔄 厳密なリーダー選挙＆トランザクションによる「確実・重複なし・正確な時刻」の自動退室処理
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
     
@@ -929,7 +929,7 @@ function toggleAcc(id) {
         try {
           const result = await pRef.transaction((currentData) => {
             if (currentData !== null && (nowTrue - currentData.t >= AUTO_EXIT_MS)) {
-              return null;
+              return null; // トランザクション成功：他のクライアントによる二重処理を完全防止
             }
             return undefined;
           });
@@ -938,10 +938,10 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
+              // 🔄 お知らせログの時刻は「3分が経過した正確な期限時刻 (u.t + AUTO_EXIT_MS)」に固定
               const exactExpiryTime = u.t + AUTO_EXIT_MS;
               const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
               
-              // 🔄 重複プッシュを防ぐユニークキー付与型、またはトランザクション連動のセーフティプッシュ
               await db.ref(`chat/${currentRoomId}`).push({ 
                 u: "system", 
                 n: "システム", 
@@ -1159,7 +1159,7 @@ function toggleAcc(id) {
     D.jumpDownBtn.disabled = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40;
   }
 
-  // 🔄 完全に厳密な時系列正順挿入（常にタイムスタンプ昇順・キー文字列順でソート配置）
+  // 🔄 完全に厳密な時系列正順挿入（タイムスタンプ昇順・キー文字列順）
   function insertMessageInOrder(el) {
     if (!D.tli) return;
     const ts = parseInt(el.dataset.ts || "0", 10);
@@ -1186,15 +1186,21 @@ function toggleAcc(id) {
   let latestDisplayedTs = 0;
   
   async function syncSingleMessage(m, isNewIncoming = false) {
-    if (!m || !m.id || displayedMsgIds.has(m.id) || processingMsgIds.has(m.id)) return;
+    if (!m || !m.id) return;
+    
+    if (displayedMsgIds.has(m.id)) {
+      const existingEl = renderedMwNodes.get(m.id);
+      if (existingEl) existingEl.remove();
+      displayedMsgIds.delete(m.id);
+    }
+
+    if (processingMsgIds.has(m.id)) return;
     processingMsgIds.add(m.id);
 
     try {
       m.m = await E2EE.decrypt(m.m, activeKey);
       m.n = await E2EE.decrypt(m.n, activeKey);
       m.p = await E2EE.decrypt(m.p, activeKey);
-
-      if (displayedMsgIds.has(m.id)) return;
 
       const el = cMsg(m, isNewIncoming);
       insertMessageInOrder(el);
@@ -1483,7 +1489,7 @@ function toggleAcc(id) {
           });
           const resolvedMsgs = await Promise.all(decryptedPromises);
 
-          // 🔄 正順ソート（古いものが上、新しいものが下。完全同期）
+          // 🔄 完全に厳密な時系列正順ソート
           resolvedMsgs.sort((a, b) => {
             const timeDiff = getMsgTime(a) - getMsgTime(b);
             if (timeDiff !== 0) return timeDiff;
