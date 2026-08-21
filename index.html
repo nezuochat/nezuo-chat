@@ -94,7 +94,6 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #tl{flex:1;min-height:0;overflow-y:scroll;padding:12px 16px;background-color:#0b0f19;will-change:transform,scroll-position;-webkit-overflow-scrolling:touch;}
 #tl-inner{display:flex;flex-direction:column;justify-content:flex-start;gap:10px;width:100%;max-width:800px;margin:0 auto;min-height:100%}
 
-/* 🚀 チャットバブル（自分は白ベース＋設定色アクセント、他人はダーク＋設定色アクセント） */
 .mw{position:relative;display:flex;flex-direction:column;width:100%;padding:2px 0;user-select:none;-webkit-user-select:none;}
 .mw.new-msg-anim{animation:slideInUp .06s cubic-bezier(0.1, 0.9, 0.2, 1) forwards}
 
@@ -895,7 +894,6 @@ function toggleAcc(id) {
     }
   }
   
-  // 🚀 【自動退室のお知らせ：ミリ単位まで完全に固定された正確なタイムスタンプ】
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
     const nowTrue = getTrueTime();
@@ -915,7 +913,6 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              // 💡 最後の活動時刻から完全に180,000ms（3分）後を正確に固定
               const exactExpiryTime = u.t + AUTO_EXIT_MS; 
               const rawSysText = "[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)";
               const encLog = await E2EE.encrypt(rawSysText, activeKey);
@@ -1224,7 +1221,6 @@ function toggleAcc(id) {
     const name = m.n || "名無し", trip = m.p || "", color = m.c || "#f1f5f9";
     const isDeletable = (m.u === myUid && m.u !== "") || (myUid === roomSettings.creatorUid) || checkIsGlobalAdmin();
 
-    // 🚀 自分の吹き出しは白(#f1f5f9)固定、設定した色は「左側の縦アクセント線」として表現して識別可能にする
     const bubbleStyle = isMine 
       ? `background: #f1f5f9 !important; color: #0f172a !important; font-weight: 500; border-left: 5px solid ${color};` 
       : `background: #1e293b !important; color: var(--tx) !important; border-left: 3px solid ${color};`;
@@ -1502,6 +1498,7 @@ function toggleAcc(id) {
         if (m) { m.id = child.key; await syncSingleMessage(m, true); }
       });
 
+      // 🚀 削除の即時反映（チャットのルートに対して直接監視）
       db.ref(`chat/${currentRoomId}`).on("child_removed", child => {
         const el = renderedMwNodes.get(child.key);
         if (el) {
@@ -1528,6 +1525,7 @@ function toggleAcc(id) {
     settingsRef = db.ref(`settings/${currentRoomId}`);
     banListRef = db.ref(`banlist/${currentRoomId}`);
     presenceRef.off(); settingsRef.off(); banListRef.off();
+    db.ref(`chat/${currentRoomId}`).off("child_removed");
 
     await loadFullRoomDataAndSync(false);
 
