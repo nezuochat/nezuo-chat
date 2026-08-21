@@ -894,6 +894,7 @@ function toggleAcc(id) {
     }
   }
   
+  // 🚀 【誰が判定しても1秒もズレない自動退室の完全同期ロジック】
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
     const nowTrue = getTrueTime();
@@ -904,7 +905,7 @@ function toggleAcc(id) {
         try {
           const result = await pRef.transaction((currentData) => {
             if (currentData !== null && (nowTrue - currentData.t >= AUTO_EXIT_MS)) {
-              return null; 
+              return null; // この瞬間にこのユーザーの存在データを完全にクリア
             }
             return undefined; 
           });
@@ -913,6 +914,7 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
+              // 💡 誰が判定・処理しても絶対にズレない、最後の活動時刻を起点とした厳密な180,000ms（3分）後の絶対タイムスタンプ
               const exactExpiryTime = u.t + AUTO_EXIT_MS; 
               const rawSysText = "[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)";
               const encLog = await E2EE.encrypt(rawSysText, activeKey);
@@ -1498,7 +1500,6 @@ function toggleAcc(id) {
         if (m) { m.id = child.key; await syncSingleMessage(m, true); }
       });
 
-      // 🚀 削除の即時反映（チャットのルートに対して直接監視）
       db.ref(`chat/${currentRoomId}`).on("child_removed", child => {
         const el = renderedMwNodes.get(child.key);
         if (el) {
