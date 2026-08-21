@@ -94,7 +94,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #tl{flex:1;min-height:0;overflow-y:scroll;padding:12px 16px;background-color:#0b0f19;will-change:transform,scroll-position;-webkit-overflow-scrolling:touch;}
 #tl-inner{display:flex;flex-direction:column;justify-content:flex-start;gap:10px;width:100%;max-width:800px;margin:0 auto;min-height:100%}
 
-/* 🚀 LINE風モノクロ＋ユーザーカラーチャットバブル */
+/* 🚀 チャットバブル（自分は白ベース＋設定色アクセント、他人はダーク＋設定色アクセント） */
 .mw{position:relative;display:flex;flex-direction:column;width:100%;padding:2px 0;user-select:none;-webkit-user-select:none;}
 .mw.new-msg-anim{animation:slideInUp .06s cubic-bezier(0.1, 0.9, 0.2, 1) forwards}
 
@@ -527,7 +527,6 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🚀 完全ノーキャッシュ：いかなる接続経路・バックグラウンド復帰でも瞬時に最新状態へ同期
   if (typeof document !== 'undefined') {
     const triggerUniversalSync = async () => {
       if (document.visibilityState === "visible" && isJoined && currentRoomId) {
@@ -896,7 +895,7 @@ function toggleAcc(id) {
     }
   }
   
-  // 🚀 【完全決定版】自動退室時刻（exactExpiryTime）を「最終活動時刻(u.t) + 3分」に完全固定し、時刻のズレ・狂いを完全根絶
+  // 🚀 【自動退室のお知らせ：ミリ単位まで完全に固定された正確なタイムスタンプ】
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
     const nowTrue = getTrueTime();
@@ -907,17 +906,19 @@ function toggleAcc(id) {
         try {
           const result = await pRef.transaction((currentData) => {
             if (currentData !== null && (nowTrue - currentData.t >= AUTO_EXIT_MS)) {
-              return null;
+              return null; 
             }
-            return undefined;
+            return undefined; 
           });
 
           if (result.committed) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              const exactExpiryTime = u.t + AUTO_EXIT_MS; // 💡 入室・最終発言時刻（u.t）を基準に正確に180,000ms後を指定
-              const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)", activeKey);
+              // 💡 最後の活動時刻から完全に180,000ms（3分）後を正確に固定
+              const exactExpiryTime = u.t + AUTO_EXIT_MS; 
+              const rawSysText = "[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)";
+              const encLog = await E2EE.encrypt(rawSysText, activeKey);
               
               await db.ref(`chat/${currentRoomId}`).push({ 
                 u: "system", 
@@ -925,7 +926,8 @@ function toggleAcc(id) {
                 p: "", 
                 c: "#f43f5e", 
                 m: encLog, 
-                t: exactExpiryTime 
+                t: exactExpiryTime,
+                sys: true
               });
 
               if (id === myUid) {
@@ -992,10 +994,11 @@ function toggleAcc(id) {
     };
 
     if (wasJoined && cleanName && db && !isAuto) {
-      const expiryTime = getTrueTime();
+      const exitTime = getTrueTime();
       try {
-        const encLog = await E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + " が退室しました", activeKey);
-        await db.ref(`chat/${oldRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: expiryTime });
+        const rawSysText = "[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + " が退室しました";
+        const encLog = await E2EE.encrypt(rawSysText, activeKey);
+        await db.ref(`chat/${oldRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exitTime, sys: true });
       } catch(e) {}
       await finishAndClean();
     } else {
@@ -1092,8 +1095,10 @@ function toggleAcc(id) {
     const cleanName = (myName || "").trim();
     if (!options.silent && cleanName && !hasEnteredLogged) {
       hasEnteredLogged = true;
-      E2EE.encrypt("[SYS]::📢 [お知らせ] " + `${cleanName} ${myTrip}`.trim() + " が入室しました", activeKey).then(encEnter => {
-        db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encEnter, t: getTrueTime() }).catch(()=>{});
+      const enterTs = getTrueTime();
+      const rawEnterText = "[SYS]::📢 [お知らせ] " + `${cleanName} ${myTrip}`.trim() + " が入室しました";
+      E2EE.encrypt(rawEnterText, activeKey).then(encEnter => {
+        db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encEnter, t: enterTs, sys: true }).catch(()=>{});
       });
     }
 
@@ -1155,13 +1160,13 @@ function toggleAcc(id) {
 
       const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 80);
 
-      if (!isFirstLoad && m.u !== myUid && m.u !== "system" && msgTime > latestDisplayedTs) {
+      if (!isFirstLoad && m.u !== myUid && m.u !== "system" && !m.sys && msgTime > latestDisplayedTs) {
         if (!isBottom) unreadMsgIds.add(m.id);
       }
       if (msgTime > latestDisplayedTs) latestDisplayedTs = msgTime;
       updateUnreadBadge();
       
-      if (isFirstLoad || m.u === myUid || m.u === "system" || (isNewIncoming && isBottom)) {
+      if (isFirstLoad || m.u === myUid || m.u === "system" || m.sys || (isNewIncoming && isBottom)) {
         scBottom(true);
         if (isBottom) { unreadMsgIds.clear(); updateUnreadBadge(); }
       }
@@ -1171,7 +1176,6 @@ function toggleAcc(id) {
     }
   }
 
-  // 🚀 削除の即時・確実な相手への同期（イベントリスナーとDOMマップの厳格なパージ）
   const setupLongPressDelete = (el, msgId, rawText, msgName, msgTrip, msgTime) => {
     let pressTimer = null;
     const triggerDelete = async () => {
@@ -1220,8 +1224,9 @@ function toggleAcc(id) {
     const name = m.n || "名無し", trip = m.p || "", color = m.c || "#f1f5f9";
     const isDeletable = (m.u === myUid && m.u !== "") || (myUid === roomSettings.creatorUid) || checkIsGlobalAdmin();
 
+    // 🚀 自分の吹き出しは白(#f1f5f9)固定、設定した色は「左側の縦アクセント線」として表現して識別可能にする
     const bubbleStyle = isMine 
-      ? `background: ${color} !important; color: #000 !important; font-weight: 500;` 
+      ? `background: #f1f5f9 !important; color: #0f172a !important; font-weight: 500; border-left: 5px solid ${color};` 
       : `background: #1e293b !important; color: var(--tx) !important; border-left: 3px solid ${color};`;
 
     el.innerHTML = `
@@ -1233,11 +1238,54 @@ function toggleAcc(id) {
       <div class="mb-bubble" style="${bubbleStyle}"></div>
     `;
     const mbBubble = el.querySelector(".mb-bubble");
+    
     if (m.m) {
-      const sp = document.createElement("span"); sp.textContent = m.m; mbBubble.appendChild(sp);
-      if (m.m.includes("http")) {
-        const urls = m.m.match(UR);
-        if (urls) urls.forEach(u => { const media = createMediaContainer(u); if (media) mbBubble.appendChild(media); });
+      const text = m.m;
+      const urls = text.match(UR);
+      
+      if (urls && urls.length > 0) {
+        let lastIdx = 0;
+        const regex = new RegExp(UR.source, "gi");
+        let match;
+        
+        while ((match = regex.exec(text)) !== null) {
+          const urlStr = match[0];
+          const idx = match.index;
+          
+          if (idx > lastIdx) {
+            const textSpan = document.createElement("span");
+            textSpan.textContent = text.substring(lastIdx, idx);
+            mbBubble.appendChild(textSpan);
+          }
+          
+          const a = document.createElement("a");
+          a.href = urlStr;
+          a.textContent = urlStr;
+          a.target = "_blank";
+          a.rel = "noopener noreferrer";
+          a.style.color = isMine ? "#2563eb" : "#38bdf8";
+          a.style.textDecoration = "underline";
+          a.style.wordBreak = "break-all";
+          a.addEventListener("click", (e) => { e.stopPropagation(); });
+          mbBubble.appendChild(a);
+          
+          lastIdx = regex.lastIndex;
+        }
+        
+        if (lastIdx < text.length) {
+          const textSpan = document.createElement("span");
+          textSpan.textContent = text.substring(lastIdx);
+          mbBubble.appendChild(textSpan);
+        }
+      } else {
+        const sp = document.createElement("span"); 
+        sp.textContent = text; 
+        mbBubble.appendChild(sp);
+      }
+
+      if (text.includes("http")) {
+        const matches = text.match(UR);
+        if (matches) matches.forEach(u => { const media = createMediaContainer(u); if (media) mbBubble.appendChild(media); });
       }
     }
 
@@ -1454,7 +1502,6 @@ function toggleAcc(id) {
         if (m) { m.id = child.key; await syncSingleMessage(m, true); }
       });
 
-      // 🚀 再接続時や別クライアントでの削除を全員に即時反映させる
       db.ref(`chat/${currentRoomId}`).on("child_removed", child => {
         const el = renderedMwNodes.get(child.key);
         if (el) {
