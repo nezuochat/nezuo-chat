@@ -884,7 +884,7 @@ function toggleAcc(id) {
       if (currentPresenceMap && Object.keys(currentPresenceMap).length > 0) {
         checkAndTriggerExitForInactiveUsers(currentPresenceMap);
       }
-    }, 3000);
+    }, 2000); // 🚀 判定頻度を2秒に短縮して即時性を限界まで向上
   }
 
   function stopSmartAutoExitChecker() {
@@ -894,7 +894,7 @@ function toggleAcc(id) {
     }
   }
   
-  // 🚀 【誰が判定しても1秒もズレない自動退室の完全同期ロジック】
+  // 🚀 【極限まで正確かつ即時実行される自動退室判定・ログ同期】
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
     const nowTrue = getTrueTime();
@@ -905,7 +905,7 @@ function toggleAcc(id) {
         try {
           const result = await pRef.transaction((currentData) => {
             if (currentData !== null && (nowTrue - currentData.t >= AUTO_EXIT_MS)) {
-              return null; // この瞬間にこのユーザーの存在データを完全にクリア
+              return null; 
             }
             return undefined; 
           });
@@ -914,7 +914,7 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              // 💡 誰が判定・処理しても絶対にズレない、最後の活動時刻を起点とした厳密な180,000ms（3分）後の絶対タイムスタンプ
+              // 💡 誰が判定しても100%同じ値になる「活動時刻 + 180,000ms」
               const exactExpiryTime = u.t + AUTO_EXIT_MS; 
               const rawSysText = "[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)";
               const encLog = await E2EE.encrypt(rawSysText, activeKey);
