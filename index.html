@@ -526,9 +526,10 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
+  // 🚀 【完全決定版】タブ切り替え・バックグラウンド復帰・ショートカット起動時の超高速強制再同期
   if (typeof document !== 'undefined') {
-    const triggerUniversalSync = async () => {
-      if (document.visibilityState === "visible" && isJoined && currentRoomId) {
+    const triggerInstantSync = async () => {
+      if (isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
           await loadFullRoomDataAndSync(true);
@@ -536,20 +537,18 @@ function toggleAcc(id) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
           }
         }
-        checkAutoExitOnResume();
       }
     };
 
     document.addEventListener("visibilitychange", () => {
       if (document.visibilityState === "visible") {
-        triggerUniversalSync();
+        triggerInstantSync();
         startSmartAutoExitChecker();
-      } else {
-        stopSmartAutoExitChecker();
       }
     });
-    window.addEventListener("pageshow", triggerUniversalSync);
-    window.addEventListener("focus", triggerUniversalSync);
+    window.addEventListener("pageshow", triggerInstantSync);
+    window.addEventListener("focus", triggerInstantSync);
+    window.addEventListener("online", triggerInstantSync);
   }
 
   (async function initInitialScreenState() {
@@ -869,7 +868,7 @@ function toggleAcc(id) {
     if (!isJoined) return;
     
     smartTimerId = setInterval(() => {
-      if (!isJoined || document.visibilityState !== "visible") return;
+      if (!isJoined) return;
       
       const nowTrue = getTrueTime();
       const sessionStart = parseInt(safeLS.get("nz_session_start_time") || nowTrue.toString(), 10);
@@ -884,7 +883,7 @@ function toggleAcc(id) {
       if (currentPresenceMap && Object.keys(currentPresenceMap).length > 0) {
         checkAndTriggerExitForInactiveUsers(currentPresenceMap);
       }
-    }, 2000); // 🚀 判定頻度を2秒に短縮して即時性を限界まで向上
+    }, 2000);
   }
 
   function stopSmartAutoExitChecker() {
@@ -894,7 +893,6 @@ function toggleAcc(id) {
     }
   }
   
-  // 🚀 【極限まで正確かつ即時実行される自動退室判定・ログ同期】
   async function checkAndTriggerExitForInactiveUsers(membersMap) {
     if (!isJoined || !db || !currentRoomId) return;
     const nowTrue = getTrueTime();
@@ -914,7 +912,6 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              // 💡 誰が判定しても100%同じ値になる「活動時刻 + 180,000ms」
               const exactExpiryTime = u.t + AUTO_EXIT_MS; 
               const rawSysText = "[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)";
               const encLog = await E2EE.encrypt(rawSysText, activeKey);
