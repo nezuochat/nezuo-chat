@@ -91,7 +91,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #playerContent{ width:100%;max-width:480px;background:#000;display:flex;justify-content:center;align-items:center;position:relative;margin:0 auto;overflow:hidden; }
 #playerCloseBtn{background:rgba(244, 63, 94, 0.15) !important;border:1px solid rgba(244, 63, 94, 0.4) !important;color: #fda4af !important;font-weight: 900 !important;padding: 4px 10px !important;font-size: 12px !important;border-radius: 5px;}
 
-/* 💡 【上を最新】通常の標準フロー（上から下）に戻し、JS側で新しいメッセージを常に一番上に挿入する */
+/* 💡 【上を最新】通常の標準フロー（上から下）にし、JS側で新しいメッセージを常に一番上に挿入する */
 #tl{flex:1;min-height:0;overflow-y:scroll;padding:8px 12px;background-color:#070a10;will-change:transform,scroll-position;-webkit-overflow-scrolling:touch;}
 #tl-inner{display:flex;flex-direction:column;justify-content:flex-start;gap:6px;width:100%;max-width:800px;margin:0 auto;min-height:100%}
 
@@ -884,7 +884,7 @@ function toggleAcc(id) {
       if (currentPresenceMap && Object.keys(currentPresenceMap).length > 0) {
         checkAndTriggerExitForInactiveUsers(currentPresenceMap);
       }
-    }, 1000); // 💡 1秒もズレないように1000ms間隔
+    }, 1000);
   }
 
   function stopSmartAutoExitChecker() {
@@ -899,6 +899,7 @@ function toggleAcc(id) {
     const nowTrue = getTrueTime();
     
     for (const [id, u] of Object.entries(membersMap)) {
+      // 💡 ユーザーの最終活動時刻(u.t)を基点とし、正確に3分(180000ms)経過した瞬間をサーバー時間で算出
       if (u && typeof u.t === "number" && (nowTrue - u.t >= AUTO_EXIT_MS)) {
         const pRef = db.ref(`presence/${currentRoomId}/${id}`);
         try {
@@ -913,7 +914,8 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              const exactExpiryTime = u.t + AUTO_EXIT_MS; 
+              // 💡 最終発言の正確な時刻（u.t）からきっちり3分後（u.t + 180000）を自動退室ログのタイムスタンプにする
+              const exactExpiryTime = u.t + AUTO_EXIT_MS;
               const rawSysText = "[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)";
               const encLog = await E2EE.encrypt(rawSysText, activeKey);
               
@@ -978,11 +980,10 @@ function toggleAcc(id) {
     };
 
     if (wasJoined && cleanName && db && !isAuto) {
-      const exitTime = getTrueTime();
       try {
         const rawSysText = "[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + " が退室しました";
         const encLog = await E2EE.encrypt(rawSysText, activeKey);
-        await db.ref(`chat/${oldRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exitTime, sys: true });
+        await db.ref(`chat/${oldRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: firebase.database.ServerValue.TIMESTAMP, sys: true });
       } catch(e) {}
       await finishAndClean();
     } else {
@@ -1079,28 +1080,26 @@ function toggleAcc(id) {
     const cleanName = (myName || "").trim();
     if (!options.silent && cleanName && !hasEnteredLogged) {
       hasEnteredLogged = true;
-      const enterTs = getTrueTime();
       const rawEnterText = "[SYS]::📢 [お知らせ] " + `${cleanName} ${myTrip}`.trim() + " が入室しました";
       E2EE.encrypt(rawEnterText, activeKey).then(encEnter => {
-        db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encEnter, t: enterTs, sys: true }).catch(()=>{});
+        db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encEnter, t: firebase.database.ServerValue.TIMESTAMP, sys: true }).catch(()=>{});
       });
     }
 
     applyRoomSettingsUI(); 
   }
 
-  // 💡 【上を最新】スクロール位置を一番上（最新位置）にする関数
+  // 💡 【上を最新】スクロールを最上部（最新位置）に瞬時かつ確実に固定
   function scTop(force = false) {
     if (!D.tl) return;
     requestAnimationFrame(() => {
       D.tl.scrollTop = 0;
-      setTimeout(() => { if (D.tl) D.tl.scrollTop = 0; }, 20);
+      setTimeout(() => { if (D.tl) D.tl.scrollTop = 0; }, 10);
     });
   }
 
   function updateJumpBtns() {
     if (!D.tl || !D.jumpUpBtn || !D.jumpDownBtn) return;
-    // 💡 ▲ボタン（最新へ）は上部にいないときに有効、▼ボタン（最下部へ）は最下部にいないときに有効
     D.jumpUpBtn.disabled = D.tl.scrollTop <= 20;
     D.jumpDownBtn.disabled = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40;
   }
@@ -1112,7 +1111,6 @@ function toggleAcc(id) {
     const children = D.tli.children;
     let inserted = false;
 
-    // 💡 【上を最新】タイムスタンプが新しいものが常に上（先頭側）に来るよう、降順（大きい順）でDOMに挿入する
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
       const childTs = parseInt(child.dataset.ts || "0", 10);
@@ -1153,7 +1151,6 @@ function toggleAcc(id) {
       if (msgTime > latestDisplayedTs) latestDisplayedTs = msgTime;
       updateUnreadBadge();
       
-      // 💡 【追従を上にする】新着が来ても自分が上にいれば（または自分が発言したなら）そのまま一番上に追従
       if (isFirstLoad || m.u === myUid || m.u === "system" || m.sys || (isNewIncoming && isAtTop)) {
         scTop(true);
         if (isAtTop) { unreadMsgIds.clear(); updateUnreadBadge(); }
@@ -1449,7 +1446,7 @@ function toggleAcc(id) {
       const resolvedMsgs = await Promise.all(decryptedPromises);
 
       resolvedMsgs.sort((a, b) => {
-        const timeDiff = getMsgTime(b) - getMsgTime(a); // 💡 新しい順（降順）
+        const timeDiff = getMsgTime(b) - getMsgTime(a);
         if (timeDiff !== 0) return timeDiff;
         return b.id.localeCompare(a.id);
       });
@@ -1758,10 +1755,12 @@ function toggleAcc(id) {
 
     if (D.mi) {
       D.mi.addEventListener("input", () => { updateClrMsgBtnVisibility(); D.mi.style.height = "auto"; D.mi.style.height = Math.min(D.mi.scrollHeight, 120) + "px"; });
+      
       D.mi.addEventListener("focus", () => {
-        setTimeout(() => scTop(true), 50);
-        setTimeout(() => scTop(true), 200);
+        setTimeout(() => scTop(true), 80);
+        setTimeout(() => scTop(true), 250);
       });
+
       D.mi.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
           const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -1864,7 +1863,7 @@ function toggleAcc(id) {
               p: "",
               c: "#f43f5e",
               m: encClearLog,
-              t: clearTs,
+              t: firebase.database.ServerValue.TIMESTAMP,
               sys: true
             });
             showToast("🚨 チャットログを初期化しました");
