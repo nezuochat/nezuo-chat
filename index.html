@@ -91,14 +91,15 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #playerContent{ width:100%;max-width:480px;background:#000;display:flex;justify-content:center;align-items:center;position:relative;margin:0 auto;overflow:hidden; }
 #playerCloseBtn{background:rgba(244, 63, 94, 0.15) !important;border:1px solid rgba(244, 63, 94, 0.4) !important;color: #fda4af !important;font-weight: 900 !important;padding: 4px 10px !important;font-size: 12px !important;border-radius: 5px;}
 
+/* 💡 【上を最新】通常の標準フロー（上から下）に戻し、JS側で新しいメッセージを常に一番上に挿入する */
 #tl{flex:1;min-height:0;overflow-y:scroll;padding:8px 12px;background-color:#070a10;will-change:transform,scroll-position;-webkit-overflow-scrolling:touch;}
 #tl-inner{display:flex;flex-direction:column;justify-content:flex-start;gap:6px;width:100%;max-width:800px;margin:0 auto;min-height:100%}
 
-/* 🚀 ライブ配信アプリ風コメントストリーム（フラット＆縦一列形式） */
+/* ライブ配信アプリ風コメントストリーム */
 .mw{position:relative;display:flex;flex-direction:column;width:100%;padding:3px 6px;border-radius:4px;user-select:none;-webkit-user-select:none;transition:background 0.1s ease;}
 .mw:hover{background:rgba(255,255,255,0.02);}
 .mw.new-msg-anim{animation:fadeIn .05s ease-out forwards}
-@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
 .mw-content-row { display: flex; align-items: baseline; gap: 6px; width: 100%; flex-wrap: wrap; }
 .mm{display:inline-flex;align-items:center;gap:4px;font-size:12px;flex-shrink:0;}
@@ -352,10 +353,11 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
             <label for="kbKeepOpenChk" style="font-size: 10px; font-weight: bold; color: var(--mu); cursor: pointer; user-select: none; white-space: nowrap;">発言後にキーボードを開いたままにする</label>
           </div>
         </div>
+        <!-- 💡 ジャンプボタン：▲（最新＝最上部へ）、▼（最下部＝過去ログへ） -->
         <div class="jump-btns">
-          <button class="jump-btn" id="jumpUpBtn" title="最上部へ" disabled>▲</button>
+          <button class="jump-btn" id="jumpUpBtn" title="最新（最上部）へ" disabled>▲</button>
           <div style="position: relative; display: inline-block;">
-            <button class="jump-btn" id="jumpDownBtn" title="最下部へ" disabled>▼</button>
+            <button class="jump-btn" id="jumpDownBtn" title="最下部（過去ログ）へ" disabled>▼</button>
             <span id="unreadBadge" style="display: none; position: absolute; top: -5px; right: -5px; background: var(--ro); color: #fff; font-size: 8.5px; font-weight: bold; border-radius: 9px; min-width: 16px; height: 16px; padding: 0 3px; align-items: center; justify-content: center; line-height: 1; border: 1.5px solid var(--sf); box-shadow: 0 2px 4px rgba(0,0,0,0.3); pointer-events: none; z-index: 5;">0</span>
           </div>
         </div>
@@ -526,7 +528,6 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🚀 【マルチブラウザ・ショートカット対応】どこから開いても復帰した瞬間にサーバーと完全同期
   if (typeof document !== 'undefined') {
     const triggerInstantSync = async () => {
       if (isJoined && currentRoomId) {
@@ -584,9 +585,9 @@ function toggleAcc(id) {
 
   function updateUnreadBadge() {
     if (!D.unreadBadge) return;
-    const isNoScrollNeeded = D.tl && (D.tl.scrollHeight <= D.tl.clientHeight + 40);
-    const count = isNoScrollNeeded ? 0 : unreadMsgIds.size;
-    if (isNoScrollNeeded) unreadMsgIds.clear();
+    const isAtTop = D.tl && (D.tl.scrollTop <= 20);
+    const count = isAtTop ? 0 : unreadMsgIds.size;
+    if (isAtTop) unreadMsgIds.clear();
 
     if (count > 0) {
       D.unreadBadge.textContent = count > 99 ? "99+" : count;
@@ -883,7 +884,7 @@ function toggleAcc(id) {
       if (currentPresenceMap && Object.keys(currentPresenceMap).length > 0) {
         checkAndTriggerExitForInactiveUsers(currentPresenceMap);
       }
-    }, 2000);
+    }, 1000); // 💡 1秒もズレないように1000ms間隔
   }
 
   function stopSmartAutoExitChecker() {
@@ -953,19 +954,6 @@ function toggleAcc(id) {
         db.ref(`banlist/${roomId}`).remove().catch(()=>{});
       }
     });
-  }
-
-  function checkAutoExitOnResume() {
-    if (!isJoined) return;
-    const sessionStart = parseInt(safeLS.get("nz_session_start_time") || getTrueTime().toString(), 10);
-    const lastPost = parseInt(safeLS.get("nz_last_post_time") || sessionStart.toString(), 10);
-    const baselineTime = Math.max(sessionStart, lastPost);
-    
-    if (getTrueTime() - baselineTime >= AUTO_EXIT_MS) {
-      doExit(true);
-    } else {
-      startSmartAutoExitChecker();
-    }
   }
 
   async function doExit(isAuto = false) {
@@ -1101,16 +1089,18 @@ function toggleAcc(id) {
     applyRoomSettingsUI(); 
   }
 
-  function scBottom(force = false) {
+  // 💡 【上を最新】スクロール位置を一番上（最新位置）にする関数
+  function scTop(force = false) {
     if (!D.tl) return;
     requestAnimationFrame(() => {
-      D.tl.scrollTop = D.tl.scrollHeight;
-      setTimeout(() => { if (D.tl) D.tl.scrollTop = D.tl.scrollHeight; }, 20);
+      D.tl.scrollTop = 0;
+      setTimeout(() => { if (D.tl) D.tl.scrollTop = 0; }, 20);
     });
   }
 
   function updateJumpBtns() {
     if (!D.tl || !D.jumpUpBtn || !D.jumpDownBtn) return;
+    // 💡 ▲ボタン（最新へ）は上部にいないときに有効、▼ボタン（最下部へ）は最下部にいないときに有効
     D.jumpUpBtn.disabled = D.tl.scrollTop <= 20;
     D.jumpDownBtn.disabled = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 40;
   }
@@ -1122,12 +1112,13 @@ function toggleAcc(id) {
     const children = D.tli.children;
     let inserted = false;
 
+    // 💡 【上を最新】タイムスタンプが新しいものが常に上（先頭側）に来るよう、降順（大きい順）でDOMに挿入する
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
       const childTs = parseInt(child.dataset.ts || "0", 10);
       const childMid = child.dataset.mid || "";
 
-      if (ts < childTs || (ts === childTs && mid.localeCompare(childMid) < 0)) {
+      if (ts > childTs || (ts === childTs && mid.localeCompare(childMid) > 0)) {
         D.tli.insertBefore(el, child);
         inserted = true;
         break;
@@ -1154,17 +1145,18 @@ function toggleAcc(id) {
       insertMessageInOrder(el);
       const msgTime = getMsgTime(m);
 
-      const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 80);
+      const isAtTop = D.tl && (D.tl.scrollTop <= 40);
 
       if (!isFirstLoad && m.u !== myUid && m.u !== "system" && !m.sys && msgTime > latestDisplayedTs) {
-        if (!isBottom) unreadMsgIds.add(m.id);
+        if (!isAtTop) unreadMsgIds.add(m.id);
       }
       if (msgTime > latestDisplayedTs) latestDisplayedTs = msgTime;
       updateUnreadBadge();
       
-      if (isFirstLoad || m.u === myUid || m.u === "system" || m.sys || (isNewIncoming && isBottom)) {
-        scBottom(true);
-        if (isBottom) { unreadMsgIds.clear(); updateUnreadBadge(); }
+      // 💡 【追従を上にする】新着が来ても自分が上にいれば（または自分が発言したなら）そのまま一番上に追従
+      if (isFirstLoad || m.u === myUid || m.u === "system" || m.sys || (isNewIncoming && isAtTop)) {
+        scTop(true);
+        if (isAtTop) { unreadMsgIds.clear(); updateUnreadBadge(); }
       }
       updateJumpBtns();
     } finally {
@@ -1302,8 +1294,8 @@ function toggleAcc(id) {
       const img = document.createElement("img"); img.className = "inline-img"; img.src = url;
       img.loading = "lazy";
       img.onload = () => {
-        const isBottom = D.tl && (D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 80);
-        if (isBottom) scBottom(true);
+        const isAtTop = D.tl && (D.tl.scrollTop <= 40);
+        if (isAtTop) scTop(true);
       };
       img.onclick = () => { if (D.imgViewSrc && D.imgViewMod) { D.imgViewSrc.src = url; resetZoom(); D.imgViewMod.classList.add("show"); } };
       wrapper.appendChild(img); return wrapper;
@@ -1409,7 +1401,7 @@ function toggleAcc(id) {
     }).catch(() => { showToast("⚠️ BAN解除に失敗しました。"); });
   };
 
-  let chatQuery = null, presenceRef = null, settingsRef = null, banListRef = null;
+  let chatQuery = null, presenceRef = null, settingsRef = null, banListRef = null, directChatRef = null;
 
   async function syncServerOffset() {
     if (!db) return;
@@ -1457,9 +1449,9 @@ function toggleAcc(id) {
       const resolvedMsgs = await Promise.all(decryptedPromises);
 
       resolvedMsgs.sort((a, b) => {
-        const timeDiff = getMsgTime(a) - getMsgTime(b);
+        const timeDiff = getMsgTime(b) - getMsgTime(a); // 💡 新しい順（降順）
         if (timeDiff !== 0) return timeDiff;
-        return a.id.localeCompare(b.id);
+        return b.id.localeCompare(a.id);
       });
 
       displayedMsgIds.clear();
@@ -1480,14 +1472,14 @@ function toggleAcc(id) {
       if (D.tli) D.tli.appendChild(fragment);
       
       isFirstLoad = false;
-      scBottom(true);
+      scTop(true);
       updateJumpBtns();
 
       const chatScr = $("chatScreen");
       if (chatScr) chatScr.classList.remove("is-loading");
 
       if (chatQuery) chatQuery.off("child_added");
-      db.ref(`chat/${currentRoomId}`).off("child_removed");
+      if (directChatRef) directChatRef.off("child_removed");
 
       chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(latestDisplayedTs + 1);
       chatQuery.on("child_added", async child => {
@@ -1495,7 +1487,8 @@ function toggleAcc(id) {
         if (m) { m.id = child.key; await syncSingleMessage(m, true); }
       });
 
-      db.ref(`chat/${currentRoomId}`).on("child_removed", child => {
+      directChatRef = db.ref(`chat/${currentRoomId}`);
+      directChatRef.on("child_removed", child => {
         const el = renderedMwNodes.get(child.key);
         if (el) {
           el.remove();
@@ -1521,7 +1514,7 @@ function toggleAcc(id) {
     settingsRef = db.ref(`settings/${currentRoomId}`);
     banListRef = db.ref(`banlist/${currentRoomId}`);
     presenceRef.off(); settingsRef.off(); banListRef.off();
-    db.ref(`chat/${currentRoomId}`).off("child_removed");
+    if (directChatRef) directChatRef.off("child_removed");
 
     await loadFullRoomDataAndSync(false);
 
@@ -1554,10 +1547,11 @@ function toggleAcc(id) {
         if (D.tli) D.tli.innerHTML = "";
         displayedMsgIds.clear(); processingMsgIds.clear(); renderedMwNodes.clear(); unreadMsgIds.clear(); latestDisplayedTs = serverClearTime; updateUnreadBadge();
         if (chatQuery) {
-          chatQuery.off(); db.ref(`chat/${currentRoomId}`).off("child_removed");
+          chatQuery.off(); if (directChatRef) directChatRef.off("child_removed");
           chatQuery = db.ref(`chat/${currentRoomId}`).orderByChild("t").startAt(serverClearTime);
           chatQuery.on("child_added", async child => { const m = child.val(); if (m) { m.id = child.key; await syncSingleMessage(m, true); } });
-          db.ref(`chat/${currentRoomId}`).on("child_removed", child => {
+          directChatRef = db.ref(`chat/${currentRoomId}`);
+          directChatRef.on("child_removed", child => {
             const el = renderedMwNodes.get(child.key);
             if (el) { el.remove(); renderedMwNodes.delete(child.key); displayedMsgIds.delete(child.key); processingMsgIds.delete(child.key); unreadMsgIds.delete(child.key); updateUnreadBadge(); updateJumpBtns(); }
           });
@@ -1609,8 +1603,8 @@ function toggleAcc(id) {
 
   function removeFirebaseListeners() {
     if (chatQuery) chatQuery.off("child_added");
+    if (directChatRef) directChatRef.off("child_removed");
     if (db && currentRoomId) {
-      db.ref(`chat/${currentRoomId}`).off("child_removed");
       db.ref(`settings/${currentRoomId}`).off("value");
       db.ref(`banlist/${currentRoomId}`).off("value");
     }
@@ -1765,8 +1759,8 @@ function toggleAcc(id) {
     if (D.mi) {
       D.mi.addEventListener("input", () => { updateClrMsgBtnVisibility(); D.mi.style.height = "auto"; D.mi.style.height = Math.min(D.mi.scrollHeight, 120) + "px"; });
       D.mi.addEventListener("focus", () => {
-        setTimeout(() => scBottom(true), 50);
-        setTimeout(() => scBottom(true), 200);
+        setTimeout(() => scTop(true), 50);
+        setTimeout(() => scTop(true), 200);
       });
       D.mi.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -1782,7 +1776,7 @@ function toggleAcc(id) {
         const currentHeight = window.innerHeight;
         if (Math.abs(lastHeight - currentHeight) > 100) {
           lastHeight = currentHeight;
-          if (isJoined) setTimeout(() => scBottom(true), 80);
+          if (isJoined) setTimeout(() => scTop(true), 80);
         }
       });
     }
@@ -1792,18 +1786,23 @@ function toggleAcc(id) {
 
     if (D.tl) {
       D.tl.addEventListener("scroll", () => {
-        const isBottom = D.tl.scrollHeight - (D.tl.scrollTop + D.tl.clientHeight) <= 80;
-        if (isBottom) { unreadMsgIds.clear(); updateUnreadBadge(); }
+        const isAtTop = D.tl.scrollTop <= 40;
+        if (isAtTop) { unreadMsgIds.clear(); updateUnreadBadge(); }
         updateJumpBtns();
       });
     }
 
-    if (D.jumpUpBtn) D.jumpUpBtn.addEventListener("click", (e) => { e.preventDefault(); if (D.tl) D.tl.scrollTo({ top: 0, behavior: "smooth" }); });
+    // 💡 ジャンプボタン：▲（最新＝最上部へ）、▼（最下部＝過去ログへ）
+    if (D.jumpUpBtn) D.jumpUpBtn.addEventListener("click", (e) => { 
+      e.preventDefault(); 
+      if (D.tl) D.tl.scrollTo({ top: 0, behavior: "smooth" }); 
+      unreadMsgIds.clear(); updateUnreadBadge(); 
+    });
     if (D.jumpDownBtn) D.jumpDownBtn.addEventListener("click", (e) => { 
       e.preventDefault(); 
       if (D.tl) D.tl.scrollTo({ top: D.tl.scrollHeight, behavior: "smooth" }); 
-      unreadMsgIds.clear(); updateUnreadBadge(); 
     });
+
     if (D.imgViewCloseBtn && D.imgViewMod) D.imgViewCloseBtn.addEventListener("click", (e) => { e.preventDefault(); D.imgViewMod.classList.remove("show"); });
 
     if (D.admBtn && D.adminAccordion) {
