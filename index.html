@@ -528,11 +528,13 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
+  // 🚀 【超即時同期：全コネクション経路対応】タブ切り替え、スリープ復帰、バックグラウンド復帰、ネットワーク再接続、Firebase接続完了時に即時再同期
   if (typeof document !== 'undefined') {
     const triggerInstantSync = async () => {
       if (isJoined && currentRoomId) {
         if (db) {
           db.goOnline();
+          await syncServerOffset();
           await loadFullRoomDataAndSync(true);
           if (myPresenceRef) {
             myPresenceRef.child("t").set(firebase.database.ServerValue.TIMESTAMP).catch(()=>{});
@@ -899,7 +901,6 @@ function toggleAcc(id) {
     const nowTrue = getTrueTime();
     
     for (const [id, u] of Object.entries(membersMap)) {
-      // 💡 ユーザーの最終活動時刻(u.t)を基点とし、正確に3分(180000ms)経過した瞬間をサーバー時間で算出
       if (u && typeof u.t === "number" && (nowTrue - u.t >= AUTO_EXIT_MS)) {
         const pRef = db.ref(`presence/${currentRoomId}/${id}`);
         try {
@@ -914,7 +915,7 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              // 💡 最終発言の正確な時刻（u.t）からきっちり3分後（u.t + 180000）を自動退室ログのタイムスタンプにする
+              // 💡 最終発言の時刻（u.t）から正確に3分後（u.t + 180000）を自動退室ログのタイムスタンプとする
               const exactExpiryTime = u.t + AUTO_EXIT_MS;
               const rawSysText = "[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)";
               const encLog = await E2EE.encrypt(rawSysText, activeKey);
@@ -1089,7 +1090,7 @@ function toggleAcc(id) {
     applyRoomSettingsUI(); 
   }
 
-  // 💡 【上を最新】スクロールを最上部（最新位置）に瞬時かつ確実に固定
+  // 💡 【上を最新】スクロールを最上部（最新位置）に固定する関数
   function scTop(force = false) {
     if (!D.tl) return;
     requestAnimationFrame(() => {
@@ -1151,7 +1152,14 @@ function toggleAcc(id) {
       if (msgTime > latestDisplayedTs) latestDisplayedTs = msgTime;
       updateUnreadBadge();
       
-      if (isFirstLoad || m.u === myUid || m.u === "system" || m.sys || (isNewIncoming && isAtTop)) {
+      // 💡 【追従の条件変更】：
+      // 「相手の発言」の時、または初回ロードの時に限り、自分が一番上にいれば自動で最新（一番上）へ追従する。
+      // ※「自分の発言」や「システムのお知らせ（にゆ等）」の時は、現在位置を勝手に動かさない（追従しない）。
+      const isMine = (m.u === myUid && m.u !== "" && m.u !== "system");
+      const isSys = m.sys === true || m.u === "system" || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
+      const shouldAutoScroll = isFirstLoad || (!isMine && !isSys && (isNewIncoming && isAtTop));
+
+      if (shouldAutoScroll) {
         scTop(true);
         if (isAtTop) { unreadMsgIds.clear(); updateUnreadBadge(); }
       }
