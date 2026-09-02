@@ -528,7 +528,7 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🚀 【超即時同期：全コネクション経路対応】タブ切り替え、スリープ復帰、バックグラウンド復帰、ネットワーク再接続、Firebase接続完了時に即時再同期
+  // 🚀 【超即時同期：全コネクション経路対応】タブ切り替え、スリープ復帰、バックグラウンド復帰、ネットワーク再接続時に即時再同期
   if (typeof document !== 'undefined') {
     const triggerInstantSync = async () => {
       if (isJoined && currentRoomId) {
@@ -915,7 +915,7 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
-              // 💡 最終発言の時刻（u.t）から正確に3分後（u.t + 180000）を自動退室ログのタイムスタンプとする
+              // 💡 【正確な時刻】最終発言時刻（u.t）からきっちり3分後（u.t + 180000）を自動退室ログのタイムスタンプとする
               const exactExpiryTime = u.t + AUTO_EXIT_MS;
               const rawSysText = "[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)";
               const encLog = await E2EE.encrypt(rawSysText, activeKey);
@@ -982,9 +982,10 @@ function toggleAcc(id) {
 
     if (wasJoined && cleanName && db && !isAuto) {
       try {
+        const exitTime = getTrueTime();
         const rawSysText = "[SYS]::📢 [お知らせ] " + `${cleanName} ${cleanTrip}`.trim() + " が退室しました";
         const encLog = await E2EE.encrypt(rawSysText, activeKey);
-        await db.ref(`chat/${oldRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: firebase.database.ServerValue.TIMESTAMP, sys: true });
+        await db.ref(`chat/${oldRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encLog, t: exitTime, sys: true });
       } catch(e) {}
       await finishAndClean();
     } else {
@@ -1081,9 +1082,10 @@ function toggleAcc(id) {
     const cleanName = (myName || "").trim();
     if (!options.silent && cleanName && !hasEnteredLogged) {
       hasEnteredLogged = true;
+      const enterTs = getTrueTime();
       const rawEnterText = "[SYS]::📢 [お知らせ] " + `${cleanName} ${myTrip}`.trim() + " が入室しました";
       E2EE.encrypt(rawEnterText, activeKey).then(encEnter => {
-        db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encEnter, t: firebase.database.ServerValue.TIMESTAMP, sys: true }).catch(()=>{});
+        db.ref(`chat/${currentRoomId}`).push({ u: "system", n: "システム", p: "", c: "#f43f5e", m: encEnter, t: enterTs, sys: true }).catch(()=>{});
       });
     }
 
@@ -1152,9 +1154,9 @@ function toggleAcc(id) {
       if (msgTime > latestDisplayedTs) latestDisplayedTs = msgTime;
       updateUnreadBadge();
       
-      // 💡 【追従の条件変更】：
-      // 「相手の発言」の時、または初回ロードの時に限り、自分が一番上にいれば自動で最新（一番上）へ追従する。
-      // ※「自分の発言」や「システムのお知らせ（にゆ等）」の時は、現在位置を勝手に動かさない（追従しない）。
+      // 💡 【追従の厳密な仕様制御】：
+      // 「自分の発言」や「システムのお知らせ（にゆ等）」の時は、画面を勝手に動かさない（追従しない）。
+      // 「相手の発言」が新着として届いた時のみ、自分が一番上にいれば自動で最新（一番上）へ追従する。
       const isMine = (m.u === myUid && m.u !== "" && m.u !== "system");
       const isSys = m.sys === true || m.u === "system" || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
       const shouldAutoScroll = isFirstLoad || (!isMine && !isSys && (isNewIncoming && isAtTop));
@@ -1764,6 +1766,8 @@ function toggleAcc(id) {
     if (D.mi) {
       D.mi.addEventListener("input", () => { updateClrMsgBtnVisibility(); D.mi.style.height = "auto"; D.mi.style.height = Math.min(D.mi.scrollHeight, 120) + "px"; });
       
+      // 💡 【フォーカス・キーボード表示時の追従修正】：
+      // テキストエリアにフォーカス時や、キーボードが開いてリサイズされた時に強制的にトップへスクロールさせる
       D.mi.addEventListener("focus", () => {
         setTimeout(() => scTop(true), 80);
         setTimeout(() => scTop(true), 250);
