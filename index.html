@@ -67,10 +67,10 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 .grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #lobbyTripPrev { font-size: 11px; font-weight: bold; color: var(--usr-color); text-align: center; background: rgba(0,0,0,0.3); padding: 6px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border: 1.5px solid var(--usr-color); }
 
-/* 💡 チラつき防止：is-loading時は完全に不透明度0にしておく */
+/* 💡 チラつき防止：完全に非表示からスムーズにフェードイン */
 #chatScreen { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; position: relative; }
 #chatScreen.is-loading { opacity: 0; pointer-events: none; }
-#chatScreen:not(.is-loading) { opacity: 1; transition: opacity 0.05s ease-in; }
+#chatScreen:not(.is-loading) { opacity: 1; transition: opacity 0.03s ease-in; }
 
 #adminAccordion {
   display: none; flex-direction: column; background: var(--sf); border-bottom: 1px solid var(--bd);
@@ -90,7 +90,7 @@ button:active,.chip:active,.btn:active,.jump-btn:active,.bsd:active,.bclrm:activ
 #playerContent{ width:100%;max-width:480px;background:#000;display:flex;justify-content:center;align-items:center;position:relative;margin:0 auto;overflow:hidden; }
 #playerCloseBtn{background:rgba(244, 63, 94, 0.15) !important;border:1px solid rgba(244, 63, 94, 0.4) !important;color: #fda4af !important;font-weight: 900 !important;padding: 4px 10px !important;font-size: 12px !important;border-radius: 5px;}
 
-/* 💡 【上を最新】上から下の標準フロー。新しいメッセージを上部に蓄積する */
+/* 💡 【上を最新】通常の標準フロー。新しいメッセージはDOMの先頭（上部）に積まれる */
 #tl{flex:1;min-height:0;overflow-y:scroll;padding:8px 12px;background-color:#070a10;will-change:transform,scroll-position;-webkit-overflow-scrolling:touch;}
 #tl-inner{display:flex;flex-direction:column;justify-content:flex-start;gap:6px;width:100%;max-width:800px;margin:0 auto;min-height:100%}
 
@@ -527,7 +527,7 @@ function toggleAcc(id) {
     } catch (e) {}
   }
 
-  // 🚀 【キャッシュチラつき完全排除＆超即時同期】
+  // 🚀 【爆速同期：全接続経路の即時検知＆キャッシュ完全排除】
   if (typeof document !== 'undefined') {
     const triggerInstantSync = async () => {
       if (isJoined && currentRoomId) {
@@ -566,7 +566,7 @@ function toggleAcc(id) {
       const chatScr = document.getElementById("chatScreen");
       if (chatScr) {
         chatScr.style.display = "flex";
-        chatScr.classList.add("is-loading"); // 💡 前のデータをチラつかせないためロード中は完全隠蔽
+        chatScr.classList.add("is-loading"); // 💡 チラつき防止：復号完了まで完全非表示
       }
       const logoTitle = document.getElementById("logoTitle");
       if (logoTitle) logoTitle.innerHTML = `NEZUO CHAT<span class="sub-room">${lastRoomId === "official" ? "常設公式部屋" : lastRoomId}</span>`;
@@ -914,6 +914,7 @@ function toggleAcc(id) {
             const userName = (u.n || "").trim();
             const userTrip = (u.p || "").trim();
             if (userName) {
+              // 💡 1秒のズレも許さない正確無比なタイムスタンプ：最終活動時刻（u.t）から正確に3分後（u.t + 180000）を刻む
               const exactExpiryTime = u.t + AUTO_EXIT_MS;
               const rawSysText = "[SYS]::📢 [お知らせ] " + `${userName} ${userTrip}`.trim() + " が自動退室しました (3分間発言がなかったため)";
               const encLog = await E2EE.encrypt(rawSysText, activeKey);
@@ -1090,7 +1091,7 @@ function toggleAcc(id) {
     applyRoomSettingsUI(); 
   }
 
-  // 💡 【上を最新】スクロール位置を最上部（最新位置）に固定する関数
+  // 💡 【上を最新】スクロールを最上部（最新位置）に固定する関数
   function scTop(force = false) {
     if (!D.tl) return;
     requestAnimationFrame(() => {
@@ -1153,15 +1154,18 @@ function toggleAcc(id) {
       updateUnreadBadge();
       
       // 💡 【追従の完全指定】：
-      // ユーザーの要望：「相手の発言以外は追従しない（自分の発言、入力フォーカス、キーボードを開いても押し上がらない・追従しない）」
-      // つまり、「新着かつ相手の発言」のときだけ一番上に追従する。それ以外（自分の発言、システム、フォーカス、キーボード等）では絶対に勝手に上にスクロールさせない。
+      // 1. 「初回ロード時」は一番上に合わせる
+      // 2. 「自分が発言した直後」は確実に一番上に強制追従する（スクロールを上にスナップ）
+      // 3. 「相手の新着発言」が届いた時、自分が一番上にいれば自動で一番上に追従する
+      // 4. 「システムのお知らせ」「入力フォーカス」「キーボード開閉」では絶対に追従（画面移動）させない
       const isMine = (m.u === myUid && m.u !== "" && m.u !== "system");
       const isSys = m.sys === true || m.u === "system" || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
-      const shouldAutoScroll = isFirstLoad || (!isMine && !isSys && (isNewIncoming && isAtTop));
+      
+      const shouldAutoScroll = isFirstLoad || isMine || (!isMine && !isSys && (isNewIncoming && isAtTop));
 
       if (shouldAutoScroll) {
         scTop(true);
-        if (isAtTop) { unreadMsgIds.clear(); updateUnreadBadge(); }
+        if (isAtTop || isMine) { unreadMsgIds.clear(); updateUnreadBadge(); }
       }
       updateJumpBtns();
     } finally {
@@ -1764,10 +1768,8 @@ function toggleAcc(id) {
     if (D.mi) {
       D.mi.addEventListener("input", () => { updateClrMsgBtnVisibility(); D.mi.style.height = "auto"; D.mi.style.height = Math.min(D.mi.scrollHeight, 120) + "px"; });
       
-      // 💡 【ご要望対応】：入力フォーカス時やキーボード表示時に、ログが勝手に押し上がったり位置が変わらないよう何もしない（固定を維持）
-      D.mi.addEventListener("focus", () => {
-        // キーボード展開時による視点自動スクロールを無効化するためスクロール操作を行いません
-      });
+      // 💡 【ご要望対応】：入力フォーカスやキーボードが開いても、ログ位置が勝手にずれたり押し上げられないように何もしない（位置キープ）
+      D.mi.addEventListener("focus", () => {});
 
       D.mi.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -1783,7 +1785,7 @@ function toggleAcc(id) {
         const currentHeight = window.innerHeight;
         if (Math.abs(lastHeight - currentHeight) > 100) {
           lastHeight = currentHeight;
-          // キーボード開閉によるリサイズ時も勝手に追従させない
+          // キーボード開閉等によるリサイズでも勝手にスクロールさせない
         }
       });
     }
