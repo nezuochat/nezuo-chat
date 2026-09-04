@@ -1153,15 +1153,13 @@ function toggleAcc(id) {
       if (msgTime > latestDisplayedTs) latestDisplayedTs = msgTime;
       updateUnreadBadge();
       
-      // 💡 【追従の完全指定】：
-      // 1. 「初回ロード時」は一番上に合わせる
-      // 2. 「自分が発言した直後」は確実に一番上に強制追従する（スクロールを上にスナップ）
-      // 3. 「相手の新着発言」が届いた時、自分が一番上にいれば自動で一番上に追従する
-      // 4. 「システムのお知らせ」「入力フォーカス」「キーボード開閉」では絶対に追従（画面移動）させない
+      // 💡 【完璧な自然挙動の追従ロジック】：
+      // 1. 初回ロード時は一番上
+      // 2. 自分が発言した直後は強制的に一番上に追従（スナップ）
+      // 3. 一番上にいるときは、自分・相手問わず新着で自動追従して常に最新が見られる
+      // 4. 下（過去ログ）を見ているときは、新着が来ても勝手に動かない
       const isMine = (m.u === myUid && m.u !== "" && m.u !== "system");
-      const isSys = m.sys === true || m.u === "system" || (typeof m.m === "string" && m.m.startsWith("[SYS]::"));
-      
-      const shouldAutoScroll = isFirstLoad || isMine || (!isMine && !isSys && (isNewIncoming && isAtTop));
+      const shouldAutoScroll = isFirstLoad || isMine || (isNewIncoming && isAtTop);
 
       if (shouldAutoScroll) {
         scTop(true);
@@ -1768,8 +1766,11 @@ function toggleAcc(id) {
     if (D.mi) {
       D.mi.addEventListener("input", () => { updateClrMsgBtnVisibility(); D.mi.style.height = "auto"; D.mi.style.height = Math.min(D.mi.scrollHeight, 120) + "px"; });
       
-      // 💡 【ご要望対応】：入力フォーカスやキーボードが開いても、ログ位置が勝手にずれたり押し上げられないように何もしない（位置キープ）
-      D.mi.addEventListener("focus", () => {});
+      // 💡 【ご要望対応】：入力フォーカス時に画面を最上部（最新位置）へ追従させる
+      D.mi.addEventListener("focus", () => {
+        setTimeout(() => scTop(true), 50);
+        setTimeout(() => scTop(true), 200);
+      });
 
       D.mi.addEventListener("keydown", (e) => {
         if (e.key === "Enter" && !e.shiftKey) {
@@ -1785,7 +1786,7 @@ function toggleAcc(id) {
         const currentHeight = window.innerHeight;
         if (Math.abs(lastHeight - currentHeight) > 100) {
           lastHeight = currentHeight;
-          // キーボード開閉等によるリサイズでも勝手にスクロールさせない
+          if (isJoined) setTimeout(() => scTop(true), 80);
         }
       });
     }
