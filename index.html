@@ -1340,7 +1340,6 @@ function toggleAcc(id) {
     updateJumpBtns();
   }
 
-  // 💡 【入室者リストのチラつきゼロ化】：要素の完全再生成を廃し、差分更新（Virtual DOMライク）で滑らかに同期
   function renderPresence(serverListMap) {
     if (!D.pl) return;
     const sorted = Object.values(serverListMap).filter(m => m && m.n).sort((a, b) => a.id.localeCompare(b.id));
